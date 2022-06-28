@@ -1,12 +1,13 @@
-use super::{BoxedFuture, ScheduleMessage, Scheduler, Spawner, Task};
+use super::{get_unix_time, BoxedFuture, ScheduleMessage, Scheduler, Spawner, Task};
 
 use std::{
-    sync::Arc,
+    sync::{Arc, Weak},
     thread::{self, JoinHandle},
 };
 
 use crossbeam::channel::{self, Receiver, Select, Sender};
 use parking_lot::Mutex;
+use rustc_hash::FxHashMap;
 
 enum Message {
     Close,
@@ -14,27 +15,27 @@ enum Message {
 
 pub struct RoundRobinScheduler {
     size: usize,
+    task_hold: FxHashMap<u128, Arc<Task>>,
     current_index: usize,
     threads: Vec<(WorkerInfo, JoinHandle<()>)>,
-    _tx: Sender<ScheduleMessage>,
     rx: Receiver<ScheduleMessage>,
 }
 
 struct WorkerInfo {
-    task_tx: Sender<Arc<Task>>,
+    task_tx: Sender<Weak<Task>>,
     tx: Sender<Message>,
 }
 
 pub struct Worker {
     _idx: usize,
-    task_rx: Receiver<Arc<Task>>,
+    task_rx: Receiver<Weak<Task>>,
     rx: Receiver<Message>,
 }
 
 impl RoundRobinScheduler {
     fn new(size: usize) -> (Spawner, Self) {
         let (tx, rx) = channel::unbounded();
-        let spawner = Spawner::new(tx.clone());
+        let spawner = Spawner::new(tx);
         let threads: Vec<(WorkerInfo, JoinHandle<()>)> = (0..size)
             .map(|_idx| {
                 let (tx, rx) = channel::unbounded();
@@ -48,9 +49,9 @@ impl RoundRobinScheduler {
             .collect();
         let scheduler = Self {
             size,
+            task_hold: FxHashMap::default(),
             current_index: 0,
             threads,
-            _tx: tx,
             rx,
         };
         (spawner, scheduler)
@@ -73,9 +74,11 @@ impl Scheduler for RoundRobinScheduler {
             future,
             tx: Arc::new(Mutex::new(Some(task_tx.clone()))),
         });
-        task_tx.send(task).expect("Failed to send message");
+        let weak = Arc::downgrade(&task);
+        self.task_hold.insert(get_unix_time(), task);
+        task_tx.send(weak).expect("Failed to send message");
     }
-    fn reschedule(&mut self, task: Arc<Task>) {
+    fn reschedule(&mut self, task: Weak<Task>) {
         let index = self.round();
         let task_tx = &self.threads[index].0.task_tx;
         task_tx.send(task).expect("Failed to send message");
@@ -101,8 +104,14 @@ impl Worker {
             let oper = select.select();
             match oper.index() {
                 i if i == task_index => {
-                    if let Ok(task) = oper.recv(&self.task_rx) {
-                        task.run();
+                    if let Ok(weak) = oper.recv(&self.task_rx) {
+                        if let Some(task) = weak.upgrade() {
+                            task.run();
+                        } else {
+                            tracing::error!(
+                                "Failed to upgrade the weak reference of current task!"
+                            );
+                        }
                     } else {
                         break;
                     }

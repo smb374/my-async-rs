@@ -4,18 +4,19 @@ pub mod work_stealing;
 use std::{
     io,
     ops::DerefMut,
-    sync::Arc,
+    sync::{Arc, Weak},
     task::{Context, Poll},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
-use crossbeam::channel::{Receiver, Sender};
+use crossbeam::channel::{self, Receiver, Sender};
 use futures_lite::future::{Boxed, Future, FutureExt};
 use futures_task::{waker_ref, ArcWake};
 use parking_lot::Mutex;
 
 pub enum ScheduleMessage {
     Schedule(BoxedFuture),
-    Reschedule(Arc<Task>),
+    Reschedule(Weak<Task>),
     Shutdown,
 }
 
@@ -26,17 +27,40 @@ pub struct Spawner {
 pub trait Scheduler {
     fn init(size: usize) -> (Spawner, Self);
     fn schedule(&mut self, future: BoxedFuture);
-    fn reschedule(&mut self, task: Arc<Task>);
+    fn reschedule(&mut self, task: Weak<Task>);
     fn shutdown(self);
     fn receiver(&self) -> &Receiver<ScheduleMessage>;
 }
 
 pub type BoxedFuture = Mutex<Option<Boxed<io::Result<()>>>>;
-pub type WrappedTaskSender = Arc<Mutex<Option<Sender<Arc<Task>>>>>;
+pub type WrappedTaskSender = Arc<Mutex<Option<Sender<Weak<Task>>>>>;
+
+pub struct Broadcast<T> {
+    channels: Vec<Sender<T>>,
+}
 
 pub struct Task {
     future: BoxedFuture,
     tx: WrappedTaskSender,
+}
+
+impl<T: Send + Clone> Broadcast<T> {
+    pub fn new() -> Self {
+        Self {
+            channels: Vec::with_capacity(num_cpus::get()),
+        }
+    }
+    pub fn subscribe(&mut self) -> Receiver<T> {
+        let (tx, rx) = channel::unbounded();
+        self.channels.push(tx);
+        rx
+    }
+    pub fn broadcast(&self, message: T) -> Result<(), channel::SendError<T>> {
+        self.channels
+            .iter()
+            .try_for_each(|tx| tx.send(message.clone()))?;
+        Ok(())
+    }
 }
 
 impl Spawner {
@@ -79,7 +103,7 @@ impl Task {
             };
         }
     }
-    pub fn replace_tx(&self, tx: Sender<Arc<Task>>) {
+    pub fn replace_tx(&self, tx: Sender<Weak<Task>>) {
         let mut guard = self.tx.lock();
         guard.deref_mut().replace(tx);
     }
@@ -87,12 +111,19 @@ impl Task {
 
 impl ArcWake for Task {
     fn wake_by_ref(arc_self: &Arc<Self>) {
-        let clone = Arc::clone(arc_self);
+        let weak = Arc::downgrade(arc_self);
         let guard = arc_self.tx.lock();
         guard
             .as_ref()
             .expect("task's tx should be assigned when scheduled at the first time")
-            .send(clone)
+            .send(weak)
             .expect("Too many message queued!");
     }
+}
+
+pub(super) fn get_unix_time() -> u128 {
+    let dur = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("System time earlier than UNIX_EPOCH!");
+    dur.as_nanos()
 }

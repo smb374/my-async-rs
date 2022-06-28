@@ -1,5 +1,2 @@
 [workspace]
-members = [
-  "my-async",
-  # "benches",
-]
+members = ["my-async"]

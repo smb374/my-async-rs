@@ -22,7 +22,7 @@ pub mod single_thread;
 pub mod schedulers;
 
 pub use mio::Interest;
-pub use modules::{fs, io, net};
+pub use modules::{fs, io, net, stream};
 
 pub struct IoWrapper<T> {
     inner: T,
