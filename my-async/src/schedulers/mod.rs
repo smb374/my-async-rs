@@ -120,10 +120,3 @@ impl ArcWake for Task {
             .expect("Too many message queued!");
     }
 }
-
-pub(super) fn get_unix_time() -> u128 {
-    let dur = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("System time earlier than UNIX_EPOCH!");
-    dur.as_nanos()
-}

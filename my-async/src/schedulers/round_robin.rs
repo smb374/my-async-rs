@@ -1,4 +1,5 @@
-use super::{get_unix_time, BoxedFuture, ScheduleMessage, Scheduler, Spawner, Task};
+use super::{BoxedFuture, ScheduleMessage, Scheduler, Spawner, Task};
+use crate::get_unix_time;
 
 use std::{
     sync::{Arc, Weak},

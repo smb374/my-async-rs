@@ -4,7 +4,7 @@ use std::{
     os::unix::prelude::{AsRawFd, RawFd},
     pin::Pin,
     task::{Context, Poll},
-    time::SystemTime,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use futures_lite::AsyncRead;
@@ -177,11 +177,15 @@ macro_rules! impl_common_write {
     };
 }
 
+pub(crate) fn get_unix_time() -> u128 {
+    let dur = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("System time earlier than UNIX_EPOCH!");
+    dur.as_nanos()
+}
+
 pub(crate) fn token_from_unixtime() -> Token {
-    let current_time = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .expect("SystemTime before UNIX_EPOCH!");
-    let time_bytes = current_time.as_nanos().to_be_bytes();
+    let time_bytes = get_unix_time().to_be_bytes();
     let tail = &time_bytes[time_bytes.len() - 8..];
     let id = usize::from_be_bytes(tail.try_into().unwrap());
     Token(id)
