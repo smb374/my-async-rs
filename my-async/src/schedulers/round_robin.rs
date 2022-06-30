@@ -72,11 +72,12 @@ impl Scheduler for RoundRobinScheduler {
         let index = self.round();
         let task_tx = &self.threads[index].0.task_tx;
         let task = Arc::new(Task {
+            id: get_unix_time(),
             future,
-            tx: Arc::new(Mutex::new(Some(task_tx.clone()))),
+            tx: Mutex::new(Some(task_tx.clone())),
         });
         let weak = Arc::downgrade(&task);
-        self.task_hold.insert(get_unix_time(), task);
+        self.task_hold.insert(task.id, task);
         task_tx.send(weak).expect("Failed to send message");
     }
     fn reschedule(&mut self, task: Weak<Task>) {

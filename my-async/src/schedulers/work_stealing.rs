@@ -16,6 +16,9 @@ use rustc_hash::FxHashMap;
 
 pub struct WorkStealingScheduler {
     _size: usize,
+    // this `HashMap` holds the ownership of tasks that spawns in this scheduler
+    // using unix timestamp for its key for further access.
+    // TODO: check if we can use `HashSet` to replace `HashMap` here because it may not be necessary to access the task by key afterall.
     task_hold: FxHashMap<u128, Arc<Task>>,
     injector: Arc<Injector<Weak<Task>>>,
     _stealers: Vec<Stealer<Weak<Task>>>,
@@ -93,11 +96,12 @@ impl Scheduler for WorkStealingScheduler {
     }
     fn schedule(&mut self, future: BoxedFuture) {
         let task = Arc::new(Task {
+            id: get_unix_time(),
             future,
-            tx: Arc::new(Mutex::new(None)),
+            tx: Mutex::new(None),
         });
         let weak = Arc::downgrade(&task);
-        self.task_hold.insert(get_unix_time(), task);
+        self.task_hold.insert(task.id, task);
         self.injector.push(weak);
         self.notifier
             .broadcast(Message::HaveTasks)

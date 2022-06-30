@@ -6,7 +6,6 @@ use std::{
     ops::DerefMut,
     sync::{Arc, Weak},
     task::{Context, Poll},
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 use crossbeam::channel::{self, Receiver, Sender};
@@ -32,14 +31,19 @@ pub trait Scheduler {
     fn receiver(&self) -> &Receiver<ScheduleMessage>;
 }
 
+// Single access from `Task` itself only, using `Mutex`
 pub type BoxedFuture = Mutex<Option<Boxed<io::Result<()>>>>;
-pub type WrappedTaskSender = Arc<Mutex<Option<Sender<Weak<Task>>>>>;
+// Single access from `Task` itself only, using `Mutex`
+pub type WrappedTaskSender = Mutex<Option<Sender<Weak<Task>>>>;
 
+// TODO: check if there is a better way to broadcast message instead of this naive implementation.
 pub struct Broadcast<T> {
     channels: Vec<Sender<T>>,
 }
 
+// Most of the `Task` are sent by downgrading `Arc<Task>` to `Weak<Task>` to prevent the increase amount of ownership.
 pub struct Task {
+    id: u128,
     future: BoxedFuture,
     tx: WrappedTaskSender,
 }
@@ -105,7 +109,7 @@ impl Task {
     }
     pub fn replace_tx(&self, tx: Sender<Weak<Task>>) {
         let mut guard = self.tx.lock();
-        guard.deref_mut().replace(tx);
+        guard.replace(tx);
     }
 }
 
