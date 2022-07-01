@@ -86,6 +86,7 @@ impl<S: Scheduler> Executor<S> {
         }
     }
     fn run(mut self) {
+        tracing::info!("Runtime booted up, start execution...");
         loop {
             match self.scheduler.receiver().recv() {
                 // continously schedule tasks
@@ -113,15 +114,16 @@ impl<S: Scheduler> Executor<S> {
             .expect("Failed to join poll thread");
         tracing::info!("Runtime shutdown complete.")
     }
-    pub fn block_on<F, T>(self, future: F) -> Option<io::Result<T>>
+    pub fn block_on<F, T>(self, future: F) -> T
     where
         T: Send + 'static,
-        F: Future<Output = io::Result<T>> + Send + 'static,
+        F: Future<Output = T> + Send + 'static,
     {
-        let result_arc: Arc<Mutex<Option<io::Result<T>>>> = Arc::new(Mutex::new(None));
+        let result_arc: Arc<Mutex<Option<T>>> = Arc::new(Mutex::new(None));
         let clone = Arc::clone(&result_arc);
         spawn(async move {
             let result = future.await;
+            // should put any result inside the arc, even if it's `()`!
             clone.lock().replace(result);
             tracing::debug!("Blocked future finished.");
             shutdown();
@@ -131,7 +133,12 @@ impl<S: Scheduler> Executor<S> {
         self.run();
         tracing::debug!("Waiting result...");
         let mut guard = result_arc.lock();
-        guard.take()
+        let result = guard.take();
+        assert!(
+            result.is_some(),
+            "The blocked future should produce a return value before the execution ends."
+        );
+        result.unwrap()
     }
 }
 
