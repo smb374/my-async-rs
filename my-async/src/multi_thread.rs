@@ -1,3 +1,5 @@
+use crate::unpoison;
+
 use super::reactor;
 use super::schedulers::{ScheduleMessage, Scheduler, Spawner};
 
@@ -9,16 +11,19 @@ use std::{
     time::Duration,
 };
 
-use crossbeam::channel::{self, Receiver, Sender, TryRecvError};
+use crossbeam::{
+    channel::{self, Receiver, Sender, TryRecvError},
+    sync::ShardedLock,
+};
 use futures_lite::prelude::*;
 use once_cell::sync::Lazy;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::Mutex;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 // write only when initializing, using `RwLock` for frequent multiple read access.
-// NOTE: using `Once` and unsafe to initialize the spawner may be a faster choice since it only mutate once.
-static SPAWNER: Lazy<RwLock<Option<Spawner>>> = Lazy::new(|| RwLock::new(None));
+// NOTE: using `Once` and unsafe to initialize the spawner may be a faster choice since it only mutate once & without needing any locks.
+static SPAWNER: Lazy<ShardedLock<Option<Spawner>>> = Lazy::new(|| ShardedLock::new(None));
 
 pub struct Executor<S: Scheduler> {
     scheduler: S,
@@ -28,14 +33,17 @@ pub struct Executor<S: Scheduler> {
 
 impl<S: Scheduler> Executor<S> {
     pub fn new() -> Self {
+        // log format
         let format = fmt::layer()
             .with_level(true)
             .with_target(false)
             .with_thread_ids(false)
             .with_thread_names(true);
+        // log level filter, default showing warning & above.
         let filter = EnvFilter::builder()
             .with_default_directive(LevelFilter::WARN.into())
             .from_env_lossy();
+        // init tracing subscriber as loggging facility.
         tracing_subscriber::registry()
             .with(format)
             .with(filter)
@@ -46,12 +54,13 @@ impl<S: Scheduler> Executor<S> {
         tracing::debug!("Scheduler initialized");
         let (tx, rx) = channel::unbounded();
         // set up spawner
-        SPAWNER.write().replace(spawner);
+        unpoison(SPAWNER.write()).replace(spawner);
         let poll_thread_handle = thread::Builder::new()
             .name("poll_thread".to_string())
             .spawn(move || Self::poll_thread(rx))
             .expect("Failed to spawn poll_thread.");
         tracing::debug!("Spawned poll_thread");
+        tracing::info!("Runtime startup complete.");
         Self {
             scheduler,
             poll_thread_notifier: tx,
@@ -92,7 +101,7 @@ impl<S: Scheduler> Executor<S> {
                 }
             }
         }
-        tracing::info!("Execution completed, shutdown");
+        tracing::info!("Execution completed, shutting down...");
         // shutdown worker threads
         self.scheduler.shutdown();
         // shutdown poll thread
@@ -102,25 +111,25 @@ impl<S: Scheduler> Executor<S> {
         self.poll_thread_handle
             .join()
             .expect("Failed to join poll thread");
+        tracing::info!("Runtime shutdown complete.")
     }
-    pub fn block_on<F, T>(self, future: F) -> Option<T>
+    pub fn block_on<F, T>(self, future: F) -> Option<io::Result<T>>
     where
         T: Send + 'static,
-        F: Future<Output = T> + Send + 'static,
+        F: Future<Output = io::Result<T>> + Send + 'static,
     {
-        let result_arc: Arc<Mutex<Option<T>>> = Arc::new(Mutex::new(None));
-        let weak = Arc::downgrade(&result_arc);
+        let result_arc: Arc<Mutex<Option<io::Result<T>>>> = Arc::new(Mutex::new(None));
+        let clone = Arc::clone(&result_arc);
         spawn(async move {
             let result = future.await;
-            if let Some(arc) = weak.upgrade() {
-                arc.lock().replace(result);
-            } else {
-                tracing::error!("Result storing arc being dropped for unknown reason!!!");
-            }
+            clone.lock().replace(result);
+            tracing::debug!("Blocked future finished.");
             shutdown();
             Ok(())
         });
+        tracing::info!("Start blocking...");
         self.run();
+        tracing::debug!("Waiting result...");
         let mut guard = result_arc.lock();
         guard.take()
     }
@@ -130,33 +139,13 @@ pub fn spawn<F>(future: F)
 where
     F: Future<Output = io::Result<()>> + Send + 'static,
 {
-    if let Some(spawner) = SPAWNER.read().deref() {
+    if let Some(spawner) = unpoison(SPAWNER.read()).deref() {
         spawner.spawn(future);
     }
 }
 
-pub fn spawn_with_result<F, T>(future: F) -> Option<T>
-where
-    T: Send + 'static,
-    F: Future<Output = T> + Send + 'static,
-{
-    let result_arc: Arc<Mutex<Option<T>>> = Arc::new(Mutex::new(None));
-    let weak = Arc::downgrade(&result_arc);
-    spawn(async move {
-        let result = future.await;
-        if let Some(arc) = weak.upgrade() {
-            arc.lock().replace(result);
-        } else {
-            tracing::error!("Result storing arc being dropped for unknown reason!!!");
-        }
-        Ok(())
-    });
-    let mut guard = result_arc.lock();
-    guard.take()
-}
-
 pub fn shutdown() {
-    if let Some(spawner) = SPAWNER.read().deref() {
+    if let Some(spawner) = unpoison(SPAWNER.read()).deref() {
         spawner.shutdown();
     }
 }

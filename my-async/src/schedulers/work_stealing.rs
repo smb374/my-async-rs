@@ -73,6 +73,7 @@ impl WorkStealingScheduler {
                         task_rx,
                     };
                     runner.run();
+                    tracing::debug!("Runner shutdown.");
                     drop(wg);
                 })
                 .expect("Failed to spawn worker");
@@ -117,7 +118,9 @@ impl Scheduler for WorkStealingScheduler {
         self.notifier
             .broadcast(Message::Close)
             .expect("Failed to send message");
+        tracing::debug!("Waiting runners to shutdown...");
         self.wait_group.wait();
+        tracing::debug!("Shutdown complete.");
     }
     fn receiver(&self) -> &Receiver<ScheduleMessage> {
         &self.rx
@@ -143,7 +146,7 @@ impl TaskRunner {
                     tracing::debug!("Start collecting tasks...");
                     let mut wakeup_count = 0;
                     // First push in all the woke up Task, non-blocking.
-                    tracing::debug!("Collecting wokeups");
+                    tracing::debug!("Collecting wokeups...");
                     loop {
                         match self.task_rx.try_recv() {
                             Ok(weak) => {
@@ -158,11 +161,13 @@ impl TaskRunner {
                         continue;
                     }
                     // If we are starving, start stealing.
+                    tracing::debug!("Try stealing tasks from other runners...");
                     if let Some(weak) = self.steal_task() {
                         self.worker.push(weak);
                         continue;
                     }
                     // Finally, wait for a single wakeup task or broadcast signal from scheduler
+                    tracing::debug!("Runner park.");
                     let oprv = select.select();
                     match oprv.index() {
                         i if i == task_index => match oprv.recv(&self.task_rx) {
