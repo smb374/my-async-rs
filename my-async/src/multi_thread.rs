@@ -1,3 +1,5 @@
+use crate::schedulers::BoxedFuture;
+
 use super::reactor;
 use super::schedulers::{ScheduleMessage, Scheduler, Spawner};
 
@@ -13,12 +15,15 @@ use crossbeam::channel::{self, Receiver, Sender, TryRecvError};
 use futures_lite::prelude::*;
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
+use sharded_slab::Pool;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 // write only when initializing, using `RwLock` for frequent multiple read access.
 // NOTE: using `Once` and unsafe to initialize the spawner may be a faster choice since it only mutate once & without needing any locks.
 static SPAWNER: Lazy<RwLock<Option<Spawner>>> = Lazy::new(|| RwLock::new(None));
+// global future allocation pool.
+pub static FUTURE_POOL: Lazy<Arc<Pool<BoxedFuture>>> = Lazy::new(|| Arc::new(Pool::new()));
 
 pub struct Executor<S: Scheduler> {
     scheduler: S,

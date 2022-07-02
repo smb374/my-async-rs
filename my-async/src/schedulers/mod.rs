@@ -4,18 +4,24 @@ pub mod work_stealing;
 use std::{
     io,
     ops::DerefMut,
-    sync::{Arc, Weak},
     task::{Context, Poll},
 };
 
 use crossbeam::channel::{self, Receiver, Sender};
 use futures_lite::future::{Boxed, Future, FutureExt};
-use futures_task::{waker_ref, ArcWake};
 use parking_lot::Mutex;
+use sharded_slab::Clear;
+use waker_fn::waker_fn;
+
+use crate::multi_thread::FUTURE_POOL;
+
+// Single access from `Task` itself only, using `Mutex`
+pub type WrappedTaskSender = Option<Sender<FutureIndex>>;
+pub type FutureIndex = usize;
 
 pub enum ScheduleMessage {
-    Schedule(BoxedFuture),
-    Reschedule(Weak<Task>),
+    Schedule(FutureIndex),
+    Reschedule(FutureIndex),
     Shutdown,
 }
 
@@ -25,27 +31,54 @@ pub struct Spawner {
 
 pub trait Scheduler {
     fn init(size: usize) -> (Spawner, Self);
-    fn schedule(&mut self, future: BoxedFuture);
-    fn reschedule(&mut self, task: Weak<Task>);
+    fn schedule(&mut self, index: FutureIndex);
+    fn reschedule(&mut self, index: FutureIndex);
     fn shutdown(self);
     fn receiver(&self) -> &Receiver<ScheduleMessage>;
 }
 
 // Single access from `Task` itself only, using `Mutex`
-pub type BoxedFuture = Mutex<Option<Boxed<io::Result<()>>>>;
-// Single access from `Task` itself only, using `Mutex`
-pub type WrappedTaskSender = Mutex<Option<Sender<Weak<Task>>>>;
+pub struct BoxedFuture(Mutex<Option<Boxed<io::Result<()>>>>);
+
+impl Default for BoxedFuture {
+    fn default() -> Self {
+        BoxedFuture(Mutex::new(None))
+    }
+}
+
+impl Clear for BoxedFuture {
+    fn clear(&mut self) {
+        self.0.get_mut().clear();
+    }
+}
+
+impl BoxedFuture {
+    pub fn run(&self, index: FutureIndex, tx: Sender<FutureIndex>) {
+        let mut guard = self.0.lock();
+        let future_slot = guard.deref_mut();
+        // run *ONCE*
+        if let Some(mut fut) = future_slot.take() {
+            let waker = waker_fn(move || {
+                tx.send(index).expect("Too many message queued!");
+            });
+            let cx = &mut Context::from_waker(&waker);
+            match fut.as_mut().poll(cx) {
+                Poll::Ready(r) => {
+                    if let Err(e) = r {
+                        tracing::error!("Error occurred when executing future: {}", e);
+                    }
+                }
+                Poll::Pending => {
+                    future_slot.replace(fut);
+                }
+            };
+        }
+    }
+}
 
 // TODO: check if there is a better way to broadcast message instead of this naive implementation.
 pub struct Broadcast<T> {
     channels: Vec<Sender<T>>,
-}
-
-// Most of the `Task` are sent by downgrading `Arc<Task>` to `Weak<Task>` to prevent the increase amount of ownership.
-pub struct Task {
-    id: u128,
-    future: BoxedFuture,
-    tx: WrappedTaskSender,
 }
 
 impl<T: Send + Clone> Broadcast<T> {
@@ -75,52 +108,19 @@ impl Spawner {
     where
         F: Future<Output = io::Result<()>> + Send + 'static,
     {
-        let boxed = Mutex::new(Some(future.boxed()));
+        // let boxed = BoxedFuture(Mutex::new(Some(future.boxed())));
+        let index = FUTURE_POOL
+            .create_with(|seat| {
+                seat.0.get_mut().replace(future.boxed());
+            })
+            .unwrap();
         self.tx
-            .send(ScheduleMessage::Schedule(boxed))
+            .send(ScheduleMessage::Schedule(index))
             .expect("Failed to send message");
     }
     pub fn shutdown(&self) {
         self.tx
             .send(ScheduleMessage::Shutdown)
             .expect("Failed to send message");
-    }
-}
-
-impl Task {
-    pub fn run(self: &Arc<Self>) {
-        let mut guard = self.future.lock();
-        let future_slot = guard.deref_mut();
-        // run *ONCE*
-        if let Some(mut fut) = future_slot.take() {
-            let waker = waker_ref(self);
-            let cx = &mut Context::from_waker(&waker);
-            match fut.as_mut().poll(cx) {
-                Poll::Ready(r) => {
-                    if let Err(e) = r {
-                        tracing::error!("Error occurred when executing future: {}", e);
-                    }
-                }
-                Poll::Pending => {
-                    *future_slot = Some(fut);
-                }
-            };
-        }
-    }
-    pub fn replace_tx(&self, tx: Sender<Weak<Task>>) {
-        let mut guard = self.tx.lock();
-        guard.replace(tx);
-    }
-}
-
-impl ArcWake for Task {
-    fn wake_by_ref(arc_self: &Arc<Self>) {
-        let weak = Arc::downgrade(arc_self);
-        let guard = arc_self.tx.lock();
-        guard
-            .as_ref()
-            .expect("task's tx should be assigned when scheduled at the first time")
-            .send(weak)
-            .expect("Too many message queued!");
     }
 }

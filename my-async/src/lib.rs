@@ -3,7 +3,6 @@ use std::{
     io::Read,
     os::unix::prelude::{AsRawFd, RawFd},
     pin::Pin,
-    sync::PoisonError,
     task::{Context, Poll},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -192,9 +191,9 @@ pub(crate) fn token_from_unixtime() -> Token {
     Token(id)
 }
 
-pub(crate) fn unpoison<T>(lock_result: Result<T, PoisonError<T>>) -> T {
-    match lock_result {
-        Ok(guard) => guard,
-        Err(p) => p.into_inner(),
-    }
-}
+// pub(crate) fn unpoison<T>(lock_result: Result<T, PoisonError<T>>) -> T {
+//     match lock_result {
+//         Ok(guard) => guard,
+//         Err(p) => p.into_inner(),
+//     }
+// }

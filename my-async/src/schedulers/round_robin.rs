@@ -1,14 +1,9 @@
-use super::{BoxedFuture, ScheduleMessage, Scheduler, Spawner, Task};
-use crate::get_unix_time;
+use super::{FutureIndex, ScheduleMessage, Scheduler, Spawner};
+use crate::multi_thread::FUTURE_POOL;
 
-use std::{
-    sync::{Arc, Weak},
-    thread::{self, JoinHandle},
-};
+use std::thread::{self, JoinHandle};
 
 use crossbeam::channel::{self, Receiver, Select, Sender};
-use parking_lot::Mutex;
-use rustc_hash::FxHashMap;
 
 enum Message {
     Close,
@@ -16,20 +11,20 @@ enum Message {
 
 pub struct RoundRobinScheduler {
     size: usize,
-    task_hold: FxHashMap<u128, Arc<Task>>,
     current_index: usize,
     threads: Vec<(WorkerInfo, JoinHandle<()>)>,
     rx: Receiver<ScheduleMessage>,
 }
 
 struct WorkerInfo {
-    task_tx: Sender<Weak<Task>>,
+    task_tx: Sender<FutureIndex>,
     tx: Sender<Message>,
 }
 
 pub struct Worker {
     _idx: usize,
-    task_rx: Receiver<Weak<Task>>,
+    task_tx: Sender<FutureIndex>,
+    task_rx: Receiver<FutureIndex>,
     rx: Receiver<Message>,
 }
 
@@ -41,8 +36,14 @@ impl RoundRobinScheduler {
             .map(|_idx| {
                 let (tx, rx) = channel::unbounded();
                 let (task_tx, task_rx) = channel::unbounded();
+                let tx_clone = task_tx.clone();
                 let handle = thread::spawn(move || {
-                    let worker = Worker { _idx, task_rx, rx };
+                    let worker = Worker {
+                        _idx,
+                        task_tx: tx_clone,
+                        task_rx,
+                        rx,
+                    };
                     worker.run();
                 });
                 (WorkerInfo { task_tx, tx }, handle)
@@ -50,7 +51,6 @@ impl RoundRobinScheduler {
             .collect();
         let scheduler = Self {
             size,
-            task_hold: FxHashMap::default(),
             current_index: 0,
             threads,
             rx,
@@ -68,22 +68,15 @@ impl Scheduler for RoundRobinScheduler {
     fn init(size: usize) -> (Spawner, Self) {
         Self::new(size)
     }
-    fn schedule(&mut self, future: BoxedFuture) {
-        let index = self.round();
-        let task_tx = &self.threads[index].0.task_tx;
-        let task = Arc::new(Task {
-            id: get_unix_time(),
-            future,
-            tx: Mutex::new(Some(task_tx.clone())),
-        });
-        let weak = Arc::downgrade(&task);
-        self.task_hold.insert(task.id, task);
-        task_tx.send(weak).expect("Failed to send message");
+    fn schedule(&mut self, index: FutureIndex) {
+        let worker_index = self.round();
+        let task_tx = &self.threads[worker_index].0.task_tx;
+        task_tx.send(index).expect("Failed to send message");
     }
-    fn reschedule(&mut self, task: Weak<Task>) {
-        let index = self.round();
-        let task_tx = &self.threads[index].0.task_tx;
-        task_tx.send(task).expect("Failed to send message");
+    fn reschedule(&mut self, index: FutureIndex) {
+        let worker_index = self.round();
+        let task_tx = &self.threads[worker_index].0.task_tx;
+        task_tx.send(index).expect("Failed to send message");
     }
     fn shutdown(self) {
         for (info, handle) in self.threads {
@@ -106,12 +99,13 @@ impl Worker {
             let oper = select.select();
             match oper.index() {
                 i if i == task_index => {
-                    if let Ok(weak) = oper.recv(&self.task_rx) {
-                        if let Some(task) = weak.upgrade() {
-                            task.run();
+                    if let Ok(index) = oper.recv(&self.task_rx) {
+                        if let Some(boxed) = FUTURE_POOL.get(index) {
+                            boxed.run(index, self.task_tx.clone());
                         } else {
                             tracing::error!(
-                                "Failed to upgrade the weak reference of current task!"
+                                "Future with index = {} disappeared in pool, check the runtime.",
+                                index
                             );
                         }
                     } else {

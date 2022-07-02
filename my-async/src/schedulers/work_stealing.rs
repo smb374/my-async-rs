@@ -1,27 +1,18 @@
-use super::{BoxedFuture, Broadcast, ScheduleMessage, Scheduler, Spawner, Task};
-use crate::get_unix_time;
+use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
+use crate::multi_thread::FUTURE_POOL;
 
-use std::{
-    sync::{Arc, Weak},
-    thread,
-};
+use std::{sync::Arc, thread};
 
 use crossbeam::{
     channel::{self, Receiver, Select, Sender},
     deque::{Injector, Stealer, Worker},
     sync::WaitGroup,
 };
-use parking_lot::Mutex;
-use rustc_hash::FxHashMap;
 
 pub struct WorkStealingScheduler {
     _size: usize,
-    // this `HashMap` holds the ownership of tasks that spawns in this scheduler
-    // using unix timestamp for its key for further access.
-    // TODO: check if we can use `HashSet` to replace `HashMap` here because it may not be necessary to access the task by key afterall.
-    task_hold: FxHashMap<u128, Arc<Task>>,
-    injector: Arc<Injector<Weak<Task>>>,
-    _stealers: Vec<Stealer<Weak<Task>>>,
+    injector: Arc<Injector<FutureIndex>>,
+    _stealers: Vec<Stealer<FutureIndex>>,
     wait_group: WaitGroup,
     notifier: Broadcast<Message>,
     rx: Receiver<ScheduleMessage>,
@@ -29,12 +20,12 @@ pub struct WorkStealingScheduler {
 
 struct TaskRunner {
     _idx: usize,
-    worker: Worker<Weak<Task>>,
-    injector: Arc<Injector<Weak<Task>>>,
-    stealers: Arc<[Stealer<Weak<Task>>]>,
+    worker: Worker<FutureIndex>,
+    injector: Arc<Injector<FutureIndex>>,
+    stealers: Arc<[Stealer<FutureIndex>]>,
     rx: Receiver<Message>,
-    task_tx: Sender<Weak<Task>>,
-    task_rx: Receiver<Weak<Task>>,
+    task_tx: Sender<FutureIndex>,
+    task_rx: Receiver<FutureIndex>,
 }
 
 #[derive(Clone)]
@@ -45,9 +36,9 @@ enum Message {
 
 impl WorkStealingScheduler {
     fn new(size: usize) -> (Spawner, Self) {
-        let injector: Arc<Injector<Weak<Task>>> = Arc::new(Injector::new());
-        let mut _stealers: Vec<Stealer<Weak<Task>>> = Vec::new();
-        let stealers_arc: Arc<[Stealer<Weak<Task>>]> = Arc::from(_stealers.as_slice());
+        let injector: Arc<Injector<FutureIndex>> = Arc::new(Injector::new());
+        let mut _stealers: Vec<Stealer<FutureIndex>> = Vec::new();
+        let stealers_arc: Arc<[Stealer<FutureIndex>]> = Arc::from(_stealers.as_slice());
         let (tx, rx) = channel::unbounded();
         let mut notifier = Broadcast::new();
         let spawner = Spawner::new(tx);
@@ -80,7 +71,6 @@ impl WorkStealingScheduler {
         }
         let scheduler = Self {
             _size: size,
-            task_hold: FxHashMap::default(),
             injector,
             _stealers,
             wait_group,
@@ -95,21 +85,14 @@ impl Scheduler for WorkStealingScheduler {
     fn init(size: usize) -> (Spawner, Self) {
         Self::new(size)
     }
-    fn schedule(&mut self, future: BoxedFuture) {
-        let task = Arc::new(Task {
-            id: get_unix_time(),
-            future,
-            tx: Mutex::new(None),
-        });
-        let weak = Arc::downgrade(&task);
-        self.task_hold.insert(task.id, task);
-        self.injector.push(weak);
+    fn schedule(&mut self, index: FutureIndex) {
+        self.injector.push(index);
         self.notifier
             .broadcast(Message::HaveTasks)
             .expect("Failed to send message");
     }
-    fn reschedule(&mut self, task: Weak<Task>) {
-        self.injector.push(task);
+    fn reschedule(&mut self, index: FutureIndex) {
+        self.injector.push(index);
         self.notifier
             .broadcast(Message::HaveTasks)
             .expect("Failed to send message");
@@ -134,12 +117,14 @@ impl TaskRunner {
         let rx_index = select.recv(&self.rx);
         'outer: loop {
             match self.worker.pop() {
-                Some(weak) => {
-                    if let Some(task) = weak.upgrade() {
-                        task.replace_tx(self.task_tx.clone());
-                        task.run();
+                Some(index) => {
+                    if let Some(boxed) = FUTURE_POOL.get(index) {
+                        boxed.run(index, self.task_tx.clone());
                     } else {
-                        tracing::error!("Failed to upgrade the weak reference of current task!");
+                        tracing::error!(
+                            "Future with index = {} disappeared in pool, check the runtime.",
+                            index
+                        );
                     }
                 }
                 None => {
@@ -149,9 +134,9 @@ impl TaskRunner {
                     tracing::debug!("Collecting wokeups...");
                     loop {
                         match self.task_rx.try_recv() {
-                            Ok(weak) => {
+                            Ok(index) => {
                                 wakeup_count += 1;
-                                self.worker.push(weak);
+                                self.worker.push(index);
                             }
                             Err(channel::TryRecvError::Empty) => break,
                             Err(channel::TryRecvError::Disconnected) => break 'outer,
@@ -162,8 +147,8 @@ impl TaskRunner {
                     }
                     // If we are starving, start stealing.
                     tracing::debug!("Try stealing tasks from other runners...");
-                    if let Some(weak) = self.steal_task() {
-                        self.worker.push(weak);
+                    if let Some(index) = self.steal_task() {
+                        self.worker.push(index);
                         continue;
                     }
                     // Finally, wait for a single wakeup task or broadcast signal from scheduler
@@ -171,7 +156,7 @@ impl TaskRunner {
                     let oprv = select.select();
                     match oprv.index() {
                         i if i == task_index => match oprv.recv(&self.task_rx) {
-                            Ok(weak) => self.worker.push(weak),
+                            Ok(index) => self.worker.push(index),
                             Err(_) => break,
                         },
                         i if i == rx_index => match oprv.recv(&self.rx) {
@@ -185,7 +170,7 @@ impl TaskRunner {
         }
     }
 
-    fn steal_task(&self) -> Option<Weak<Task>> {
+    fn steal_task(&self) -> Option<FutureIndex> {
         // will generate *ONE* task at a time
         std::iter::repeat_with(|| {
             self.injector
