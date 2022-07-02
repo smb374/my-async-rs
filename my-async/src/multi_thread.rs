@@ -1,5 +1,3 @@
-use crate::unpoison;
-
 use super::reactor;
 use super::schedulers::{ScheduleMessage, Scheduler, Spawner};
 
@@ -11,19 +9,16 @@ use std::{
     time::Duration,
 };
 
-use crossbeam::{
-    channel::{self, Receiver, Sender, TryRecvError},
-    sync::ShardedLock,
-};
+use crossbeam::channel::{self, Receiver, Sender, TryRecvError};
 use futures_lite::prelude::*;
 use once_cell::sync::Lazy;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 // write only when initializing, using `RwLock` for frequent multiple read access.
 // NOTE: using `Once` and unsafe to initialize the spawner may be a faster choice since it only mutate once & without needing any locks.
-static SPAWNER: Lazy<ShardedLock<Option<Spawner>>> = Lazy::new(|| ShardedLock::new(None));
+static SPAWNER: Lazy<RwLock<Option<Spawner>>> = Lazy::new(|| RwLock::new(None));
 
 pub struct Executor<S: Scheduler> {
     scheduler: S,
@@ -54,7 +49,7 @@ impl<S: Scheduler> Executor<S> {
         tracing::debug!("Scheduler initialized");
         let (tx, rx) = channel::unbounded();
         // set up spawner
-        unpoison(SPAWNER.write()).replace(spawner);
+        SPAWNER.write().replace(spawner);
         let poll_thread_handle = thread::Builder::new()
             .name("poll_thread".to_string())
             .spawn(move || Self::poll_thread(rx))
@@ -146,13 +141,13 @@ pub fn spawn<F>(future: F)
 where
     F: Future<Output = io::Result<()>> + Send + 'static,
 {
-    if let Some(spawner) = unpoison(SPAWNER.read()).deref() {
+    if let Some(spawner) = SPAWNER.read().deref() {
         spawner.spawn(future);
     }
 }
 
 pub fn shutdown() {
-    if let Some(spawner) = unpoison(SPAWNER.read()).deref() {
+    if let Some(spawner) = SPAWNER.read().deref() {
         spawner.shutdown();
     }
 }

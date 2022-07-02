@@ -4,19 +4,16 @@ use std::{
     time::Duration,
 };
 
-use crossbeam::sync::ShardedLock;
 use futures_task::Waker;
 use mio::{
     event::{Event, Source},
     Events, Interest, Poll, Registry, Token,
 };
 use once_cell::sync::Lazy;
-use parking_lot::Mutex;
+use parking_lot::{Mutex, RwLock};
 use rustc_hash::FxHashMap;
 
-use crate::unpoison;
-
-static REGISTRY: Lazy<ShardedLock<Option<Registry>>> = Lazy::new(|| ShardedLock::new(None));
+static REGISTRY: Lazy<RwLock<Option<Registry>>> = Lazy::new(|| RwLock::new(None));
 static WAKER_MAP: Lazy<Mutex<FxHashMap<Token, WakerSet>>> =
     Lazy::new(|| Mutex::new(FxHashMap::default()));
 
@@ -61,7 +58,7 @@ impl Reactor {
     }
 
     pub fn setup_registry(&self) {
-        let mut guard = unpoison(REGISTRY.write());
+        let mut guard = REGISTRY.write();
         let registry = self
             .poll
             .registry()
@@ -146,7 +143,7 @@ pub fn register<S>(source: &mut S, token: Token, interests: Interest) -> io::Res
 where
     S: Source + ?Sized,
 {
-    let registry_guard = unpoison(REGISTRY.read());
+    let registry_guard = REGISTRY.read();
     if let Some(registry) = registry_guard.deref() {
         let mut wakers_guard = WAKER_MAP.lock();
         let wakers_ref = wakers_guard.deref_mut();
