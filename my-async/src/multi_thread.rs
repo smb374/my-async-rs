@@ -8,10 +8,9 @@ use std::{
     ops::Deref,
     sync::Arc,
     thread::{self, JoinHandle},
-    time::Duration,
 };
 
-use crossbeam::channel::{self, Receiver, Sender, TryRecvError};
+use flume::{Receiver, Sender, TryRecvError};
 use futures_lite::prelude::*;
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
@@ -23,7 +22,7 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 // NOTE: using `Once` and unsafe to initialize the spawner may be a faster choice since it only mutate once & without needing any locks.
 static SPAWNER: Lazy<RwLock<Option<Spawner>>> = Lazy::new(|| RwLock::new(None));
 // global future allocation pool.
-pub static FUTURE_POOL: Lazy<Arc<Pool<BoxedFuture>>> = Lazy::new(|| Arc::new(Pool::new()));
+pub static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(|| Pool::new());
 
 pub struct Executor<S: Scheduler> {
     scheduler: S,
@@ -49,10 +48,10 @@ impl<S: Scheduler> Executor<S> {
             .with(filter)
             .init();
         let cpus = num_cpus::get();
-        let size = if cpus == 0 { 1 } else { cpus - 2 };
+        let size = if cpus == 0 { 1 } else { cpus };
         let (spawner, scheduler) = S::init(size);
         tracing::debug!("Scheduler initialized");
-        let (tx, rx) = channel::unbounded();
+        let (tx, rx) = flume::unbounded();
         // set up spawner
         SPAWNER.write().replace(spawner);
         let poll_thread_handle = thread::Builder::new()
@@ -79,7 +78,7 @@ impl<S: Scheduler> Executor<S> {
             };
             // check if wakeups that is not used immediately is needed now.
             reactor.check_extra_wakeups();
-            if let Err(e) = reactor.wait(Some(Duration::from_millis(100))) {
+            if let Err(e) = reactor.wait(None) {
                 tracing::error!("reactor wait error: {}, exit poll thread", e);
                 break;
             }

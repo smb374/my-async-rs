@@ -3,11 +3,9 @@ use crate::multi_thread::FUTURE_POOL;
 
 use std::{sync::Arc, thread};
 
-use crossbeam::{
-    channel::{self, Receiver, Select, Sender},
-    deque::{Injector, Stealer, Worker},
-    sync::WaitGroup,
-};
+use crossbeam_deque::{Injector, Stealer, Worker};
+use crossbeam_utils::sync::WaitGroup;
+use flume::{Receiver, Selector, Sender, TryRecvError};
 
 pub struct WorkStealingScheduler {
     _size: usize,
@@ -39,7 +37,7 @@ impl WorkStealingScheduler {
         let injector: Arc<Injector<FutureIndex>> = Arc::new(Injector::new());
         let mut _stealers: Vec<Stealer<FutureIndex>> = Vec::new();
         let stealers_arc: Arc<[Stealer<FutureIndex>]> = Arc::from(_stealers.as_slice());
-        let (tx, rx) = channel::unbounded();
+        let (tx, rx) = flume::unbounded();
         let mut notifier = Broadcast::new();
         let spawner = Spawner::new(tx);
         let wait_group = WaitGroup::new();
@@ -53,7 +51,7 @@ impl WorkStealingScheduler {
             thread::Builder::new()
                 .name(format!("work_stealing_worker_{}", _idx))
                 .spawn(move || {
-                    let (task_tx, task_rx) = channel::unbounded();
+                    let (task_tx, task_rx) = flume::unbounded();
                     let runner = TaskRunner {
                         _idx,
                         worker,
@@ -112,19 +110,21 @@ impl Scheduler for WorkStealingScheduler {
 
 impl TaskRunner {
     fn run(&self) {
-        let mut select = Select::new();
-        let task_index = select.recv(&self.task_rx);
-        let rx_index = select.recv(&self.rx);
         'outer: loop {
             match self.worker.pop() {
                 Some(index) => {
                     if let Some(boxed) = FUTURE_POOL.get(index) {
-                        boxed.run(index, self.task_tx.clone());
+                        let finished = boxed.run(index, self.task_tx.clone());
+                        if finished {
+                            if !FUTURE_POOL.clear(index) {
+                                tracing::error!(
+                                    "Failed to remove completed future with index = {} from pool.",
+                                    index
+                                );
+                            }
+                        }
                     } else {
-                        tracing::error!(
-                            "Future with index = {} disappeared in pool, check the runtime.",
-                            index
-                        );
+                        tracing::error!("Future with index = {} is not in pool.", index);
                     }
                 }
                 None => {
@@ -138,8 +138,8 @@ impl TaskRunner {
                                 wakeup_count += 1;
                                 self.worker.push(index);
                             }
-                            Err(channel::TryRecvError::Empty) => break,
-                            Err(channel::TryRecvError::Disconnected) => break 'outer,
+                            Err(TryRecvError::Empty) => break,
+                            Err(TryRecvError::Disconnected) => break 'outer,
                         }
                     }
                     if wakeup_count > 0 {
@@ -153,17 +153,21 @@ impl TaskRunner {
                     }
                     // Finally, wait for a single wakeup task or broadcast signal from scheduler
                     tracing::debug!("Runner park.");
-                    let oprv = select.select();
-                    match oprv.index() {
-                        i if i == task_index => match oprv.recv(&self.task_rx) {
-                            Ok(index) => self.worker.push(index),
-                            Err(_) => break,
-                        },
-                        i if i == rx_index => match oprv.recv(&self.rx) {
-                            Ok(Message::HaveTasks) => continue,
-                            Ok(Message::Close) | Err(_) => break 'outer,
-                        },
-                        _ => unreachable!(),
+                    let exit_loop = Selector::new()
+                        .recv(&self.task_rx, |result| match result {
+                            Ok(index) => {
+                                self.worker.push(index);
+                                false
+                            }
+                            Err(_) => true,
+                        })
+                        .recv(&self.rx, |result| match result {
+                            Ok(Message::HaveTasks) => false,
+                            Ok(Message::Close) | Err(_) => true,
+                        })
+                        .wait();
+                    if exit_loop {
+                        break 'outer;
                     }
                 }
             }

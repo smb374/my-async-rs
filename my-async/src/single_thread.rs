@@ -6,7 +6,7 @@ use std::{
     task::{Context, Poll},
 };
 
-use crossbeam::channel::{self, Receiver, Sender, TryRecvError};
+use flume::{Receiver, Sender, TryRecvError};
 use futures_lite::future::{Boxed, FutureExt};
 use futures_task::{waker_ref, ArcWake};
 use once_cell::sync::Lazy;
@@ -34,7 +34,7 @@ struct Spawner {
 
 impl Executor {
     pub fn new() -> Self {
-        let (tx, rx) = channel::unbounded();
+        let (tx, rx) = flume::unbounded();
         let spawner = Spawner { tx };
         SPAWNER.lock().replace(spawner);
         Self { rx }

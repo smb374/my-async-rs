@@ -3,11 +3,10 @@ pub mod work_stealing;
 
 use std::{
     io,
-    ops::DerefMut,
     task::{Context, Poll},
 };
 
-use crossbeam::channel::{self, Receiver, Sender};
+use flume::{Receiver, Sender};
 use futures_lite::future::{Boxed, Future, FutureExt};
 use parking_lot::Mutex;
 use sharded_slab::Clear;
@@ -53,11 +52,10 @@ impl Clear for BoxedFuture {
 }
 
 impl BoxedFuture {
-    pub fn run(&self, index: FutureIndex, tx: Sender<FutureIndex>) {
+    pub fn run(&self, index: FutureIndex, tx: Sender<FutureIndex>) -> bool {
         let mut guard = self.0.lock();
-        let future_slot = guard.deref_mut();
         // run *ONCE*
-        if let Some(mut fut) = future_slot.take() {
+        if let Some(fut) = guard.as_mut() {
             let waker = waker_fn(move || {
                 tx.send(index).expect("Too many message queued!");
             });
@@ -67,11 +65,12 @@ impl BoxedFuture {
                     if let Err(e) = r {
                         tracing::error!("Error occurred when executing future: {}", e);
                     }
+                    true
                 }
-                Poll::Pending => {
-                    future_slot.replace(fut);
-                }
-            };
+                Poll::Pending => false,
+            }
+        } else {
+            true
         }
     }
 }
@@ -88,11 +87,11 @@ impl<T: Send + Clone> Broadcast<T> {
         }
     }
     pub fn subscribe(&mut self) -> Receiver<T> {
-        let (tx, rx) = channel::unbounded();
+        let (tx, rx) = flume::unbounded();
         self.channels.push(tx);
         rx
     }
-    pub fn broadcast(&self, message: T) -> Result<(), channel::SendError<T>> {
+    pub fn broadcast(&self, message: T) -> Result<(), flume::SendError<T>> {
         self.channels
             .iter()
             .try_for_each(|tx| tx.send(message.clone()))?;
@@ -108,7 +107,6 @@ impl Spawner {
     where
         F: Future<Output = io::Result<()>> + Send + 'static,
     {
-        // let boxed = BoxedFuture(Mutex::new(Some(future.boxed())));
         let index = FUTURE_POOL
             .create_with(|seat| {
                 seat.0.get_mut().replace(future.boxed());

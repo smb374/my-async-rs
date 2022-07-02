@@ -3,7 +3,8 @@ use crate::multi_thread::FUTURE_POOL;
 
 use std::thread::{self, JoinHandle};
 
-use crossbeam::channel::{self, Receiver, Select, Sender};
+// use crossbeam::channel::{self, Receiver, Select, Sender};
+use flume::{Receiver, Selector, Sender};
 
 enum Message {
     Close,
@@ -30,12 +31,12 @@ pub struct Worker {
 
 impl RoundRobinScheduler {
     fn new(size: usize) -> (Spawner, Self) {
-        let (tx, rx) = channel::unbounded();
+        let (tx, rx) = flume::unbounded();
         let spawner = Spawner::new(tx);
         let threads: Vec<(WorkerInfo, JoinHandle<()>)> = (0..size)
             .map(|_idx| {
-                let (tx, rx) = channel::unbounded();
-                let (task_tx, task_rx) = channel::unbounded();
+                let (tx, rx) = flume::unbounded();
+                let (task_tx, task_rx) = flume::unbounded();
                 let tx_clone = task_tx.clone();
                 let handle = thread::spawn(move || {
                     let worker = Worker {
@@ -92,34 +93,34 @@ impl Scheduler for RoundRobinScheduler {
 
 impl Worker {
     fn run(&self) {
-        let mut select = Select::new();
-        let task_index = select.recv(&self.task_rx);
-        let rx_index = select.recv(&self.rx);
         loop {
-            let oper = select.select();
-            match oper.index() {
-                i if i == task_index => {
-                    if let Ok(index) = oper.recv(&self.task_rx) {
+            let exit_loop = Selector::new()
+                .recv(&self.task_rx, |result| match result {
+                    Ok(index) => {
                         if let Some(boxed) = FUTURE_POOL.get(index) {
-                            boxed.run(index, self.task_tx.clone());
+                            let finished = boxed.run(index, self.task_tx.clone());
+                            if finished {
+                                if !FUTURE_POOL.clear(index) {
+                                    tracing::error!(
+                                    "Failed to remove completed future with index = {} from pool.",
+                                    index
+                                );
+                                }
+                            }
                         } else {
-                            tracing::error!(
-                                "Future with index = {} disappeared in pool, check the runtime.",
-                                index
-                            );
+                            tracing::error!("Future with index = {} is not in pool.", index);
                         }
-                    } else {
-                        break;
+                        false
                     }
-                }
-                i if i == rx_index => match oper.recv(&self.rx) {
-                    Ok(Message::Close) => break,
-                    Err(e) => {
-                        eprintln!("recv error: {}", e);
-                        break;
-                    }
-                },
-                _ => unreachable!(),
+                    Err(_) => true,
+                })
+                .recv(&self.rx, |result| match result {
+                    Ok(Message::Close) => true,
+                    Err(_) => true,
+                })
+                .wait();
+            if exit_loop {
+                break;
             }
         }
     }
