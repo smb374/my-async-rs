@@ -1,10 +1,10 @@
 use std::{
     io,
     ops::{Deref, DerefMut},
+    task::Waker,
     time::Duration,
 };
 
-use futures_task::Waker;
 use mio::{
     event::{Event, Source},
     Events, Interest, Poll, Registry, Token,

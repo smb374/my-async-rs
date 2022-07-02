@@ -1,9 +1,10 @@
-use crate::schedulers::BoxedFuture;
+use super::BoxedFuture;
 
 use super::reactor;
 use super::schedulers::{ScheduleMessage, Scheduler, Spawner};
 
 use std::{
+    future::Future,
     io,
     ops::Deref,
     sync::Arc,
@@ -11,7 +12,6 @@ use std::{
 };
 
 use flume::{Receiver, Sender, TryRecvError};
-use futures_lite::prelude::*;
 use once_cell::sync::Lazy;
 use parking_lot::{Mutex, RwLock};
 use sharded_slab::Pool;

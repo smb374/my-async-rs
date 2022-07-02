@@ -15,7 +15,6 @@ crossbeam-deque = "~0.8"
 crossbeam-utils = "~0.8"
 flume = "~0.10"
 futures-lite = "~1.12"
-futures-task = "~0.3"
 mio = { version = "~0.8", features = ["os-poll", "os-ext", "net"] }
 nix = { version = "~0.24", features = ["fs"] }
 num_cpus = "~1.13"

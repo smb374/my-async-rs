@@ -7,9 +7,13 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use futures_lite::AsyncRead;
+use flume::Sender;
+use futures_lite::{future::Boxed, AsyncRead};
 use mio::{event::Source, unix::SourceFd, Registry, Token};
 use nix::fcntl::{fcntl, FcntlArg, OFlag};
+use parking_lot::Mutex;
+use sharded_slab::Clear;
+use waker_fn::waker_fn;
 
 // reactor, not exposed
 mod reactor;
@@ -23,6 +27,47 @@ pub mod schedulers;
 
 pub use mio::Interest;
 pub use modules::{fs, io, net, stream};
+
+pub type WrappedTaskSender = Option<Sender<FutureIndex>>;
+pub type FutureIndex = usize;
+
+pub struct BoxedFuture(Mutex<Option<Boxed<io::Result<()>>>>);
+
+impl Default for BoxedFuture {
+    fn default() -> Self {
+        BoxedFuture(Mutex::new(None))
+    }
+}
+
+impl Clear for BoxedFuture {
+    fn clear(&mut self) {
+        self.0.get_mut().clear();
+    }
+}
+
+impl BoxedFuture {
+    pub fn run(&self, index: FutureIndex, tx: Sender<FutureIndex>) -> bool {
+        let mut guard = self.0.lock();
+        // run *ONCE*
+        if let Some(fut) = guard.as_mut() {
+            let waker = waker_fn(move || {
+                tx.send(index).expect("Too many message queued!");
+            });
+            let cx = &mut Context::from_waker(&waker);
+            match fut.as_mut().poll(cx) {
+                Poll::Ready(r) => {
+                    if let Err(e) = r {
+                        tracing::error!("Error occurred when executing future: {}", e);
+                    }
+                    true
+                }
+                Poll::Pending => false,
+            }
+        } else {
+            true
+        }
+    }
+}
 
 pub struct IoWrapper<T> {
     inner: T,
