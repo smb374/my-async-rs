@@ -1,11 +1,13 @@
 use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
 use crate::multi_thread::FUTURE_POOL;
 
-use std::{sync::Arc, thread};
+use std::{hash::BuildHasherDefault, sync::Arc, thread};
 
 use crossbeam_deque::{Injector, Stealer, Worker};
 use crossbeam_utils::sync::WaitGroup;
 use flume::{Receiver, Selector, Sender, TryRecvError};
+use priority_queue::priority_queue::PriorityQueue;
+use rustc_hash::FxHasher;
 
 pub struct WorkStealingScheduler {
     _size: usize,
@@ -110,65 +112,78 @@ impl Scheduler for WorkStealingScheduler {
 
 impl TaskRunner {
     fn run(&self) {
+        let mut pq: PriorityQueue<FutureIndex, usize, BuildHasherDefault<FxHasher>> =
+            PriorityQueue::with_capacity_and_default_hasher(65536);
         'outer: loop {
-            match self.worker.pop() {
-                Some(index) => {
-                    if let Some(boxed) = FUTURE_POOL.get(index) {
-                        let finished = boxed.run(index, self.task_tx.clone());
-                        if finished && !FUTURE_POOL.clear(index) {
-                            log::error!(
-                                "Failed to remove completed future with index = {} from pool.",
-                                index
-                            );
-                        }
-                    } else {
-                        log::error!("Future with index = {} is not in pool.", index);
+            if !self.worker.is_empty() {
+                if self.worker.len() == 1 {
+                    let index = self.worker.pop().unwrap();
+                    Self::process_future(index, &self.task_tx);
+                } else {
+                    while let Some(index) = self.worker.pop() {
+                        pq.push(index, index.sleep_count);
+                    }
+                    while let Some((index, _)) = pq.pop() {
+                        Self::process_future(index, &self.task_tx);
                     }
                 }
-                None => {
-                    log::debug!("Start collecting tasks...");
-                    let mut wakeup_count = 0;
-                    // First push in all the woke up Task, non-blocking.
-                    log::debug!("Collecting wokeups...");
-                    loop {
-                        match self.task_rx.try_recv() {
-                            Ok(index) => {
-                                wakeup_count += 1;
-                                self.worker.push(index);
-                            }
-                            Err(TryRecvError::Empty) => break,
-                            Err(TryRecvError::Disconnected) => break 'outer,
+            } else {
+                log::debug!("Start collecting tasks...");
+                let mut wakeup_count = 0;
+                // First push in all the woke up Task, non-blocking.
+                log::debug!("Collecting wokeups...");
+                loop {
+                    match self.task_rx.try_recv() {
+                        Ok(index) => {
+                            wakeup_count += 1;
+                            self.worker.push(index);
                         }
+                        Err(TryRecvError::Empty) => break,
+                        Err(TryRecvError::Disconnected) => break 'outer,
                     }
-                    if wakeup_count > 0 {
-                        continue;
-                    }
-                    // If we are starving, start stealing.
-                    log::debug!("Try stealing tasks from other runners...");
-                    if let Some(index) = self.steal_task() {
-                        self.worker.push(index);
-                        continue;
-                    }
-                    // Finally, wait for a single wakeup task or broadcast signal from scheduler
-                    log::debug!("Runner park.");
-                    let exit_loop = Selector::new()
-                        .recv(&self.task_rx, |result| match result {
-                            Ok(index) => {
-                                self.worker.push(index);
-                                false
-                            }
-                            Err(_) => true,
-                        })
-                        .recv(&self.rx, |result| match result {
-                            Ok(Message::HaveTasks) => false,
-                            Ok(Message::Close) | Err(_) => true,
-                        })
-                        .wait();
-                    if exit_loop {
-                        break 'outer;
-                    }
+                }
+                if wakeup_count > 0 {
+                    continue;
+                }
+                // If we are starving, start stealing.
+                log::debug!("Try stealing tasks from other runners...");
+                if let Some(index) = self.steal_task() {
+                    self.worker.push(index);
+                    continue;
+                }
+                // Finally, wait for a single wakeup task or broadcast signal from scheduler
+                log::debug!("Runner park.");
+                let exit_loop = Selector::new()
+                    .recv(&self.task_rx, |result| match result {
+                        Ok(index) => {
+                            self.worker.push(index);
+                            false
+                        }
+                        Err(_) => true,
+                    })
+                    .recv(&self.rx, |result| match result {
+                        Ok(Message::HaveTasks) => false,
+                        Ok(Message::Close) | Err(_) => true,
+                    })
+                    .wait();
+                if exit_loop {
+                    break 'outer;
                 }
             }
+        }
+    }
+
+    fn process_future(index: FutureIndex, tx: &Sender<FutureIndex>) {
+        if let Some(boxed) = FUTURE_POOL.get(index.key) {
+            let finished = boxed.run(&index, tx.clone());
+            if finished && !FUTURE_POOL.clear(index.key) {
+                log::error!(
+                    "Failed to remove completed future with index = {} from pool.",
+                    index.key
+                );
+            }
+        } else {
+            log::error!("Future with index = {} is not in pool.", index.key);
         }
     }
 
@@ -176,7 +191,7 @@ impl TaskRunner {
         // will generate *ONE* task at a time
         std::iter::repeat_with(|| {
             self.injector
-                .steal_batch_and_pop(&self.worker)
+                .steal()
                 .or_else(|| self.stealers.iter().map(|s| s.steal()).collect())
         })
         .find(|s| !s.is_retry())

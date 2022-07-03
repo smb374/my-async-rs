@@ -60,13 +60,16 @@ impl Spawner {
     where
         F: Future<Output = io::Result<()>> + Send + 'static,
     {
-        let index = FUTURE_POOL
+        let key = FUTURE_POOL
             .create_with(|seat| {
-                seat.0.get_mut().replace(future.boxed());
+                seat.future.get_mut().replace(future.boxed());
             })
             .unwrap();
         self.tx
-            .send(ScheduleMessage::Schedule(index))
+            .send(ScheduleMessage::Schedule(FutureIndex {
+                key,
+                sleep_count: 0,
+            }))
             .expect("Failed to send message");
     }
     pub fn shutdown(&self) {

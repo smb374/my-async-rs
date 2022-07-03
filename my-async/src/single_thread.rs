@@ -46,16 +46,16 @@ impl Executor {
         reactor.setup_registry();
         'outer: loop {
             if let Some(index) = self.queue.pop_back() {
-                if let Some(boxed) = FUTURE_POOL.get(index) {
-                    let finished = boxed.run(index, self.task_tx.clone());
-                    if finished && !FUTURE_POOL.clear(index) {
+                if let Some(boxed) = FUTURE_POOL.get(index.key) {
+                    let finished = boxed.run(&index, self.task_tx.clone());
+                    if finished && !FUTURE_POOL.clear(index.key) {
                         log::error!(
                             "Failed to remove completed future with index = {} from pool.",
-                            index
+                            index.key
                         );
                     }
                 } else {
-                    log::error!("Future with index = {} is not in pool.", index);
+                    log::error!("Future with index = {} is not in pool.", index.key);
                 }
             } else {
                 let mut wakeup_count = 0;
@@ -131,13 +131,16 @@ impl Spawner {
     where
         F: Future<Output = io::Result<()>> + 'static + Send,
     {
-        let index = FUTURE_POOL
+        let key = FUTURE_POOL
             .create_with(|seat| {
-                seat.0.get_mut().replace(future.boxed());
+                seat.future.get_mut().replace(future.boxed());
             })
             .unwrap();
         self.tx
-            .send(Message::Run(index))
+            .send(Message::Run(FutureIndex {
+                key,
+                sleep_count: 0,
+            }))
             .expect("too many task queued");
     }
     fn shutdown(&self) {

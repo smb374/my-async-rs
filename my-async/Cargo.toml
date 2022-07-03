@@ -19,6 +19,7 @@ nix = { version = "~0.24", features = ["fs"] }
 num_cpus = "~1.13"
 once_cell = "~1.9"
 parking_lot = "~0.11"
+priority-queue = "~1.2"
 rustc-hash = "~1.1"
 sharded-slab = "~0.1"
 waker-fn = "~1.1"

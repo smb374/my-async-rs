@@ -1,5 +1,6 @@
 use std::{
     convert::{AsMut, AsRef},
+    hash::Hash,
     io::Read,
     os::unix::prelude::{AsRawFd, RawFd},
     pin::Pin,
@@ -29,29 +30,57 @@ pub use mio::Interest;
 pub use modules::{fs, io, net, stream};
 
 pub type WrappedTaskSender = Option<Sender<FutureIndex>>;
-pub type FutureIndex = usize;
 
-pub struct BoxedFuture(Mutex<Option<Boxed<io::Result<()>>>>);
+#[derive(Clone, Copy, Eq)]
+pub struct FutureIndex {
+    key: usize,
+    sleep_count: usize,
+}
+
+impl PartialEq for FutureIndex {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
+}
+
+impl Hash for FutureIndex {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.key.hash(state);
+    }
+}
+
+#[allow(dead_code)]
+pub struct BoxedFuture {
+    future: Mutex<Option<Boxed<io::Result<()>>>>,
+    sleep_count: usize,
+}
 
 impl Default for BoxedFuture {
     fn default() -> Self {
-        BoxedFuture(Mutex::new(None))
+        BoxedFuture {
+            future: Mutex::new(None),
+            sleep_count: 0,
+        }
     }
 }
 
 impl Clear for BoxedFuture {
     fn clear(&mut self) {
-        self.0.get_mut().clear();
+        self.future.get_mut().clear();
     }
 }
 
 impl BoxedFuture {
-    pub fn run(&self, index: FutureIndex, tx: Sender<FutureIndex>) -> bool {
-        let mut guard = self.0.lock();
+    pub fn run(&self, index: &FutureIndex, tx: Sender<FutureIndex>) -> bool {
+        let mut guard = self.future.lock();
         // run *ONCE*
         if let Some(fut) = guard.as_mut() {
+            let new_index = FutureIndex {
+                key: index.key,
+                sleep_count: index.sleep_count + 1,
+            };
             let waker = waker_fn(move || {
-                tx.send(index).expect("Too many message queued!");
+                tx.send(new_index).expect("Too many message queued!");
             });
             let cx = &mut Context::from_waker(&waker);
             match fut.as_mut().poll(cx) {

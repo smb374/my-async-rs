@@ -97,16 +97,16 @@ impl Worker {
             let exit_loop = Selector::new()
                 .recv(&self.task_rx, |result| match result {
                     Ok(index) => {
-                        if let Some(boxed) = FUTURE_POOL.get(index) {
-                            let finished = boxed.run(index, self.task_tx.clone());
-                            if finished && !FUTURE_POOL.clear(index) {
+                        if let Some(boxed) = FUTURE_POOL.get(index.key) {
+                            let finished = boxed.run(&index, self.task_tx.clone());
+                            if finished && !FUTURE_POOL.clear(index.key) {
                                 log::error!(
                                     "Failed to remove completed future with index = {} from pool.",
-                                    index
+                                    index.key
                                 );
                             }
                         } else {
-                            log::error!("Future with index = {} is not in pool.", index);
+                            log::error!("Future with index = {} is not in pool.", index.key);
                         }
                         false
                     }
