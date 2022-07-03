@@ -9,7 +9,6 @@ use std::{
 };
 
 use futures_lite::{io::AsyncWrite, Stream};
-use tracing::error;
 
 pub type TcpStream = IoWrapper<std::net::TcpStream>;
 pub type TcpListener = IoWrapper<std::net::TcpListener>;
@@ -135,7 +134,7 @@ impl<'a> Stream for Incoming<'a> {
                 }
                 io::ErrorKind::Interrupted => Pin::new(me).poll_next(cx),
                 _ => {
-                    error!("Failed to accept new connection: {}", e);
+                    log::error!("Failed to accept new connection: {}", e);
                     Poll::Ready(None)
                 }
             },

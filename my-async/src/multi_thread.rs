@@ -14,8 +14,6 @@ use flume::{Receiver, Sender, TryRecvError};
 use once_cell::sync::{Lazy, OnceCell};
 use parking_lot::Mutex;
 use sharded_slab::Pool;
-use tracing::metadata::LevelFilter;
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 // Use `OnceCell` to achieve lock-free.
 static SPAWNER: OnceCell<Spawner> = OnceCell::new();
@@ -30,25 +28,10 @@ pub struct Executor<S: Scheduler> {
 
 impl<S: Scheduler> Executor<S> {
     pub fn new() -> Self {
-        // log format
-        let format = fmt::layer()
-            .with_level(true)
-            .with_target(false)
-            .with_thread_ids(false)
-            .with_thread_names(true);
-        // log level filter, default showing warning & above.
-        let filter = EnvFilter::builder()
-            .with_default_directive(LevelFilter::WARN.into())
-            .from_env_lossy();
-        // init tracing subscriber as loggging facility.
-        tracing_subscriber::registry()
-            .with(format)
-            .with(filter)
-            .init();
         let cpus = num_cpus::get();
         let size = if cpus == 0 { 1 } else { cpus };
         let (spawner, scheduler) = S::init(size);
-        tracing::debug!("Scheduler initialized");
+        log::debug!("Scheduler initialized");
         let (tx, rx) = flume::unbounded();
         // set up spawner
         SPAWNER.get_or_init(move || spawner);
@@ -56,8 +39,8 @@ impl<S: Scheduler> Executor<S> {
             .name("poll_thread".to_string())
             .spawn(move || Self::poll_thread(rx))
             .expect("Failed to spawn poll_thread.");
-        tracing::debug!("Spawned poll_thread");
-        tracing::info!("Runtime startup complete.");
+        log::debug!("Spawned poll_thread");
+        log::info!("Runtime startup complete.");
         Self {
             scheduler,
             poll_thread_notifier: tx,
@@ -77,13 +60,13 @@ impl<S: Scheduler> Executor<S> {
             // check if wakeups that is not used immediately is needed now.
             reactor.check_extra_wakeups();
             if let Err(e) = reactor.wait(None) {
-                tracing::error!("reactor wait error: {}, exit poll thread", e);
+                log::error!("reactor wait error: {}, exit poll thread", e);
                 break;
             }
         }
     }
     fn run(mut self) {
-        tracing::info!("Runtime booted up, start execution...");
+        log::info!("Runtime booted up, start execution...");
         loop {
             match self.scheduler.receiver().recv() {
                 // continously schedule tasks
@@ -94,12 +77,12 @@ impl<S: Scheduler> Executor<S> {
                 },
                 // Err(RecvTimeoutError::Timeout) => continue,
                 Err(_) => {
-                    tracing::debug!("exit...");
+                    log::debug!("exit...");
                     break;
                 }
             }
         }
-        tracing::info!("Execution completed, shutting down...");
+        log::info!("Execution completed, shutting down...");
         // shutdown worker threads
         self.scheduler.shutdown();
         // shutdown poll thread
@@ -109,7 +92,7 @@ impl<S: Scheduler> Executor<S> {
         self.poll_thread_handle
             .join()
             .expect("Failed to join poll thread");
-        tracing::info!("Runtime shutdown complete.")
+        log::info!("Runtime shutdown complete.")
     }
     pub fn block_on<F, T>(self, future: F) -> T
     where
@@ -122,13 +105,13 @@ impl<S: Scheduler> Executor<S> {
             let result = future.await;
             // should put any result inside the arc, even if it's `()`!
             clone.lock().replace(result);
-            tracing::debug!("Blocked future finished.");
+            log::debug!("Blocked future finished.");
             shutdown();
             Ok(())
         });
-        tracing::info!("Start blocking...");
+        log::info!("Start blocking...");
         self.run();
-        tracing::debug!("Waiting result...");
+        log::debug!("Waiting result...");
         let mut guard = result_arc.lock();
         let result = guard.take();
         assert!(
