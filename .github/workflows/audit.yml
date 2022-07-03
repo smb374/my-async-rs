@@ -1,6 +1,9 @@
-name: Daily dependency audit check
+name: Audit
 
 on:
+  push:
+    paths:
+      - "my-async/Cargo.toml"
   schedule:
     - cron: "0 0 * * *"
 
