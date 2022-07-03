@@ -6,21 +6,19 @@ use super::schedulers::{ScheduleMessage, Scheduler, Spawner};
 use std::{
     future::Future,
     io,
-    ops::Deref,
     sync::Arc,
     thread::{self, JoinHandle},
 };
 
 use flume::{Receiver, Sender, TryRecvError};
-use once_cell::sync::Lazy;
-use parking_lot::{Mutex, RwLock};
+use once_cell::sync::{Lazy, OnceCell};
+use parking_lot::Mutex;
 use sharded_slab::Pool;
 use tracing::metadata::LevelFilter;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-// write only when initializing, using `RwLock` for frequent multiple read access.
-// NOTE: using `Once` and unsafe to initialize the spawner may be a faster choice since it only mutate once & without needing any locks.
-static SPAWNER: Lazy<RwLock<Option<Spawner>>> = Lazy::new(|| RwLock::new(None));
+// Use `OnceCell` to achieve lock-free.
+static SPAWNER: OnceCell<Spawner> = OnceCell::new();
 // global future allocation pool.
 pub static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(|| Pool::new());
 
@@ -53,7 +51,7 @@ impl<S: Scheduler> Executor<S> {
         tracing::debug!("Scheduler initialized");
         let (tx, rx) = flume::unbounded();
         // set up spawner
-        SPAWNER.write().replace(spawner);
+        SPAWNER.get_or_init(move || spawner);
         let poll_thread_handle = thread::Builder::new()
             .name("poll_thread".to_string())
             .spawn(move || Self::poll_thread(rx))
@@ -145,13 +143,13 @@ pub fn spawn<F>(future: F)
 where
     F: Future<Output = io::Result<()>> + Send + 'static,
 {
-    if let Some(spawner) = SPAWNER.read().deref() {
+    if let Some(spawner) = SPAWNER.get() {
         spawner.spawn(future);
     }
 }
 
 pub fn shutdown() {
-    if let Some(spawner) = SPAWNER.read().deref() {
+    if let Some(spawner) = SPAWNER.get() {
         spawner.shutdown();
     }
 }

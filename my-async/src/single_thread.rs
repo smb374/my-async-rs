@@ -4,11 +4,11 @@ use std::{collections::VecDeque, future::Future, io, sync::Arc};
 
 use flume::{Receiver, Sender, TryRecvError};
 use futures_lite::future::FutureExt;
-use once_cell::sync::Lazy;
+use once_cell::sync::{Lazy, OnceCell};
 use parking_lot::Mutex;
 use sharded_slab::Pool;
 
-static SPAWNER: Lazy<Mutex<Option<Spawner>>> = Lazy::new(|| Mutex::new(None));
+static SPAWNER: OnceCell<Spawner> = OnceCell::new();
 static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(|| Pool::new());
 
 enum Message {
@@ -32,7 +32,7 @@ impl Executor {
         let (tx, rx) = flume::unbounded();
         let (task_tx, task_rx) = flume::unbounded();
         let spawner = Spawner { tx: tx.clone() };
-        SPAWNER.lock().replace(spawner);
+        SPAWNER.get_or_init(move || spawner);
         Self {
             task_tx,
             task_rx,
@@ -119,7 +119,7 @@ impl Executor {
 
 impl Drop for Executor {
     fn drop(&mut self) {
-        if let Some(spawner) = SPAWNER.lock().as_ref() {
+        if let Some(spawner) = SPAWNER.get() {
             spawner
                 .tx
                 .send(Message::Close)
@@ -151,13 +151,13 @@ pub fn spawn<F>(fut: F)
 where
     F: Future<Output = io::Result<()>> + 'static + Send,
 {
-    if let Some(spawner) = SPAWNER.lock().as_ref() {
+    if let Some(spawner) = SPAWNER.get() {
         spawner.spawn(fut);
     }
 }
 
 pub fn shutdown() {
-    if let Some(spawner) = SPAWNER.lock().as_ref() {
+    if let Some(spawner) = SPAWNER.get() {
         spawner.shutdown();
     }
 }

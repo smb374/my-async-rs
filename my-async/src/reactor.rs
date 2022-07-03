@@ -1,19 +1,14 @@
-use std::{
-    io,
-    ops::{Deref, DerefMut},
-    task::Waker,
-    time::Duration,
-};
+use std::{io, ops::DerefMut, task::Waker, time::Duration};
 
 use mio::{
     event::{Event, Source},
     Events, Interest, Poll, Registry, Token,
 };
-use once_cell::sync::Lazy;
-use parking_lot::{Mutex, RwLock};
+use once_cell::sync::{Lazy, OnceCell};
+use parking_lot::Mutex;
 use rustc_hash::FxHashMap;
 
-static REGISTRY: Lazy<RwLock<Option<Registry>>> = Lazy::new(|| RwLock::new(None));
+static REGISTRY: OnceCell<Registry> = OnceCell::new();
 static WAKER_MAP: Lazy<Mutex<FxHashMap<Token, WakerSet>>> =
     Lazy::new(|| Mutex::new(FxHashMap::default()));
 
@@ -58,13 +53,12 @@ impl Reactor {
     }
 
     pub fn setup_registry(&self) {
-        let mut guard = REGISTRY.write();
         let registry = self
             .poll
             .registry()
             .try_clone()
             .expect("Failed to clone registry");
-        guard.replace(registry);
+        REGISTRY.get_or_init(move || registry);
     }
 
     pub fn check_extra_wakeups(&mut self) -> bool {
@@ -143,8 +137,7 @@ pub fn register<S>(source: &mut S, token: Token, interests: Interest) -> io::Res
 where
     S: Source + ?Sized,
 {
-    let registry_guard = REGISTRY.read();
-    if let Some(registry) = registry_guard.deref() {
+    if let Some(registry) = REGISTRY.get() {
         let mut wakers_guard = WAKER_MAP.lock();
         let wakers_ref = wakers_guard.deref_mut();
         if wakers_ref.get(&token).is_some() {
