@@ -18,6 +18,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   check:
+    needs:
+      - audit
     name: Perform basic checks
     runs-on: ubuntu-latest
     steps:
@@ -34,6 +36,9 @@ jobs:
           command: check
 
   clippy:
+    needs:
+      - audit
+      - check
     name: Perform code check against `clippy`
     runs-on: ubuntu-latest
     steps:
@@ -54,6 +59,10 @@ jobs:
           args: --all-features
 
   build-test:
+    needs:
+      - audit
+      - check
+      - clippy
     name: Build & test the code
     runs-on: ubuntu-latest
     steps:
