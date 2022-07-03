@@ -49,13 +49,13 @@ impl Executor {
                 if let Some(boxed) = FUTURE_POOL.get(index) {
                     let finished = boxed.run(index, self.task_tx.clone());
                     if finished && !FUTURE_POOL.clear(index) {
-                        tracing::error!(
+                        log::error!(
                             "Failed to remove completed future with index = {} from pool.",
                             index
                         );
                     }
                 } else {
-                    tracing::error!("Future with index = {} is not in pool.", index);
+                    log::error!("Future with index = {} is not in pool.", index);
                 }
             } else {
                 let mut wakeup_count = 0;
@@ -78,7 +78,7 @@ impl Executor {
                     }
                     Err(TryRecvError::Empty) => {
                         if let Err(e) = reactor.wait(None) {
-                            tracing::error!("reactor wait error: {}, exit", e);
+                            log::error!("reactor wait error: {}, exit", e);
                             break;
                         }
                     }
@@ -98,13 +98,13 @@ impl Executor {
             let result = future.await;
             // should put any result inside the arc, even if it's `()`!
             clone.lock().replace(result);
-            tracing::debug!("Blocked future finished.");
+            log::debug!("Blocked future finished.");
             shutdown();
             Ok(())
         });
-        tracing::info!("Start blocking...");
+        log::info!("Start blocking...");
         self.run();
-        tracing::debug!("Waiting result...");
+        log::debug!("Waiting result...");
         let mut guard = result_arc.lock();
         let result = guard.take();
         assert!(

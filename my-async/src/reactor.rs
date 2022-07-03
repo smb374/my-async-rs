@@ -39,7 +39,7 @@ impl Reactor {
     pub fn wait(&mut self, timeout: Option<Duration>) -> io::Result<()> {
         self.poll.poll(&mut self.events, timeout)?;
         if !self.events.is_empty() {
-            tracing::debug!("Start process events.");
+            log::debug!("Start process events.");
             self.events.iter().for_each(|e| {
                 let mut guard = WAKER_MAP.lock();
                 let wakers_ref = guard.deref_mut();

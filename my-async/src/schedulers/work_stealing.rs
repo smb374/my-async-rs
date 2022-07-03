@@ -62,7 +62,7 @@ impl WorkStealingScheduler {
                         task_rx,
                     };
                     runner.run();
-                    tracing::debug!("Runner shutdown.");
+                    log::debug!("Runner shutdown.");
                     drop(wg);
                 })
                 .expect("Failed to spawn worker");
@@ -99,9 +99,9 @@ impl Scheduler for WorkStealingScheduler {
         self.notifier
             .broadcast(Message::Close)
             .expect("Failed to send message");
-        tracing::debug!("Waiting runners to shutdown...");
+        log::debug!("Waiting runners to shutdown...");
         self.wait_group.wait();
-        tracing::debug!("Shutdown complete.");
+        log::debug!("Shutdown complete.");
     }
     fn receiver(&self) -> &Receiver<ScheduleMessage> {
         &self.rx
@@ -116,20 +116,20 @@ impl TaskRunner {
                     if let Some(boxed) = FUTURE_POOL.get(index) {
                         let finished = boxed.run(index, self.task_tx.clone());
                         if finished && !FUTURE_POOL.clear(index) {
-                            tracing::error!(
+                            log::error!(
                                 "Failed to remove completed future with index = {} from pool.",
                                 index
                             );
                         }
                     } else {
-                        tracing::error!("Future with index = {} is not in pool.", index);
+                        log::error!("Future with index = {} is not in pool.", index);
                     }
                 }
                 None => {
-                    tracing::debug!("Start collecting tasks...");
+                    log::debug!("Start collecting tasks...");
                     let mut wakeup_count = 0;
                     // First push in all the woke up Task, non-blocking.
-                    tracing::debug!("Collecting wokeups...");
+                    log::debug!("Collecting wokeups...");
                     loop {
                         match self.task_rx.try_recv() {
                             Ok(index) => {
@@ -144,13 +144,13 @@ impl TaskRunner {
                         continue;
                     }
                     // If we are starving, start stealing.
-                    tracing::debug!("Try stealing tasks from other runners...");
+                    log::debug!("Try stealing tasks from other runners...");
                     if let Some(index) = self.steal_task() {
                         self.worker.push(index);
                         continue;
                     }
                     // Finally, wait for a single wakeup task or broadcast signal from scheduler
-                    tracing::debug!("Runner park.");
+                    log::debug!("Runner park.");
                     let exit_loop = Selector::new()
                         .recv(&self.task_rx, |result| match result {
                             Ok(index) => {

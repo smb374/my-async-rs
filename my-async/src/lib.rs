@@ -57,7 +57,7 @@ impl BoxedFuture {
             match fut.as_mut().poll(cx) {
                 Poll::Ready(r) => {
                     if let Err(e) = r {
-                        tracing::error!("Error occurred when executing future: {}", e);
+                        log::error!("Error occurred when executing future: {}", e);
                     }
                     true
                 }
