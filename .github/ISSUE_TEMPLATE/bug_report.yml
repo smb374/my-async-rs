@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a bug you have encountered
+title: "[BUG] "
+labels:
+  - bug
+body:
+  - type: checkboxes
+    attributes:
+      label: Checklist before submitting an issue
+      options:
+        - label: I have searched through the existing [closed and open issues](https://github.com/smb374/my-async-rs/issues?q=is%3Aissue) for eww and made sure this is not a duplicate
+          required: true
+        - label: I have specifically verified that this bug is related to this repo. [Examples of bugs not related to this repo](https://github.com/smb374/my-async-rs/issues?q=is%3Aissue+label%3Anot-actual-bug+is%3Aclosed)
+          required: true
+        - label: I am providing as much relevant information as I am able to in this bug report (Minimal code sample to reproduce the issue for example, if applicable)
+          required: true
+  - type: input
+    attributes:
+      label: Your build target
+      description: Provide your build target if possible. (e.g. `x86_64-unknown-linux-gnu`)
+      placeholder: x86_64-unknown-linux-gnu
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: "Description of the bug"
+      description: "A clear an concise description of what the bug is."
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: "Reproducing the issue"
+      description: "Please provide a clear and and minimal description of how to reproduce the bug. If possible, provide a minimal code sample that shows the issue."
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: "Additional context"
+      description: "If applicable, provide additional context or screenshots here."
+    validations:
+      required: false
