@@ -2,8 +2,9 @@
 
 # my-async-rs
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/smb374/my-async-rs/Checks?label=check&style=for-the-badge)
-![GitHub top language](https://img.shields.io/github/languages/top/smb374/my-async-rs?logo=Rust&style=for-the-badge)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/smb374/my-async-rs/Checks/main?label=main&logo=Github&style=flat-square)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/smb374/my-async-rs/Checks/dev?label=dev&logo=Github&style=flat-square)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/smb374/my-async-rs/Audit?color=blue&label=dpendency%20audit&logo=Rust&style=flat-square)
 
 An example async runtime.
 
