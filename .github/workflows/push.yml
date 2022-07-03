@@ -2,6 +2,8 @@ name: Repo push checks
 
 on:
   push:
+    paths-ignore:
+      - ".github/**"
     branches:
       - main
 
