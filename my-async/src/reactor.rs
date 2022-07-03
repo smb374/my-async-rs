@@ -18,6 +18,7 @@ pub struct Reactor {
     extra_wakeups: FxHashMap<Token, Event>,
 }
 
+#[derive(Default)]
 pub struct WakerSet {
     read: Option<Waker>,
     write: Option<Waker>,
@@ -90,15 +91,6 @@ impl WakerSet {
     }
     pub fn is_empty(&self) -> bool {
         self.read.is_none() && self.write.is_none()
-    }
-}
-
-impl Default for WakerSet {
-    fn default() -> Self {
-        Self {
-            read: None,
-            write: None,
-        }
     }
 }
 

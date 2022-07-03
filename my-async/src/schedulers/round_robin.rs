@@ -99,13 +99,11 @@ impl Worker {
                     Ok(index) => {
                         if let Some(boxed) = FUTURE_POOL.get(index) {
                             let finished = boxed.run(index, self.task_tx.clone());
-                            if finished {
-                                if !FUTURE_POOL.clear(index) {
-                                    tracing::error!(
+                            if finished && !FUTURE_POOL.clear(index) {
+                                tracing::error!(
                                     "Failed to remove completed future with index = {} from pool.",
                                     index
                                 );
-                                }
                             }
                         } else {
                             tracing::error!("Future with index = {} is not in pool.", index);

@@ -20,7 +20,7 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 // Use `OnceCell` to achieve lock-free.
 static SPAWNER: OnceCell<Spawner> = OnceCell::new();
 // global future allocation pool.
-pub static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(|| Pool::new());
+pub static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
 
 pub struct Executor<S: Scheduler> {
     scheduler: S,

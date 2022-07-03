@@ -9,7 +9,7 @@ use parking_lot::Mutex;
 use sharded_slab::Pool;
 
 static SPAWNER: OnceCell<Spawner> = OnceCell::new();
-static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(|| Pool::new());
+static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
 
 enum Message {
     Run(FutureIndex),
@@ -31,7 +31,7 @@ impl Executor {
     pub fn new() -> Self {
         let (tx, rx) = flume::unbounded();
         let (task_tx, task_rx) = flume::unbounded();
-        let spawner = Spawner { tx: tx.clone() };
+        let spawner = Spawner { tx };
         SPAWNER.get_or_init(move || spawner);
         Self {
             task_tx,
@@ -48,13 +48,11 @@ impl Executor {
             if let Some(index) = self.queue.pop_back() {
                 if let Some(boxed) = FUTURE_POOL.get(index) {
                     let finished = boxed.run(index, self.task_tx.clone());
-                    if finished {
-                        if !FUTURE_POOL.clear(index) {
-                            tracing::error!(
-                                "Failed to remove completed future with index = {} from pool.",
-                                index
-                            );
-                        }
+                    if finished && !FUTURE_POOL.clear(index) {
+                        tracing::error!(
+                            "Failed to remove completed future with index = {} from pool.",
+                            index
+                        );
                     }
                 } else {
                     tracing::error!("Future with index = {} is not in pool.", index);
