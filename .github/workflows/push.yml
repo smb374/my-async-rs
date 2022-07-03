@@ -1,27 +1,13 @@
-name: Repo push checks
+name: Checks
 
 on:
   push:
     paths:
-      - "my-async/**"
-    branches:
-      - main
+      - "my-async/Cargo.toml"
+      - "my-async/**.rs"
 
 jobs:
-  audit:
-    name: Perform dependency audit
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Run depedency audit
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
   check:
-    needs:
-      - audit
     name: Perform basic checks
     runs-on: ubuntu-latest
     steps:
@@ -38,9 +24,6 @@ jobs:
           command: check
 
   clippy:
-    needs:
-      - audit
-      - check
     name: Perform code check against `clippy`
     runs-on: ubuntu-latest
     steps:
@@ -60,12 +43,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
 
-  build-test:
+  test:
     needs:
-      - audit
       - check
       - clippy
-    name: Build & test the code
+    name: Test the code
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -76,10 +58,6 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --all-features
       - uses: actions-rs/cargo@v1
         with:
           command: test
