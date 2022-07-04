@@ -2,11 +2,13 @@ use std::{io, task::Waker, time::Duration};
 
 use mio::{event::Source, Events, Interest, Poll, Registry, Token};
 use once_cell::sync::{Lazy, OnceCell};
-use parking_lot::Mutex;
+use parking_lot::{Mutex, MutexGuard};
 use sharded_slab::Slab;
 
 static REGISTRY: OnceCell<Registry> = OnceCell::new();
 static WAKER_SLAB: Lazy<Slab<Mutex<Option<Waker>>>> = Lazy::new(Slab::new);
+static POLL_WAKE_TOKEN: Token = Token(usize::MAX);
+pub(super) static POLL_WAKER: OnceCell<mio::Waker> = OnceCell::new();
 
 pub struct Reactor {
     poll: Poll,
@@ -26,23 +28,27 @@ impl Reactor {
         }
     }
 
-    pub fn wait(&mut self, timeout: Option<Duration>) -> io::Result<()> {
+    pub fn wait(&mut self, timeout: Option<Duration>) -> io::Result<bool> {
         self.poll.poll(&mut self.events, timeout)?;
         if !self.events.is_empty() {
             log::debug!("Start process events.");
-            self.events.iter().for_each(|e| {
-                if WAKER_SLAB.contains(e.token().0) {
-                    let mutex = WAKER_SLAB.get(e.token().0).unwrap();
-                    let mut guard = mutex.lock();
+            for e in self.events.iter() {
+                if e.token() == POLL_WAKE_TOKEN {
+                    return Ok(true);
+                }
+                let idx = e.token().0;
+                let waker_processed = process_waker(idx, |guard| {
                     if let Some(w) = guard.take() {
                         w.wake_by_ref();
                     }
-                } else {
-                    self.extra_wakeups.push(e.token().0);
+                });
+
+                if !waker_processed {
+                    self.extra_wakeups.push(idx);
                 }
-            });
+            }
         }
-        Ok(())
+        Ok(false)
     }
 
     pub fn setup_registry(&self) {
@@ -51,27 +57,23 @@ impl Reactor {
             .registry()
             .try_clone()
             .expect("Failed to clone registry");
+        POLL_WAKER.get_or_init(|| match mio::Waker::new(&registry, POLL_WAKE_TOKEN) {
+            Ok(waker) => waker,
+            Err(e) => panic!("Failed to setup waker for poll: {}", e),
+        });
         REGISTRY.get_or_init(move || registry);
     }
 
     pub fn check_extra_wakeups(&mut self) -> bool {
         let mut event_checked = false;
         self.extra_wakeups.retain(|&idx| {
-            if WAKER_SLAB.contains(idx) {
-                let mutex = WAKER_SLAB.get(idx).unwrap();
-                let mut guard = mutex.lock();
+            let waker_processed = process_waker(idx, |guard| {
                 if let Some(w) = guard.take() {
                     event_checked = true;
                     w.wake_by_ref();
                 }
-                // false is outside of the `guard.take()` match
-                // because we also want to remove unnecessary
-                // indexes since the pointed waker is not presented
-                // in the `WAKER_SLAB`.
-                false
-            } else {
-                true
-            }
+            });
+            !waker_processed
         });
         event_checked
     }
@@ -83,13 +85,28 @@ impl Default for Reactor {
     }
 }
 
-pub(crate) fn add_waker(token: &Token, waker: Waker) -> Option<Token> {
-    if WAKER_SLAB.contains(token.0) {
-        let mutex = WAKER_SLAB.get(token.0).unwrap();
+fn process_waker<F>(idx: usize, f: F) -> bool
+where
+    F: FnOnce(&mut MutexGuard<Option<Waker>>),
+{
+    if WAKER_SLAB.contains(idx) {
+        let mutex = WAKER_SLAB.get(idx).unwrap();
         let mut guard = mutex.lock();
-        if let Some(w) = guard.replace(waker) {
+        f(&mut guard);
+        drop(guard);
+        true
+    } else {
+        false
+    }
+}
+
+pub(crate) fn add_waker(token: &Token, waker: Waker) -> Option<Token> {
+    let waker_found = process_waker(token.0, |guard| {
+        if let Some(w) = guard.replace(waker.clone()) {
             w.wake_by_ref();
         }
+    });
+    if waker_found {
         None
     } else {
         WAKER_SLAB.insert(Mutex::new(Some(waker))).map(Token)
