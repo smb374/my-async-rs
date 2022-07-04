@@ -33,6 +33,12 @@ pub struct Broadcast<T> {
     channels: Vec<Sender<T>>,
 }
 
+impl<T: Send + Clone> Default for Broadcast<T> {
+    fn default() -> Broadcast<T> {
+        Broadcast::new()
+    }
+}
+
 impl<T: Send + Clone> Broadcast<T> {
     pub fn new() -> Self {
         Self {

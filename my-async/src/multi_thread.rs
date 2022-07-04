@@ -26,6 +26,12 @@ pub struct Executor<S: Scheduler> {
     poll_thread_handle: JoinHandle<()>,
 }
 
+impl<S: Scheduler> Default for Executor<S> {
+    fn default() -> Executor<S> {
+        Executor::new()
+    }
+}
+
 impl<S: Scheduler> Executor<S> {
     pub fn new() -> Self {
         let cpus = num_cpus::get();

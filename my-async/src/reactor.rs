@@ -64,6 +64,10 @@ impl Reactor {
                     event_checked = true;
                     w.wake_by_ref();
                 }
+                // false is outside of the `guard.take()` match
+                // because we also want to remove unnecessary
+                // indexes since the pointed waker is not presented
+                // in the `WAKER_SLAB`.
                 false
             } else {
                 true
@@ -88,9 +92,7 @@ pub(crate) fn add_waker(token: &Token, waker: Waker) -> Option<Token> {
         }
         None
     } else {
-        WAKER_SLAB
-            .insert(Mutex::new(Some(waker)))
-            .map(|idx| Token(idx))
+        WAKER_SLAB.insert(Mutex::new(Some(waker))).map(Token)
     }
 }
 
