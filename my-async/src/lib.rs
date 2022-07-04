@@ -5,7 +5,7 @@ use std::{
     os::unix::prelude::{AsRawFd, RawFd},
     pin::Pin,
     task::{Context, Poll},
-    time::{SystemTime, UNIX_EPOCH},
+    // time::{SystemTime, UNIX_EPOCH},
 };
 
 use flume::Sender;
@@ -98,16 +98,24 @@ impl BoxedFuture {
     }
 }
 
-pub struct IoWrapper<T> {
+pub struct IoWrapper<T: AsRawFd> {
     inner: T,
     token: Token,
 }
 
 impl<T: AsRawFd> IoWrapper<T> {
-    pub fn register_reactor(&mut self, interest: Interest, cx: &mut Context<'_>) -> io::Result<()> {
+    pub fn register_reactor(
+        &mut self,
+        interests: Interest,
+        cx: &mut Context<'_>,
+    ) -> io::Result<()> {
         let waker = cx.waker().clone();
-        reactor::register(self, self.token, interest)?;
-        reactor::add_waker(self.token, interest, waker)?;
+        if let Some(token) = reactor::add_waker(&self.token, waker) {
+            self.token = token;
+            reactor::register(self, self.token, interests, false)?;
+        } else {
+            reactor::register(self, self.token, interests, true)?;
+        }
         Ok(())
     }
     pub fn degister_reactor(&mut self) -> io::Result<()> {
@@ -119,8 +127,10 @@ impl<T: AsRawFd> IoWrapper<T> {
 impl<T: AsRawFd> From<T> for IoWrapper<T> {
     fn from(inner: T) -> Self {
         Self::set_nonblocking(inner.as_raw_fd()).expect("Failed to set nonblocking");
-        let token = token_from_unixtime();
-        Self { inner, token }
+        Self {
+            inner,
+            token: Token(usize::MAX),
+        }
     }
 }
 
@@ -135,13 +145,13 @@ impl<T: AsRawFd> IoWrapper<T> {
     }
 }
 
-impl<T> AsRef<T> for IoWrapper<T> {
+impl<T: AsRawFd> AsRef<T> for IoWrapper<T> {
     fn as_ref(&self) -> &T {
         &self.inner
     }
 }
 
-impl<T> AsMut<T> for IoWrapper<T> {
+impl<T: AsRawFd> AsMut<T> for IoWrapper<T> {
     fn as_mut(&mut self) -> &mut T {
         &mut self.inner
     }
@@ -251,19 +261,19 @@ macro_rules! impl_common_write {
     };
 }
 
-pub(crate) fn get_unix_time() -> u128 {
-    let dur = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("System time earlier than UNIX_EPOCH!");
-    dur.as_nanos()
-}
+// pub(crate) fn get_unix_time() -> u128 {
+//     let dur = SystemTime::now()
+//         .duration_since(UNIX_EPOCH)
+//         .expect("System time earlier than UNIX_EPOCH!");
+//     dur.as_nanos()
+// }
 
-pub(crate) fn token_from_unixtime() -> Token {
-    let time_bytes = get_unix_time().to_be_bytes();
-    let tail = &time_bytes[time_bytes.len() - 8..];
-    let id = usize::from_be_bytes(tail.try_into().unwrap());
-    Token(id)
-}
+// pub(crate) fn token_from_unixtime() -> Token {
+//     let time_bytes = get_unix_time().to_be_bytes();
+//     let tail = &time_bytes[time_bytes.len() - 8..];
+//     let id = usize::from_be_bytes(tail.try_into().unwrap());
+//     Token(id)
+// }
 
 // pub(crate) fn unpoison<T>(lock_result: Result<T, PoisonError<T>>) -> T {
 //     match lock_result {

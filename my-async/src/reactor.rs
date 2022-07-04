@@ -1,34 +1,24 @@
-use std::{io, ops::DerefMut, task::Waker, time::Duration};
+use std::{io, task::Waker, time::Duration};
 
-use mio::{
-    event::{Event, Source},
-    Events, Interest, Poll, Registry, Token,
-};
+use mio::{event::Source, Events, Interest, Poll, Registry, Token};
 use once_cell::sync::{Lazy, OnceCell};
 use parking_lot::Mutex;
-use rustc_hash::FxHashMap;
+use sharded_slab::Slab;
 
 static REGISTRY: OnceCell<Registry> = OnceCell::new();
-static WAKER_MAP: Lazy<Mutex<FxHashMap<Token, WakerSet>>> =
-    Lazy::new(|| Mutex::new(FxHashMap::default()));
+static WAKER_SLAB: Lazy<Slab<Mutex<Option<Waker>>>> = Lazy::new(Slab::new);
 
 pub struct Reactor {
     poll: Poll,
     events: Events,
-    extra_wakeups: FxHashMap<Token, Event>,
-}
-
-#[derive(Default)]
-pub struct WakerSet {
-    read: Option<Waker>,
-    write: Option<Waker>,
+    extra_wakeups: Vec<usize>,
 }
 
 impl Reactor {
     pub fn new(capacity: usize) -> Self {
         let poll = Poll::new().expect("Failed to setup Poll");
         let events = Events::with_capacity(capacity);
-        let extra_wakeups = FxHashMap::default();
+        let extra_wakeups = Vec::with_capacity(1024);
         Self {
             poll,
             events,
@@ -41,12 +31,14 @@ impl Reactor {
         if !self.events.is_empty() {
             log::debug!("Start process events.");
             self.events.iter().for_each(|e| {
-                let mut guard = WAKER_MAP.lock();
-                let wakers_ref = guard.deref_mut();
-                if let Some(ws) = wakers_ref.get_mut(&e.token()) {
-                    process_waker(ws, e);
+                if WAKER_SLAB.contains(e.token().0) {
+                    let mutex = WAKER_SLAB.get(e.token().0).unwrap();
+                    let mut guard = mutex.lock();
+                    if let Some(w) = guard.take() {
+                        w.wake_by_ref();
+                    }
                 } else {
-                    self.extra_wakeups.insert(e.token(), e.clone());
+                    self.extra_wakeups.push(e.token().0);
                 }
             });
         }
@@ -64,13 +56,15 @@ impl Reactor {
 
     pub fn check_extra_wakeups(&mut self) -> bool {
         let mut event_checked = false;
-        self.extra_wakeups.retain(|t, e| {
-            let mut guard = WAKER_MAP.lock();
-            let wakers_ref = guard.deref_mut();
-            if let Some(ws) = wakers_ref.get_mut(t) {
-                event_checked = true;
-                process_waker(ws, e);
-                !ws.is_empty()
+        self.extra_wakeups.retain(|&idx| {
+            if WAKER_SLAB.contains(idx) {
+                let mutex = WAKER_SLAB.get(idx).unwrap();
+                let mut guard = mutex.lock();
+                if let Some(w) = guard.take() {
+                    event_checked = true;
+                    w.wake_by_ref();
+                }
+                false
             } else {
                 true
             }
@@ -85,84 +79,54 @@ impl Default for Reactor {
     }
 }
 
-impl WakerSet {
-    pub fn new() -> Self {
-        Self::default()
-    }
-    pub fn is_empty(&self) -> bool {
-        self.read.is_none() && self.write.is_none()
-    }
-}
-
-pub(crate) fn add_waker(token: Token, interests: Interest, waker: Waker) -> io::Result<()> {
-    let mut guard = WAKER_MAP.lock();
-    let lock = guard.deref_mut();
-    if let Some(ws) = lock.get_mut(&token) {
-        if interests.is_readable() {
-            if let Some(w) = ws.read.replace(waker) {
-                w.wake_by_ref();
-            }
-        } else if interests.is_writable() {
-            if let Some(w) = ws.write.replace(waker) {
-                w.wake_by_ref();
-            }
+pub(crate) fn add_waker(token: &Token, waker: Waker) -> Option<Token> {
+    if WAKER_SLAB.contains(token.0) {
+        let mutex = WAKER_SLAB.get(token.0).unwrap();
+        let mut guard = mutex.lock();
+        if let Some(w) = guard.replace(waker) {
+            w.wake_by_ref();
         }
+        None
     } else {
-        let mut ws = WakerSet::new();
-        if interests.is_readable() {
-            ws.read.replace(waker);
-        } else if interests.is_writable() {
-            ws.write.replace(waker);
-        }
-        lock.insert(token, ws);
+        WAKER_SLAB
+            .insert(Mutex::new(Some(waker)))
+            .map(|idx| Token(idx))
     }
-    Ok(())
 }
 
-pub(crate) fn remove_waker(token: Token) {
-    let mut guard = WAKER_MAP.lock();
-    let lock = guard.deref_mut();
-    lock.remove(&token);
+pub(crate) fn remove_waker(token: Token) -> bool {
+    WAKER_SLAB.remove(token.0)
 }
 
-pub fn register<S>(source: &mut S, token: Token, interests: Interest) -> io::Result<()>
+pub fn register<S>(
+    source: &mut S,
+    token: Token,
+    interests: Interest,
+    reregister: bool,
+) -> io::Result<()>
 where
     S: Source + ?Sized,
 {
     if let Some(registry) = REGISTRY.get() {
-        let mut wakers_guard = WAKER_MAP.lock();
-        let wakers_ref = wakers_guard.deref_mut();
-        if wakers_ref.get(&token).is_some() {
+        if reregister {
             registry.reregister(source, token, interests)?;
         } else {
             registry.register(source, token, interests)?;
         }
+    } else {
+        log::error!("Registry hasn't initialized.")
     }
     Ok(())
 }
 
-pub fn deregister<S>(_source: &mut S, token: Token) -> io::Result<()>
+pub fn deregister<S>(source: &mut S, token: Token) -> io::Result<()>
 where
     S: Source + ?Sized,
 {
     remove_waker(token);
     // TODO: find a way to deregister without throwing errors.
-    // let registry_guard = REGISTRY.lock();
-    // if let Some(_registry) = registry_guard.deref() {
-    //     registry.deregister(source)?;
-    // }
+    if let Some(registry) = REGISTRY.get() {
+        registry.deregister(source)?;
+    }
     Ok(())
-}
-
-fn process_waker(ws: &mut WakerSet, e: &Event) {
-    if e.is_readable() {
-        if let Some(w) = ws.read.take() {
-            w.wake_by_ref();
-        }
-    }
-    if e.is_writable() {
-        if let Some(w) = ws.write.take() {
-            w.wake_by_ref();
-        }
-    }
 }
