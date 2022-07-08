@@ -1,13 +1,11 @@
 use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
 use crate::multi_thread::FUTURE_POOL;
 
-use std::{hash::BuildHasherDefault, sync::Arc, thread};
+use std::{sync::Arc, thread};
 
 use crossbeam_deque::{Injector, Stealer, Worker};
 use crossbeam_utils::sync::WaitGroup;
 use flume::{Receiver, Selector, Sender, TryRecvError};
-use priority_queue::priority_queue::PriorityQueue;
-use rustc_hash::FxHasher;
 
 pub struct WorkStealingScheduler {
     _size: usize,
@@ -112,20 +110,10 @@ impl Scheduler for WorkStealingScheduler {
 
 impl TaskRunner {
     fn run(&self) {
-        let mut pq: PriorityQueue<FutureIndex, usize, BuildHasherDefault<FxHasher>> =
-            PriorityQueue::with_capacity_and_default_hasher(65536);
         'outer: loop {
             if !self.worker.is_empty() {
-                if self.worker.len() == 1 {
-                    let index = self.worker.pop().unwrap();
+                while let Some(index) = self.worker.pop() {
                     Self::process_future(index, &self.task_tx);
-                } else {
-                    while let Some(index) = self.worker.pop() {
-                        pq.push(index, index.sleep_count);
-                    }
-                    while let Some((index, _)) = pq.pop() {
-                        Self::process_future(index, &self.task_tx);
-                    }
                 }
             } else {
                 log::debug!("Start collecting tasks...");
@@ -147,7 +135,11 @@ impl TaskRunner {
                 }
                 // If we are starving, start stealing.
                 log::debug!("Try stealing tasks from other runners...");
-                if let Some(index) = self.steal_task() {
+                if let Some(index) = self.steal_injector() {
+                    self.worker.push(index);
+                    continue;
+                }
+                if let Some(index) = self.steal_others() {
                     self.worker.push(index);
                     continue;
                 }
@@ -187,14 +179,15 @@ impl TaskRunner {
         }
     }
 
-    fn steal_task(&self) -> Option<FutureIndex> {
+    fn steal_injector(&self) -> Option<FutureIndex> {
         // will generate *ONE* task at a time
-        std::iter::repeat_with(|| {
-            self.injector
-                .steal()
-                .or_else(|| self.stealers.iter().map(|s| s.steal()).collect())
-        })
-        .find(|s| !s.is_retry())
-        .and_then(|s| s.success())
+        self.injector.steal().success()
+    }
+    fn steal_others(&self) -> Option<FutureIndex> {
+        self.stealers
+            .iter()
+            .map(|s| s.steal())
+            .find(|s| s.is_success())
+            .and_then(|s| s.success())
     }
 }

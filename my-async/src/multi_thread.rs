@@ -3,6 +3,7 @@ use super::BoxedFuture;
 use super::reactor::{self, POLL_WAKER};
 use super::schedulers::{ScheduleMessage, Scheduler, Spawner};
 
+use std::time::Duration;
 use std::{
     future::Future,
     io,
@@ -55,7 +56,7 @@ impl<S: Scheduler> Executor<S> {
         loop {
             // check if wakeups that is not used immediately is needed now.
             reactor.check_extra_wakeups();
-            match reactor.wait(None) {
+            match reactor.wait(Some(Duration::from_millis(100))) {
                 Ok(true) => break,
                 Ok(false) => continue,
                 Err(e) => {

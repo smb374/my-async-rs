@@ -1,3 +1,4 @@
+pub mod hybrid;
 pub mod round_robin;
 pub mod work_stealing;
 
