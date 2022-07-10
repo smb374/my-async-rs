@@ -1,21 +1,3 @@
-use std::{
-    convert::{AsMut, AsRef},
-    hash::Hash,
-    io::Read,
-    os::unix::prelude::{AsRawFd, RawFd},
-    pin::Pin,
-    task::{Context, Poll},
-    // time::{SystemTime, UNIX_EPOCH},
-};
-
-use flume::Sender;
-use futures_lite::{future::Boxed, AsyncRead};
-use mio::{event::Source, unix::SourceFd, Registry, Token};
-use nix::fcntl::{fcntl, FcntlArg, OFlag};
-use parking_lot::Mutex;
-use sharded_slab::Clear;
-use waker_fn::waker_fn;
-
 // reactor, not exposed
 mod reactor;
 // modules
@@ -25,6 +7,25 @@ pub mod multi_thread;
 pub mod single_thread;
 // scheduler
 pub mod schedulers;
+
+use std::{
+    convert::{AsMut, AsRef},
+    hash::Hash,
+    io::Read,
+    pin::Pin,
+    task::{Context, Poll},
+};
+
+use flume::Sender;
+use futures_lite::{future::Boxed, AsyncRead};
+use mio::{event::Source, unix::SourceFd, Registry, Token};
+use parking_lot::Mutex;
+use rustix::{
+    fd::{AsFd, AsRawFd, BorrowedFd, RawFd},
+    fs::{fcntl_getfl, fcntl_setfl, OFlags},
+};
+use sharded_slab::Clear;
+use waker_fn::waker_fn;
 
 pub use mio::Interest;
 pub use modules::{fs, io, net, stream};
@@ -98,12 +99,12 @@ impl BoxedFuture {
     }
 }
 
-pub struct IoWrapper<T: AsRawFd> {
+pub struct IoWrapper<T: AsFd> {
     inner: T,
     token: Token,
 }
 
-impl<T: AsRawFd> IoWrapper<T> {
+impl<T: AsFd> IoWrapper<T> {
     pub fn register_reactor(
         &mut self,
         interests: Interest,
@@ -124,9 +125,9 @@ impl<T: AsRawFd> IoWrapper<T> {
     }
 }
 
-impl<T: AsRawFd> From<T> for IoWrapper<T> {
+impl<T: AsFd> From<T> for IoWrapper<T> {
     fn from(inner: T) -> Self {
-        Self::set_nonblocking(inner.as_raw_fd()).expect("Failed to set nonblocking");
+        Self::set_nonblocking(&inner).expect("Failed to set nonblocking");
         Self {
             inner,
             token: Token(usize::MAX),
@@ -134,36 +135,44 @@ impl<T: AsRawFd> From<T> for IoWrapper<T> {
     }
 }
 
-impl<T: AsRawFd> IoWrapper<T> {
-    fn set_nonblocking(fd: RawFd) -> io::Result<()> {
-        let mut current_flags = OFlag::from_bits_truncate(fcntl(fd, FcntlArg::F_GETFL)?);
-        if !current_flags.contains(OFlag::O_NONBLOCK) {
-            current_flags.set(OFlag::O_NONBLOCK, true);
-            fcntl(fd, FcntlArg::F_SETFL(current_flags))?;
+impl<T: AsFd> IoWrapper<T> {
+    fn set_nonblocking(fd: &T) -> io::Result<()> {
+        let mut current_flags =
+            fcntl_getfl(fd).map_err(|e| io::Error::from_raw_os_error(e.raw_os_error()))?;
+        if !current_flags.contains(OFlags::NONBLOCK) {
+            current_flags.set(OFlags::NONBLOCK, true);
+            fcntl_setfl(fd, current_flags)
+                .map_err(|e| io::Error::from_raw_os_error(e.raw_os_error()))?;
         }
         Ok(())
     }
 }
 
-impl<T: AsRawFd> AsRef<T> for IoWrapper<T> {
+impl<T: AsFd> AsRef<T> for IoWrapper<T> {
     fn as_ref(&self) -> &T {
         &self.inner
     }
 }
 
-impl<T: AsRawFd> AsMut<T> for IoWrapper<T> {
+impl<T: AsFd> AsMut<T> for IoWrapper<T> {
     fn as_mut(&mut self) -> &mut T {
         &mut self.inner
     }
 }
 
-impl<T: AsRawFd> AsRawFd for IoWrapper<T> {
-    fn as_raw_fd(&self) -> RawFd {
-        self.inner.as_raw_fd()
+impl<T: AsFd> AsFd for IoWrapper<T> {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.inner.as_fd()
     }
 }
 
-impl<T: AsRawFd> Source for IoWrapper<T> {
+impl<T: AsFd> AsRawFd for IoWrapper<T> {
+    fn as_raw_fd(&self) -> RawFd {
+        self.inner.as_fd().as_raw_fd()
+    }
+}
+
+impl<T: AsFd> Source for IoWrapper<T> {
     fn register(
         &mut self,
         registry: &Registry,
@@ -187,7 +196,7 @@ impl<T: AsRawFd> Source for IoWrapper<T> {
     }
 }
 
-impl<T: AsRawFd + Read + Unpin> AsyncRead for IoWrapper<T> {
+impl<T: AsFd + Read + Unpin> AsyncRead for IoWrapper<T> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -260,24 +269,3 @@ macro_rules! impl_common_write {
         }
     };
 }
-
-// pub(crate) fn get_unix_time() -> u128 {
-//     let dur = SystemTime::now()
-//         .duration_since(UNIX_EPOCH)
-//         .expect("System time earlier than UNIX_EPOCH!");
-//     dur.as_nanos()
-// }
-
-// pub(crate) fn token_from_unixtime() -> Token {
-//     let time_bytes = get_unix_time().to_be_bytes();
-//     let tail = &time_bytes[time_bytes.len() - 8..];
-//     let id = usize::from_be_bytes(tail.try_into().unwrap());
-//     Token(id)
-// }
-
-// pub(crate) fn unpoison<T>(lock_result: Result<T, PoisonError<T>>) -> T {
-//     match lock_result {
-//         Ok(guard) => guard,
-//         Err(p) => p.into_inner(),
-//     }
-// }

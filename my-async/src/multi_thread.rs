@@ -3,12 +3,12 @@ use super::BoxedFuture;
 use super::reactor::{self, POLL_WAKER};
 use super::schedulers::{ScheduleMessage, Scheduler, Spawner};
 
-use std::time::Duration;
 use std::{
     future::Future,
-    io,
+    io, panic,
     sync::Arc,
     thread::{self, JoinHandle},
+    time::Duration,
 };
 
 use once_cell::sync::{Lazy, OnceCell};
@@ -34,7 +34,11 @@ impl<S: Scheduler> Default for Executor<S> {
 impl<S: Scheduler> Executor<S> {
     pub fn new() -> Self {
         let cpus = num_cpus::get();
-        let size = if cpus == 0 { 1 } else { cpus };
+        assert!(
+            cpus > 0,
+            "Failed to detect core number of current cpu, panic!"
+        );
+        let size = cpus;
         let (spawner, scheduler) = S::init(size);
         log::debug!("Scheduler initialized");
         // set up spawner
@@ -44,6 +48,22 @@ impl<S: Scheduler> Executor<S> {
             .spawn(move || Self::poll_thread())
             .expect("Failed to spawn poll_thread.");
         log::debug!("Spawned poll_thread");
+        panic::set_hook(Box::new(|info| {
+            let message = match info.payload().downcast_ref::<&str>() {
+                Some(s) => s,
+                None => "No panic message",
+            };
+            let location = match info.location() {
+                Some(l) => format!("at {}, line {}", l.file(), l.line()),
+                None => "No location information".to_string(),
+            };
+            eprintln!(
+                "Runtime panic: message: {}, location: {}",
+                message, location
+            );
+            log::error!("Runtime panic, request shutting down...");
+            shutdown();
+        }));
         log::info!("Runtime startup complete.");
         Self {
             scheduler,
@@ -59,6 +79,7 @@ impl<S: Scheduler> Executor<S> {
             match reactor.wait(Some(Duration::from_millis(100))) {
                 Ok(true) => break,
                 Ok(false) => continue,
+                Err(ref e) if e.kind() == io::ErrorKind::Interrupted => continue,
                 Err(e) => {
                     log::error!("reactor wait error: {}, exit poll thread", e);
                     break;
