@@ -2,7 +2,7 @@ pub mod hybrid;
 pub mod round_robin;
 pub mod work_stealing;
 
-use crate::FutureIndex;
+use super::multi_thread::FutureIndex;
 
 use std::{future::Future, io};
 

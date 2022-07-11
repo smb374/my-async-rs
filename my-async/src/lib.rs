@@ -10,94 +10,20 @@ pub mod schedulers;
 
 use std::{
     convert::{AsMut, AsRef},
-    hash::Hash,
     io::Read,
     pin::Pin,
     task::{Context, Poll},
 };
 
-use flume::Sender;
-use futures_lite::{future::Boxed, AsyncRead};
+use futures_lite::AsyncRead;
 use mio::{event::Source, unix::SourceFd, Registry, Token};
-use parking_lot::Mutex;
 use rustix::{
     fd::{AsFd, AsRawFd, BorrowedFd, RawFd},
     fs::{fcntl_getfl, fcntl_setfl, OFlags},
 };
-use sharded_slab::Clear;
-use waker_fn::waker_fn;
 
 pub use mio::Interest;
 pub use modules::{fs, io, net, stream};
-
-pub type WrappedTaskSender = Option<Sender<FutureIndex>>;
-
-#[derive(Clone, Copy, Eq)]
-pub struct FutureIndex {
-    key: usize,
-    sleep_count: usize,
-}
-
-impl PartialEq for FutureIndex {
-    fn eq(&self, other: &Self) -> bool {
-        self.key == other.key
-    }
-}
-
-impl Hash for FutureIndex {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.key.hash(state);
-    }
-}
-
-#[allow(dead_code)]
-pub struct BoxedFuture {
-    future: Mutex<Option<Boxed<io::Result<()>>>>,
-    sleep_count: usize,
-}
-
-impl Default for BoxedFuture {
-    fn default() -> Self {
-        BoxedFuture {
-            future: Mutex::new(None),
-            sleep_count: 0,
-        }
-    }
-}
-
-impl Clear for BoxedFuture {
-    fn clear(&mut self) {
-        self.future.get_mut().clear();
-    }
-}
-
-impl BoxedFuture {
-    pub fn run(&self, index: &FutureIndex, tx: Sender<FutureIndex>) -> bool {
-        let mut guard = self.future.lock();
-        // run *ONCE*
-        if let Some(fut) = guard.as_mut() {
-            let new_index = FutureIndex {
-                key: index.key,
-                sleep_count: index.sleep_count + 1,
-            };
-            let waker = waker_fn(move || {
-                tx.send(new_index).expect("Too many message queued!");
-            });
-            let cx = &mut Context::from_waker(&waker);
-            match fut.as_mut().poll(cx) {
-                Poll::Ready(r) => {
-                    if let Err(e) = r {
-                        log::error!("Error occurred when executing future: {}", e);
-                    }
-                    true
-                }
-                Poll::Pending => false,
-            }
-        } else {
-            true
-        }
-    }
-}
 
 pub struct IoWrapper<T: AsFd> {
     inner: T,

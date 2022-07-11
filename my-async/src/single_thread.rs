@@ -1,15 +1,90 @@
-use super::{reactor, BoxedFuture, FutureIndex};
+use super::reactor;
 
-use std::{collections::VecDeque, future::Future, io, sync::Arc};
+use std::{
+    collections::VecDeque,
+    future::Future,
+    hash::Hash,
+    io,
+    sync::Arc,
+    task::{Context, Poll},
+};
 
 use flume::{Receiver, Sender, TryRecvError};
+use futures_lite::future::Boxed;
 use futures_lite::future::FutureExt;
 use once_cell::sync::{Lazy, OnceCell};
 use parking_lot::Mutex;
-use sharded_slab::Pool;
+use sharded_slab::{Clear, Pool};
+use waker_fn::waker_fn;
 
 static SPAWNER: OnceCell<Spawner> = OnceCell::new();
 static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
+
+#[derive(Clone, Copy, Eq)]
+pub struct FutureIndex {
+    key: usize,
+}
+
+impl PartialEq for FutureIndex {
+    fn eq(&self, other: &Self) -> bool {
+        self.key == other.key
+    }
+}
+
+impl Hash for FutureIndex {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.key.hash(state);
+    }
+}
+
+#[allow(dead_code)]
+pub struct BoxedFuture {
+    future: Mutex<Option<Boxed<io::Result<()>>>>,
+    sleep_count: usize,
+}
+
+impl Default for BoxedFuture {
+    fn default() -> Self {
+        BoxedFuture {
+            future: Mutex::new(None),
+            sleep_count: 0,
+        }
+    }
+}
+
+impl Clear for BoxedFuture {
+    fn clear(&mut self) {
+        self.future.get_mut().clear();
+    }
+}
+
+impl BoxedFuture {
+    pub fn run(&self, index: &FutureIndex, tx: Sender<FutureIndex>) -> bool {
+        let mut guard = self.future.lock();
+        // run *ONCE*
+        if let Some(fut) = guard.as_mut() {
+            let new_index = FutureIndex {
+                key: index.key,
+                // sleep_count: index.sleep_count + 1,
+            };
+            let waker = waker_fn(move || {
+                tx.send(new_index).expect("Too many message queued!");
+            });
+            let cx = &mut Context::from_waker(&waker);
+            match fut.as_mut().poll(cx) {
+                Poll::Ready(r) => {
+                    if let Err(e) = r {
+                        log::error!("Error occurred when executing future: {}", e);
+                    }
+                    true
+                }
+                Poll::Pending => false,
+            }
+        } else {
+            true
+        }
+    }
+}
 
 enum Message {
     Run(FutureIndex),
@@ -139,7 +214,7 @@ impl Spawner {
         self.tx
             .send(Message::Run(FutureIndex {
                 key,
-                sleep_count: 0,
+                // sleep_count: 0,
             }))
             .expect("too many task queued");
     }
