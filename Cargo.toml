@@ -1,2 +1,8 @@
 [workspace]
-members = ["my-async"]
+members = [
+  "my-async",
+  "concurrent-ringbuf"
+]
+
+[profile.bench]
+debug = true

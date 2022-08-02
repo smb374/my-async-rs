@@ -1,4 +1,4 @@
-use assert_ok::assert_ok;
+use claim::assert_ok;
 use my_async::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     multi_thread::{spawn, Executor},
@@ -11,7 +11,7 @@ async fn echo_server() {
 
     let (tx, rx) = flume::unbounded();
 
-    let mut srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
+    let srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
 
     let msg = "foo bar baz";
@@ -29,7 +29,6 @@ async fn echo_server() {
         }
 
         assert_ok!(tx.send(()));
-        Ok(())
     });
 
     let (stream, _) = assert_ok!(srv.accept().await);

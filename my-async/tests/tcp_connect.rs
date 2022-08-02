@@ -1,4 +1,4 @@
-use assert_ok::assert_ok;
+use claim::assert_ok;
 use futures_lite::future::zip;
 use my_async::{
     multi_thread::{spawn, Executor},
@@ -7,17 +7,16 @@ use my_async::{
 };
 
 async fn connect_v4() {
-    let mut srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
+    let srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
     assert!(addr.is_ipv4());
 
     let (tx, rx) = flume::unbounded();
 
-    spawn(async move {
+    let handle = spawn(async move {
         let (socket, addr) = assert_ok!(srv.accept().await);
         assert_eq!(addr, assert_ok!(socket.as_ref().peer_addr()));
         assert_ok!(tx.send(socket));
-        Ok(())
     });
 
     let mine = assert_ok!(TcpStream::connect(&addr));
@@ -31,21 +30,21 @@ async fn connect_v4() {
         assert_ok!(theirs.as_ref().local_addr()),
         assert_ok!(mine.as_ref().peer_addr())
     );
+    handle.join().await;
 }
 
 #[allow(dead_code)]
 async fn connect_v6() {
-    let mut srv = assert_ok!(TcpListener::bind("[::1]:0"));
+    let srv = assert_ok!(TcpListener::bind("[::1]:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
     assert!(addr.is_ipv6());
 
     let (tx, rx) = flume::unbounded();
 
-    spawn(async move {
+    let handle = spawn(async move {
         let (socket, addr) = assert_ok!(srv.accept().await);
         assert_eq!(addr, assert_ok!(socket.as_ref().peer_addr()));
         assert_ok!(tx.send(socket));
-        Ok(())
     });
 
     let mine = assert_ok!(TcpStream::connect(&addr));
@@ -59,10 +58,11 @@ async fn connect_v6() {
         assert_ok!(theirs.as_ref().local_addr()),
         assert_ok!(mine.as_ref().peer_addr())
     );
+    handle.join().await;
 }
 
 async fn connect_addr_ip_string() {
-    let mut srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
+    let srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
     let addr = format!("127.0.0.1:{}", addr.port());
 
@@ -78,7 +78,7 @@ async fn connect_addr_ip_string() {
 }
 
 async fn connect_addr_ip_str_slice() {
-    let mut srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
+    let srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
     let addr = format!("127.0.0.1:{}", addr.port());
 
@@ -94,7 +94,7 @@ async fn connect_addr_ip_str_slice() {
 }
 
 async fn connect_addr_host_string() {
-    let mut srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
+    let srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
     let addr = format!("localhost:{}", addr.port());
 
@@ -110,7 +110,7 @@ async fn connect_addr_host_string() {
 }
 
 async fn connect_addr_ip_port_tuple() {
-    let mut srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
+    let srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
     let addr = (addr.ip(), addr.port());
 
@@ -126,7 +126,7 @@ async fn connect_addr_ip_port_tuple() {
 }
 
 async fn connect_addr_ip_str_port_tuple() {
-    let mut srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
+    let srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
     let addr = ("127.0.0.1", addr.port());
 
@@ -142,7 +142,7 @@ async fn connect_addr_ip_str_port_tuple() {
 }
 
 async fn connect_addr_host_str_port_tuple() {
-    let mut srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
+    let srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
     let addr = ("localhost", addr.port());
 

@@ -1,4 +1,4 @@
-use assert_ok::assert_ok;
+use claim::assert_ok;
 use my_async::{io::AsyncReadExt, multi_thread::Executor, schedulers::hybrid::HybridScheduler};
 
 async fn read_to_end() {

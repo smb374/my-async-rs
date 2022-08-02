@@ -1,4 +1,4 @@
-use super::{FutureIndex, ScheduleMessage, Scheduler, Spawner};
+use super::{wake_join_handle, FutureIndex, ScheduleMessage, Scheduler, Spawner};
 use crate::multi_thread::FUTURE_POOL;
 
 use std::thread::{self, JoinHandle};
@@ -99,11 +99,14 @@ impl Worker {
                     Ok(index) => {
                         if let Some(boxed) = FUTURE_POOL.get(index.key) {
                             let finished = boxed.run(&index, self.task_tx.clone());
-                            if finished && !FUTURE_POOL.clear(index.key) {
-                                log::error!(
-                                    "Failed to remove completed future with index = {} from pool.",
-                                    index.key
-                                );
+                            if finished {
+                                wake_join_handle(index.key);
+                                if !FUTURE_POOL.clear(index.key) {
+                                    log::error!(
+                                        "Failed to remove completed future with index = {} from pool.",
+                                        index.key
+                                    );
+                                }
                             }
                         } else {
                             log::error!("Future with index = {} is not in pool.", index.key);

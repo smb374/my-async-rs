@@ -1,23 +1,27 @@
+use crate::schedulers;
+
 use super::reactor::{self, POLL_WAKER};
-use super::schedulers::{ScheduleMessage, Scheduler, Spawner};
+use super::schedulers::{ScheduleMessage, Scheduler};
 
 use std::{
     future::Future,
     hash::Hash,
-    io, panic,
-    sync::Arc,
+    io,
     task::{Context, Poll},
     thread::{self, JoinHandle},
     time::Duration,
 };
+use std::{panic, process};
 
+use claim::assert_some;
 use flume::Sender;
 use futures_lite::future::Boxed;
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use sharded_slab::{Clear, Pool};
 use waker_fn::waker_fn;
 
+pub use schedulers::{shutdown, spawn};
 pub type WrappedTaskSender = Option<Sender<FutureIndex>>;
 
 #[derive(Clone, Copy, Eq)]
@@ -41,14 +45,12 @@ impl Hash for FutureIndex {
 #[allow(dead_code)]
 pub struct BoxedFuture {
     pub(crate) future: Mutex<Option<Boxed<io::Result<()>>>>,
-    pub(crate) sleep_count: usize,
 }
 
 impl Default for BoxedFuture {
     fn default() -> Self {
         BoxedFuture {
             future: Mutex::new(None),
-            sleep_count: 0,
         }
     }
 }
@@ -87,8 +89,6 @@ impl BoxedFuture {
     }
 }
 
-// Use `OnceCell` to achieve lock-free.
-static SPAWNER: OnceCell<Spawner> = OnceCell::new();
 // global future allocation pool.
 pub static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
 
@@ -114,27 +114,20 @@ impl<S: Scheduler> Executor<S> {
         let (spawner, scheduler) = S::init(size);
         log::debug!("Scheduler initialized");
         // set up spawner
-        SPAWNER.get_or_init(move || spawner);
+        schedulers::init_spawner(spawner);
         let poll_thread_handle = thread::Builder::new()
             .name("poll_thread".to_string())
             .spawn(move || Self::poll_thread())
             .expect("Failed to spawn poll_thread.");
         log::debug!("Spawned poll_thread");
-        panic::set_hook(Box::new(|info| {
-            let message = match info.payload().downcast_ref::<&str>() {
-                Some(s) => s,
-                None => "No panic message",
-            };
-            let location = match info.location() {
-                Some(l) => format!("at {}, line {}", l.file(), l.line()),
-                None => "No location information".to_string(),
-            };
-            eprintln!(
-                "Runtime panic: message: {}, location: {}",
-                message, location
-            );
-            log::error!("Runtime panic, request shutting down...");
+        // set panic hook
+        let default_hook = panic::take_hook();
+        panic::set_hook(Box::new(move |info| {
+            default_hook(info);
+            log::error!("Runtime panics: {}", info);
+            log::error!("Shutting down runtime with exit code 1...");
             shutdown();
+            process::exit(1);
         }));
         log::info!("Runtime startup complete.");
         Self {
@@ -193,45 +186,20 @@ impl<S: Scheduler> Executor<S> {
         }
         log::info!("Runtime shutdown complete.")
     }
-    pub fn block_on<F, T>(self, future: F) -> T
+    pub fn block_on<F>(self, future: F) -> F::Output
     where
-        T: Send + 'static,
-        F: Future<Output = T> + Send + 'static,
+        F: Future + Send + 'static,
+        F::Output: Send + 'static,
     {
-        let result_arc: Arc<Mutex<Option<T>>> = Arc::new(Mutex::new(None));
-        let clone = Arc::clone(&result_arc);
-        spawn(async move {
-            let result = future.await;
-            // should put any result inside the arc, even if it's `()`!
-            clone.lock().replace(result);
-            log::debug!("Blocked future finished.");
-            shutdown();
-            Ok(())
-        });
+        let handle = schedulers::spawn_with_handle(future, true);
         log::info!("Start blocking...");
         self.run();
         log::debug!("Waiting result...");
-        let mut guard = result_arc.lock();
-        let result = guard.take();
-        assert!(
-            result.is_some(),
+        // The blocked on future finished executing, the result should be `Some(val)`
+        let result = assert_some!(
+            handle.try_join(),
             "The blocked future should produce a return value before the execution ends."
         );
-        result.unwrap()
-    }
-}
-
-pub fn spawn<F>(future: F)
-where
-    F: Future<Output = io::Result<()>> + Send + 'static,
-{
-    if let Some(spawner) = SPAWNER.get() {
-        spawner.spawn(future);
-    }
-}
-
-pub fn shutdown() {
-    if let Some(spawner) = SPAWNER.get() {
-        spawner.shutdown();
+        result
     }
 }

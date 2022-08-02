@@ -1,4 +1,4 @@
-use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
+use super::{wake_join_handle, Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
 use crate::multi_thread::FUTURE_POOL;
 
 use std::{sync::Arc, thread};
@@ -42,7 +42,7 @@ impl WorkStealingScheduler {
         let spawner = Spawner::new(tx);
         let wait_group = WaitGroup::new();
         for _idx in 0..size {
-            let worker = Worker::new_fifo();
+            let worker = Worker::new_lifo();
             _stealers.push(worker.stealer());
             let ic = Arc::clone(&injector);
             let sc = Arc::clone(&stealers_arc);
@@ -168,11 +168,14 @@ impl TaskRunner {
     fn process_future(index: FutureIndex, tx: &Sender<FutureIndex>) {
         if let Some(boxed) = FUTURE_POOL.get(index.key) {
             let finished = boxed.run(&index, tx.clone());
-            if finished && !FUTURE_POOL.clear(index.key) {
-                log::error!(
-                    "Failed to remove completed future with index = {} from pool.",
-                    index.key
-                );
+            if finished {
+                wake_join_handle(index.key);
+                if !FUTURE_POOL.clear(index.key) {
+                    log::error!(
+                        "Failed to remove completed future with index = {} from pool.",
+                        index.key
+                    );
+                }
             }
         } else {
             log::error!("Future with index = {} is not in pool.", index.key);

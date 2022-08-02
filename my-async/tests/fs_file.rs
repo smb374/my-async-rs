@@ -1,6 +1,6 @@
 // From tokio-rs/tokio/tokio/tests/fs_file.rs
 
-use assert_ok::assert_ok;
+use claim::assert_ok;
 use my_async::{
     fs::File,
     io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, SeekFrom},

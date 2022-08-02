@@ -9,6 +9,7 @@ categories = ["asynchronous"]
 edition = "2021"
 
 [dependencies]
+claim = "~0.5"
 crossbeam-deque = "~0.8"
 crossbeam-utils = "~0.8"
 flume = "~0.10"
@@ -25,7 +26,6 @@ sharded-slab = "~0.1"
 waker-fn = "~1.1"
 
 [dev-dependencies]
-assert_ok = "~1.0"
 bytes = "*"
 pin-project = "*"
 tempfile = "~3.3"

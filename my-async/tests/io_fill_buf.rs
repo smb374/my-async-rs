@@ -1,4 +1,4 @@
-use assert_ok::assert_ok;
+use claim::assert_ok;
 use my_async::fs::File;
 use my_async::io::{AsyncBufReadExt, BufReader};
 use my_async::multi_thread::Executor;

@@ -1,6 +1,6 @@
 use std::io::Result;
 
-use assert_ok::assert_ok;
+use claim::assert_ok;
 use futures_lite::future::try_zip;
 use my_async::{
     io::{self, AsyncReadExt, AsyncWriteExt},
@@ -11,7 +11,7 @@ use my_async::{
 
 async fn split() -> Result<()> {
     const MSG: &[u8] = b"split";
-    let mut listener = TcpListener::bind("127.0.0.1:0")?;
+    let listener = TcpListener::bind("127.0.0.1:0")?;
     let addr = listener.as_ref().local_addr()?;
 
     let a = async move {

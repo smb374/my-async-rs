@@ -100,8 +100,8 @@ where
     }
 }
 
-pub(crate) fn add_waker(token: &Token, waker: Waker) -> Option<Token> {
-    let waker_found = process_waker(token.0, |guard| {
+pub(crate) fn add_waker(token: usize, waker: Waker) -> Option<usize> {
+    let waker_found = process_waker(token, |guard| {
         if let Some(w) = guard.replace(waker.clone()) {
             w.wake_by_ref();
         }
@@ -109,7 +109,7 @@ pub(crate) fn add_waker(token: &Token, waker: Waker) -> Option<Token> {
     if waker_found {
         None
     } else {
-        WAKER_SLAB.insert(Mutex::new(Some(waker))).map(Token)
+        WAKER_SLAB.insert(Mutex::new(Some(waker)))
     }
 }
 

@@ -201,6 +201,12 @@ impl Drop for Executor {
     }
 }
 
+impl Default for Executor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Spawner {
     fn spawn<F>(&self, future: F)
     where

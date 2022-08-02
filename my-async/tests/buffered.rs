@@ -1,6 +1,6 @@
 // From tokio-rs/tokio/tokio/tests/buffered.rs
 
-use assert_ok::assert_ok;
+use claim::assert_ok;
 use my_async::{multi_thread::Executor, net::TcpListener, schedulers::hybrid::HybridScheduler};
 
 use std::{io::prelude::*, net::TcpStream, thread};
@@ -8,7 +8,7 @@ use std::{io::prelude::*, net::TcpStream, thread};
 async fn echo_server() {
     const N: usize = 1024;
 
-    let mut srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
+    let srv = assert_ok!(TcpListener::bind("127.0.0.1:0"));
     let addr = assert_ok!(srv.as_ref().local_addr());
 
     let msg = "foo bar baz";

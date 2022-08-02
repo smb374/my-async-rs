@@ -2,7 +2,7 @@ use std::io::Result;
 use std::io::{Read, Write};
 use std::{net, thread};
 
-use assert_ok::assert_ok;
+use claim::assert_ok;
 use my_async::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     multi_thread::Executor,
