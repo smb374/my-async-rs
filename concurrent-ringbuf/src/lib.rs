@@ -26,24 +26,15 @@ impl<T> Steal<T> {
     }
 
     pub fn is_success(&self) -> bool {
-        match self {
-            &Steal::Success(_) => true,
-            _ => false,
-        }
+        matches!(self, &Steal::Success(_))
     }
 
     pub fn is_retry(&self) -> bool {
-        match self {
-            &Steal::Retry => true,
-            _ => false,
-        }
+        matches!(self, &Steal::Retry)
     }
 
     pub fn is_empty(&self) -> bool {
-        match self {
-            &Steal::Empty => true,
-            _ => false,
-        }
+        matches!(self, &Steal::Empty)
     }
 }
 struct Buffer<T> {
@@ -131,7 +122,6 @@ impl<T> Drop for Inner<T> {
 
 impl<T> Ringbuf<T> {
     pub fn new(cap: usize) -> Self {
-        assert!(cap <= usize::MAX, "Size too big");
         let capacity = if cap < usize::MAX && !cap.is_power_of_two() {
             cap.next_power_of_two()
         } else {
