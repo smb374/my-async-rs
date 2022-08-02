@@ -1,4 +1,5 @@
 use std::{
+    cell::UnsafeCell,
     marker::PhantomData,
     mem::{self, MaybeUninit},
     ptr,
@@ -92,9 +93,10 @@ unsafe impl<T> Sync for Inner<T> {}
 // omits some checks on push/pop
 pub struct Ringbuf<T> {
     inner: Arc<CachePadded<Inner<T>>>,
-    _marker: PhantomData<*mut ()>,
+    _marker: PhantomData<UnsafeCell<()>>,
 }
 
+#[derive(Clone)]
 pub struct Stealer<T> {
     inner: Arc<CachePadded<Inner<T>>>,
 }

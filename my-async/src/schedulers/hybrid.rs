@@ -1,24 +1,13 @@
 use super::{wake_join_handle, Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
-use crate::multi_thread::FUTURE_POOL;
+use crate::{multi_thread::FUTURE_POOL, schedulers::reschedule};
 
-#[allow(unused_imports)]
-use std::{
-    hash::BuildHasherDefault,
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    thread,
-};
+use std::{hash::BuildHasherDefault, sync::Arc, thread};
 
-use crossbeam_deque::{Injector, Steal, Stealer, Worker};
+use concurrent_ringbuf::{Ringbuf, Stealer};
 use crossbeam_utils::sync::WaitGroup;
 use flume::{Receiver, Selector, Sender, TryRecvError};
-// use once_cell::sync::OnceCell;
 use priority_queue::priority_queue::PriorityQueue;
 use rustc_hash::FxHasher;
-
-// static TRANS_STATUS: OnceCell<Vec<AtomicBool>> = OnceCell::new();
 
 #[derive(Clone)]
 enum Message {
@@ -27,16 +16,17 @@ enum Message {
 }
 
 struct TaskQueue {
-    cold: Worker<FutureIndex>,
+    cold: Ringbuf<FutureIndex>,
     hot: PriorityQueue<FutureIndex, usize, BuildHasherDefault<FxHasher>>,
 }
 
 // A prioritized work stealing scheduler with a hybrid task queue.
 pub struct HybridScheduler {
     wait_group: WaitGroup,
-    injector: Arc<Injector<FutureIndex>>,
     _stealers: Vec<Stealer<FutureIndex>>,
+    handles: Vec<thread::JoinHandle<()>>,
     // channels
+    inject_sender: Sender<FutureIndex>,
     schedule_message_receiver: Receiver<ScheduleMessage>,
     notifier: Broadcast<Message>,
 }
@@ -44,9 +34,9 @@ pub struct HybridScheduler {
 struct TaskRunner {
     idx: usize,
     queue: TaskQueue,
-    injector: Arc<Injector<FutureIndex>>,
     stealers: Arc<[Stealer<FutureIndex>]>,
     // channels
+    inject_receiver: Receiver<FutureIndex>,
     task_wakeup_sender: Sender<FutureIndex>,
     task_wakeup_receiver: Receiver<FutureIndex>,
     notify_receiver: Receiver<Message>,
@@ -55,37 +45,31 @@ struct TaskRunner {
 impl HybridScheduler {
     pub fn new(size: usize) -> (Spawner, Self) {
         let (schedule_message_sender, schedule_message_receiver) = flume::unbounded();
-        let injector: Arc<Injector<FutureIndex>> = Arc::new(Injector::new());
+        let (inject_sender, inject_receiver) = flume::unbounded();
         let mut _stealers = Vec::with_capacity(size);
+        let mut handles = Vec::with_capacity(size);
         let stealers_arc: Arc<[Stealer<FutureIndex>]> = Arc::from(_stealers.as_slice());
-        // TRANS_STATUS.get_or_init(|| {
-        //     let mut trans = Vec::new();
-        //     for _ in 0..size {
-        //         trans.push(AtomicBool::new(false));
-        //     }
-        //     trans
-        // });
         let mut notifier = Broadcast::new();
         let wait_group = WaitGroup::new();
         for idx in 0..size {
-            let worker = Worker::new_lifo();
+            let rb = Ringbuf::new(4096);
             let wg = wait_group.clone();
             let notify_receiver = notifier.subscribe();
-            _stealers.push(worker.stealer());
-            let ic = Arc::clone(&injector);
+            _stealers.push(rb.stealer());
+            let ic = inject_receiver.clone();
             let sc = Arc::clone(&stealers_arc);
-            thread::Builder::new()
+            let handle = thread::Builder::new()
                 .name(format!("hybrid_worker_{}", idx))
                 .spawn(move || {
                     let (task_wakeup_sender, task_wakeup_receiver) = flume::unbounded();
                     let mut runner = TaskRunner {
                         idx,
                         queue: TaskQueue {
-                            cold: worker,
+                            cold: rb,
                             hot: PriorityQueue::with_capacity_and_default_hasher(65536),
                         },
-                        injector: ic,
                         stealers: sc,
+                        inject_receiver: ic,
                         task_wakeup_sender,
                         task_wakeup_receiver,
                         notify_receiver,
@@ -95,12 +79,14 @@ impl HybridScheduler {
                     drop(wg);
                 })
                 .expect("Failed to spawn worker");
+            handles.push(handle);
         }
         let spawner = Spawner::new(schedule_message_sender);
         let scheduler = Self {
             wait_group,
-            injector,
             _stealers,
+            handles,
+            inject_sender,
             schedule_message_receiver,
             notifier,
         };
@@ -113,13 +99,13 @@ impl Scheduler for HybridScheduler {
         Self::new(size)
     }
     fn schedule(&mut self, index: FutureIndex) {
-        self.injector.push(index);
+        self.inject_sender.send(index).unwrap();
         self.notifier
             .broadcast(Message::HaveTasks)
             .expect("Failed to send message");
     }
     fn reschedule(&mut self, index: FutureIndex) {
-        self.injector.push(index);
+        self.inject_sender.send(index).unwrap();
         self.notifier
             .broadcast(Message::HaveTasks)
             .expect("Failed to send message");
@@ -130,6 +116,7 @@ impl Scheduler for HybridScheduler {
             .expect("Faild to send shutdown notify");
         log::debug!("Waiting runners to shutdown...");
         self.wait_group.wait();
+        self.handles.into_iter().for_each(|h| h.join().unwrap());
         log::debug!("Shutdown complete.");
     }
     fn receiver(&self) -> &Receiver<ScheduleMessage> {
@@ -147,10 +134,6 @@ impl TaskRunner {
                 // Step 1. cold -> hot
                 log::debug!("Cold to hot");
                 let mut push = false;
-                // ensure that nothing is stolen from cold queue when we transfer indexes to hot queue.
-                // TRANS_STATUS.get().unwrap()[self.idx]
-                //     .compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed)
-                //     .expect("Failed to exchange!");
                 if !self.queue.cold.is_empty() {
                     push = true;
                     // cold -> hot
@@ -158,9 +141,6 @@ impl TaskRunner {
                         self.queue.hot.push(index, index.sleep_count);
                     }
                 }
-                // TRANS_STATUS.get().unwrap()[self.idx]
-                //     .compare_exchange(true, false, Ordering::Relaxed, Ordering::Relaxed)
-                //     .expect("Failed to exchange!");
                 if push {
                     continue;
                 }
@@ -170,7 +150,9 @@ impl TaskRunner {
                 loop {
                     match self.task_wakeup_receiver.try_recv() {
                         Ok(index) => {
-                            self.queue.cold.push(index);
+                            if let Err(index) = self.queue.cold.push(index) {
+                                reschedule(index);
+                            }
                             recv_count += 1;
                         }
                         Err(TryRecvError::Empty) => break,
@@ -183,12 +165,16 @@ impl TaskRunner {
                 }
                 // Step 3. steal
                 log::debug!("Try stealing tasks from other runners...");
-                if let Some(index) = self.injector.steal().success() {
-                    self.queue.cold.push(index);
+                if let Ok(index) = self.inject_receiver.try_recv() {
+                    if let Err(index) = self.queue.cold.push(index) {
+                        reschedule(index);
+                    }
                     continue;
                 }
                 if let Some(index) = self.steal_task() {
-                    self.queue.cold.push(index);
+                    if let Err(index) = self.queue.cold.push(index) {
+                        reschedule(index);
+                    }
                     continue;
                 }
                 // Step 4. wait
@@ -196,15 +182,19 @@ impl TaskRunner {
                 let exit_loop = Selector::new()
                     .recv(&self.task_wakeup_receiver, |result| match result {
                         Ok(index) => {
-                            self.queue.cold.push(index);
+                            if let Err(index) = self.queue.cold.push(index) {
+                                reschedule(index);
+                            }
                             false
                         }
                         Err(_) => true,
                     })
                     .recv(&self.notify_receiver, |result| match result {
                         Ok(Message::HaveTasks) => {
-                            if let Some(index) = self.injector.steal().success() {
-                                self.queue.cold.push(index);
+                            if let Ok(index) = self.inject_receiver.try_recv() {
+                                if let Err(index) = self.queue.cold.push(index) {
+                                    reschedule(index);
+                                }
                             }
                             false
                         }
@@ -237,10 +227,9 @@ impl TaskRunner {
 
     fn steal_task(&self) -> Option<FutureIndex> {
         for (i, s) in self.stealers.iter().enumerate() {
-            // let trans = &TRANS_STATUS.get().unwrap()[self.idx];
             if i == self.idx {
                 continue;
-            } else if let Steal::Success(index) = s.steal() {
+            } else if let Some(index) = s.steal().success() {
                 return Some(index);
             }
         }

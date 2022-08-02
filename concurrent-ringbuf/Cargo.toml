@@ -1,6 +1,8 @@
 [package]
 name = "concurrent-ringbuf"
 version = "0.1.0"
+authors = ["Po-Yeh Chen <smb374.cs08@nctu.edu.tw>"]
+license = "MIT"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

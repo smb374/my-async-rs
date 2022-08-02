@@ -24,6 +24,7 @@ rustc-hash = "~1.1"
 rustix = { version = "~0.35", features = ["fs"] }
 sharded-slab = "~0.1"
 waker-fn = "~1.1"
+concurrent-ringbuf = {path = "../concurrent-ringbuf"}
 
 [dev-dependencies]
 bytes = "*"

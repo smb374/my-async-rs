@@ -1,26 +1,29 @@
 use super::{wake_join_handle, Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
-use crate::multi_thread::FUTURE_POOL;
+use crate::{multi_thread::FUTURE_POOL, schedulers::reschedule};
 
 use std::{sync::Arc, thread};
 
-use crossbeam_deque::{Injector, Stealer, Worker};
+use concurrent_ringbuf::{Ringbuf, Stealer};
 use crossbeam_utils::sync::WaitGroup;
 use flume::{Receiver, Selector, Sender, TryRecvError};
 
 pub struct WorkStealingScheduler {
     _size: usize,
-    injector: Arc<Injector<FutureIndex>>,
     _stealers: Vec<Stealer<FutureIndex>>,
     wait_group: WaitGroup,
+    handles: Vec<thread::JoinHandle<()>>,
+    // channels
+    inject_sender: Sender<FutureIndex>,
     notifier: Broadcast<Message>,
     rx: Receiver<ScheduleMessage>,
 }
 
 struct TaskRunner {
     _idx: usize,
-    worker: Worker<FutureIndex>,
-    injector: Arc<Injector<FutureIndex>>,
+    worker: Ringbuf<FutureIndex>,
     stealers: Arc<[Stealer<FutureIndex>]>,
+    // channels
+    inject_receiver: Receiver<FutureIndex>,
     rx: Receiver<Message>,
     task_tx: Sender<FutureIndex>,
     task_rx: Receiver<FutureIndex>,
@@ -34,29 +37,30 @@ enum Message {
 
 impl WorkStealingScheduler {
     fn new(size: usize) -> (Spawner, Self) {
-        let injector: Arc<Injector<FutureIndex>> = Arc::new(Injector::new());
         let mut _stealers: Vec<Stealer<FutureIndex>> = Vec::new();
         let stealers_arc: Arc<[Stealer<FutureIndex>]> = Arc::from(_stealers.as_slice());
+        let (inject_sender, inject_receiver) = flume::unbounded();
+        let mut handles = Vec::with_capacity(size);
         let (tx, rx) = flume::unbounded();
         let mut notifier = Broadcast::new();
         let spawner = Spawner::new(tx);
         let wait_group = WaitGroup::new();
         for _idx in 0..size {
-            let worker = Worker::new_lifo();
+            let worker = Ringbuf::new(4096);
             _stealers.push(worker.stealer());
-            let ic = Arc::clone(&injector);
+            let ic = inject_receiver.clone();
             let sc = Arc::clone(&stealers_arc);
             let wg = wait_group.clone();
             let rc = notifier.subscribe();
-            thread::Builder::new()
+            let handle = thread::Builder::new()
                 .name(format!("work_stealing_worker_{}", _idx))
                 .spawn(move || {
                     let (task_tx, task_rx) = flume::unbounded();
                     let runner = TaskRunner {
                         _idx,
                         worker,
-                        injector: ic,
                         stealers: sc,
+                        inject_receiver: ic,
                         rx: rc,
                         task_tx,
                         task_rx,
@@ -66,12 +70,14 @@ impl WorkStealingScheduler {
                     drop(wg);
                 })
                 .expect("Failed to spawn worker");
+            handles.push(handle);
         }
         let scheduler = Self {
             _size: size,
-            injector,
             _stealers,
             wait_group,
+            handles,
+            inject_sender,
             notifier,
             rx,
         };
@@ -84,13 +90,17 @@ impl Scheduler for WorkStealingScheduler {
         Self::new(size)
     }
     fn schedule(&mut self, index: FutureIndex) {
-        self.injector.push(index);
+        self.inject_sender
+            .send(index)
+            .expect("Failed to send message");
         self.notifier
             .broadcast(Message::HaveTasks)
             .expect("Failed to send message");
     }
     fn reschedule(&mut self, index: FutureIndex) {
-        self.injector.push(index);
+        self.inject_sender
+            .send(index)
+            .expect("Failed to send message");
         self.notifier
             .broadcast(Message::HaveTasks)
             .expect("Failed to send message");
@@ -101,6 +111,7 @@ impl Scheduler for WorkStealingScheduler {
             .expect("Failed to send message");
         log::debug!("Waiting runners to shutdown...");
         self.wait_group.wait();
+        self.handles.into_iter().for_each(|h| h.join().unwrap());
         log::debug!("Shutdown complete.");
     }
     fn receiver(&self) -> &Receiver<ScheduleMessage> {
@@ -124,7 +135,9 @@ impl TaskRunner {
                     match self.task_rx.try_recv() {
                         Ok(index) => {
                             wakeup_count += 1;
-                            self.worker.push(index);
+                            if let Err(index) = self.worker.push(index) {
+                                reschedule(index);
+                            }
                         }
                         Err(TryRecvError::Empty) => break,
                         Err(TryRecvError::Disconnected) => break 'outer,
@@ -135,12 +148,16 @@ impl TaskRunner {
                 }
                 // If we are starving, start stealing.
                 log::debug!("Try stealing tasks from other runners...");
-                if let Some(index) = self.steal_injector() {
-                    self.worker.push(index);
+                if let Ok(index) = self.inject_receiver.try_recv() {
+                    if let Err(index) = self.worker.push(index) {
+                        reschedule(index);
+                    }
                     continue;
                 }
                 if let Some(index) = self.steal_others() {
-                    self.worker.push(index);
+                    if let Err(index) = self.worker.push(index) {
+                        reschedule(index);
+                    }
                     continue;
                 }
                 // Finally, wait for a single wakeup task or broadcast signal from scheduler
@@ -148,7 +165,9 @@ impl TaskRunner {
                 let exit_loop = Selector::new()
                     .recv(&self.task_rx, |result| match result {
                         Ok(index) => {
-                            self.worker.push(index);
+                            if let Err(index) = self.worker.push(index) {
+                                reschedule(index);
+                            }
                             false
                         }
                         Err(_) => true,
@@ -182,10 +201,6 @@ impl TaskRunner {
         }
     }
 
-    fn steal_injector(&self) -> Option<FutureIndex> {
-        // will generate *ONE* task at a time
-        self.injector.steal().success()
-    }
     fn steal_others(&self) -> Option<FutureIndex> {
         self.stealers
             .iter()

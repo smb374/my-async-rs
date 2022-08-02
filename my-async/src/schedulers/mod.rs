@@ -95,6 +95,11 @@ impl Spawner {
             }))
             .expect("Failed to send message");
     }
+    fn reschedule(&self, index: FutureIndex) {
+        self.tx
+            .send(ScheduleMessage::Reschedule(index))
+            .expect("Failed to send message");
+    }
     pub fn spawn_with_handle<F>(&self, future: F, is_block: bool) -> JoinHandle<F::Output>
     where
         F: Future + Send + 'static,
@@ -155,6 +160,11 @@ where
 {
     let spawner = SPAWNER.get().unwrap();
     spawner.spawn_with_handle(future, is_block)
+}
+
+pub(crate) fn reschedule(index: FutureIndex) {
+    let spawner = SPAWNER.get().unwrap();
+    spawner.reschedule(index);
 }
 
 pub fn shutdown() {
