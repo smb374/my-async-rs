@@ -20,7 +20,7 @@ async fn connect_v4() {
     });
 
     let mine = assert_ok!(TcpStream::connect(&addr));
-    let theirs = assert_ok!(rx.recv_async().await);
+    let theirs = assert_ok!(rx.recv());
 
     assert_eq!(
         assert_ok!(mine.as_ref().local_addr()),
@@ -48,7 +48,7 @@ async fn connect_v6() {
     });
 
     let mine = assert_ok!(TcpStream::connect(&addr));
-    let theirs = assert_ok!(rx.recv_async().await);
+    let theirs = assert_ok!(rx.recv());
 
     assert_eq!(
         assert_ok!(mine.as_ref().local_addr()),

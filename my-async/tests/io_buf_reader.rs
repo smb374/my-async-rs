@@ -7,23 +7,28 @@ use my_async::io::{
 };
 use my_async::multi_thread::Executor;
 use my_async::schedulers::hybrid::HybridScheduler;
-use pin_project::pin_project;
+use pin_project_lite::pin_project;
 use std::cmp;
 use std::io;
+use std::marker::PhantomPinned;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
 // https://github.com/rust-lang/futures-rs/pull/2489#discussion_r697865719
-#[pin_project(!Unpin)]
-struct Cursor<T> {
-    #[pin]
-    inner: futures_lite::io::Cursor<T>,
+pin_project! {
+    struct Cursor<T> {
+        #[pin]
+        inner: futures_lite::io::Cursor<T>,
+        #[pin]
+        _marker: PhantomPinned,
+    }
 }
 
 impl<T> Cursor<T> {
     fn new(inner: T) -> Self {
         Self {
             inner: futures_lite::io::Cursor::new(inner),
+            _marker: PhantomPinned,
         }
     }
 }

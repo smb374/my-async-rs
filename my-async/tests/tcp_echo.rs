@@ -37,7 +37,7 @@ async fn echo_server() {
     let n = assert_ok!(io::copy(&mut rd, &mut wr).await);
     assert_eq!(n, (ITER * msg.len()) as u64);
 
-    assert_ok!(rx.recv_async().await);
+    assert_ok!(rx.recv());
 }
 
 #[test]
