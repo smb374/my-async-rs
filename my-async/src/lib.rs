@@ -17,39 +17,39 @@ use std::{
 };
 
 use futures_lite::{future::poll_fn, AsyncRead};
-use mio::{event::Source, unix::SourceFd, Registry, Token};
+use polling::Event;
 use rustix::{
     fd::{AsFd, AsRawFd, BorrowedFd, RawFd},
     fs::{fcntl_getfl, fcntl_setfl, OFlags},
 };
 
-pub use mio::Interest;
 pub use modules::{fs, io, net, stream};
 
 pub struct IoWrapper<T: AsFd> {
     inner: T,
-    token: AtomicUsize,
+    key: AtomicUsize,
 }
 
 impl<T: AsFd> IoWrapper<T> {
-    pub fn register_reactor(&self, interests: Interest, cx: &mut Context<'_>) -> io::Result<()> {
+    pub fn register_reactor(&self, interest: Event, cx: &mut Context<'_>) -> io::Result<()> {
         let waker = cx.waker().clone();
-        let fd = self.as_raw_fd();
-        let mut source = SourceFd(&fd);
-        let current = self.token.load(Ordering::Relaxed);
-        if let Some(token) = reactor::add_waker(current, waker) {
-            self.token.store(token, Ordering::Relaxed);
-            reactor::register(&mut source, Token(token), interests, false)?;
+        let current = interest.key;
+        if let Some(key) = reactor::add_waker(current, waker) {
+            self.key.store(key, Ordering::Relaxed);
+            let new_interest = Event {
+                key,
+                readable: interest.readable,
+                writable: interest.writable,
+            };
+            reactor::register(self, new_interest, false)?;
         } else {
-            reactor::register(&mut source, Token(current), interests, true)?;
+            reactor::register(self, interest, true)?;
         }
         Ok(())
     }
     pub fn degister_reactor(&self) -> io::Result<()> {
-        let fd = self.as_raw_fd();
-        let mut source = SourceFd(&fd);
-        let current = self.token.load(Ordering::Relaxed);
-        reactor::deregister(&mut source, Token(current))?;
+        let current = self.key.load(Ordering::Relaxed);
+        reactor::deregister(self, current)?;
         Ok(())
     }
     pub fn inner(&self) -> &T {
@@ -65,7 +65,7 @@ impl<T: AsFd> From<T> for IoWrapper<T> {
         Self::set_nonblocking(&inner).expect("Failed to set nonblocking");
         Self {
             inner,
-            token: AtomicUsize::new(usize::MAX),
+            key: AtomicUsize::new(usize::MAX),
         }
     }
 }
@@ -85,14 +85,14 @@ impl<T: AsFd> IoWrapper<T> {
 
 #[allow(dead_code)]
 impl<T: AsFd + Unpin> IoWrapper<T> {
-    async fn ref_io<U, F>(&self, interest: Interest, mut f: F) -> io::Result<U>
+    async fn ref_io<U, F>(&self, interest: Event, mut f: F) -> io::Result<U>
     where
         F: FnMut(&Self) -> io::Result<U>,
     {
         poll_fn(|cx| self.poll_ref(cx, interest, &mut f)).await
     }
 
-    async fn mut_io<U, F>(&mut self, interest: Interest, mut f: F) -> io::Result<U>
+    async fn mut_io<U, F>(&mut self, interest: Event, mut f: F) -> io::Result<U>
     where
         F: FnMut(&mut Self) -> io::Result<U>,
     {
@@ -102,7 +102,7 @@ impl<T: AsFd + Unpin> IoWrapper<T> {
     fn poll_pinned<U, F>(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        interest: Interest,
+        interest: Event,
         mut f: F,
     ) -> Poll<io::Result<U>>
     where
@@ -122,12 +122,7 @@ impl<T: AsFd + Unpin> IoWrapper<T> {
         }
     }
 
-    fn poll_ref<U, F>(
-        &self,
-        cx: &mut Context<'_>,
-        interest: Interest,
-        mut f: F,
-    ) -> Poll<io::Result<U>>
+    fn poll_ref<U, F>(&self, cx: &mut Context<'_>, interest: Event, mut f: F) -> Poll<io::Result<U>>
     where
         F: FnMut(&Self) -> io::Result<U>,
     {
@@ -147,7 +142,7 @@ impl<T: AsFd + Unpin> IoWrapper<T> {
     fn poll_mut<U, F>(
         &mut self,
         cx: &mut Context<'_>,
-        interest: Interest,
+        interest: Event,
         mut f: F,
     ) -> Poll<io::Result<U>>
     where
@@ -191,37 +186,22 @@ impl<T: AsFd> AsRawFd for IoWrapper<T> {
     }
 }
 
-impl<T: AsFd> Source for IoWrapper<T> {
-    fn register(
-        &mut self,
-        registry: &Registry,
-        token: Token,
-        interests: Interest,
-    ) -> io::Result<()> {
-        SourceFd(&self.as_raw_fd()).register(registry, token, interests)
-    }
-
-    fn reregister(
-        &mut self,
-        registry: &Registry,
-        token: Token,
-        interests: Interest,
-    ) -> io::Result<()> {
-        SourceFd(&self.as_raw_fd()).reregister(registry, token, interests)
-    }
-
-    fn deregister(&mut self, registry: &Registry) -> io::Result<()> {
-        SourceFd(&self.as_raw_fd()).deregister(registry)
-    }
-}
-
 impl<T: AsFd + Read + Unpin> AsyncRead for IoWrapper<T> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        self.poll_pinned(cx, Interest::READABLE, |x| x.inner.read(buf))
+        let key = self.key.load(Ordering::Relaxed);
+        self.poll_pinned(
+            cx,
+            Event {
+                key,
+                readable: true,
+                writable: false,
+            },
+            |x| x.inner.read(buf),
+        )
     }
 }
 
@@ -233,10 +213,30 @@ macro_rules! impl_common_write {
             cx: &mut Context<'_>,
             buf: &[u8],
         ) -> Poll<io::Result<usize>> {
-            self.poll_pinned(cx, Interest::WRITABLE, |x| x.inner.write(buf))
+            use polling::Event;
+            use std::sync::atomic::Ordering;
+            let key = self.key.load(Ordering::Relaxed);
+            self.poll_pinned(
+                cx,
+                Event {
+                    key,
+                    readable: false,
+                    writable: true,
+                },
+                |x| x.inner.write(buf),
+            )
         }
         fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            self.poll_pinned(cx, Interest::WRITABLE, |x| x.inner.flush())
+            let key = self.key.load(Ordering::Relaxed);
+            self.poll_pinned(
+                cx,
+                Event {
+                    key,
+                    readable: false,
+                    writable: true,
+                },
+                |x| x.inner.flush(),
+            )
         }
     };
 }

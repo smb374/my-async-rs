@@ -118,7 +118,7 @@ impl Executor {
 
     fn run(&mut self) {
         let mut reactor = reactor::Reactor::default();
-        reactor.setup_registry();
+        // reactor.setup_registry();
         'outer: loop {
             if let Some(index) = self.queue.pop_back() {
                 if let Some(boxed) = FUTURE_POOL.get(index.key) {

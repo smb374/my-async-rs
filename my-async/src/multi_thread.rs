@@ -1,6 +1,6 @@
 use crate::schedulers;
 
-use super::reactor::{self, POLL_WAKER};
+use super::reactor;
 use super::schedulers::{ScheduleMessage, Scheduler};
 
 use std::{
@@ -14,7 +14,7 @@ use std::{
 use std::{panic, process};
 
 use claim::assert_some;
-use flume::Sender;
+use flume::{Receiver, Sender, TryRecvError};
 use futures_lite::future::Boxed;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
@@ -94,6 +94,7 @@ pub static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
 
 pub struct Executor<S: Scheduler> {
     scheduler: S,
+    poll_thread_notify_sender: Sender<()>,
     poll_thread_handle: JoinHandle<()>,
 }
 
@@ -112,12 +113,13 @@ impl<S: Scheduler> Executor<S> {
         );
         let size = cpus;
         let (spawner, scheduler) = S::init(size);
+        let (tx, rx) = flume::bounded(1);
         log::debug!("Scheduler initialized");
         // set up spawner
         schedulers::init_spawner(spawner);
         let poll_thread_handle = thread::Builder::new()
             .name("poll_thread".to_string())
-            .spawn(move || Self::poll_thread())
+            .spawn(move || Self::poll_thread(rx))
             .expect("Failed to spawn poll_thread.");
         log::debug!("Spawned poll_thread");
         // set panic hook
@@ -132,18 +134,21 @@ impl<S: Scheduler> Executor<S> {
         log::info!("Runtime startup complete.");
         Self {
             scheduler,
+            poll_thread_notify_sender: tx,
             poll_thread_handle,
         }
     }
-    fn poll_thread() {
+    fn poll_thread(poll_thread_notify_receiver: Receiver<()>) {
         let mut reactor = reactor::Reactor::default();
-        reactor.setup_registry();
         loop {
+            match poll_thread_notify_receiver.try_recv() {
+                Err(TryRecvError::Empty) => {}
+                _ => break,
+            }
             // check if wakeups that is not used immediately is needed now.
             reactor.check_extra_wakeups();
             match reactor.wait(Some(Duration::from_millis(100))) {
-                Ok(true) => break,
-                Ok(false) => continue,
+                Ok(()) => continue,
                 Err(ref e) if e.kind() == io::ErrorKind::Interrupted => continue,
                 Err(e) => {
                     log::error!("reactor wait error: {}, exit poll thread", e);
@@ -171,19 +176,10 @@ impl<S: Scheduler> Executor<S> {
         log::info!("Execution completed, shutting down...");
         // shutdown worker threads
         self.scheduler.shutdown();
-        match POLL_WAKER.get() {
-            Some(waker) => {
-                if let Err(e) = waker.wake() {
-                    log::error!("Failed to wake poll_thread: {}", e);
-                } else {
-                    self.poll_thread_handle
-                        .join()
-                        .expect("Failed to join poll thread");
-                    log::debug!("poll thread shutdown completed.");
-                }
-            }
-            None => log::error!("POLL_WAKER not set when trying to join poll thread!"),
-        }
+        self.poll_thread_notify_sender.send(()).unwrap();
+        self.poll_thread_handle
+            .join()
+            .expect("Failed to join poll thread.");
         log::info!("Runtime shutdown complete.")
     }
     pub fn block_on<F>(self, future: F) -> F::Output

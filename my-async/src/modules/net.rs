@@ -1,14 +1,16 @@
-use crate::{impl_common_write, Interest, IoWrapper};
+use crate::{impl_common_write, IoWrapper};
 
 use std::{
     io::{self, Write},
     net::{SocketAddr, ToSocketAddrs},
     path::Path,
     pin::Pin,
+    sync::atomic::Ordering,
     task::{Context, Poll},
 };
 
 use futures_lite::{io::AsyncWrite, Stream};
+use polling::Event;
 
 // Net Socket
 pub type TcpStream = IoWrapper<std::net::TcpStream>;
@@ -34,8 +36,13 @@ impl TcpStream {
         Ok(IoWrapper::from(stdstream))
     }
     pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
-        self.ref_io(Interest::READABLE, |me| me.inner().peek(buf))
-            .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: false,
+        };
+        self.ref_io(interest, |me| me.inner().peek(buf)).await
     }
 }
 
@@ -55,7 +62,13 @@ impl TcpListener {
         Ok(IoWrapper::from(inner))
     }
     pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
-        self.ref_io(Interest::READABLE, |me| me.inner().accept())
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: false,
+        };
+        self.ref_io(interest, |me| me.inner().accept())
             .await
             .map(|(s, a)| (IoWrapper::from(s), a))
     }
@@ -68,35 +81,63 @@ impl UdpSocket {
     }
 
     pub async fn connect<A: ToSocketAddrs + Unpin>(&self, addr: A) -> io::Result<()> {
-        self.ref_io(Interest::READABLE | Interest::WRITABLE, |me| {
-            me.inner().connect(&addr)
-        })
-        .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: true,
+        };
+        self.ref_io(interest, |me| me.inner().connect(&addr)).await
     }
 
     pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
-        self.ref_io(Interest::READABLE, |me| me.inner().peek(buf))
-            .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: false,
+        };
+        self.ref_io(interest, |me| me.inner().peek(buf)).await
     }
 
     pub async fn peek_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
-        self.ref_io(Interest::READABLE, |me| me.inner().peek_from(buf))
-            .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: false,
+        };
+        self.ref_io(interest, |me| me.inner().peek_from(buf)).await
     }
 
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
-        self.ref_io(Interest::READABLE, |me| me.inner().recv(buf))
-            .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: false,
+        };
+        self.ref_io(interest, |me| me.inner().recv(buf)).await
     }
 
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
-        self.ref_io(Interest::READABLE, |me| me.inner().recv_from(buf))
-            .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: false,
+        };
+        self.ref_io(interest, |me| me.inner().recv_from(buf)).await
     }
 
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
-        self.ref_io(Interest::WRITABLE, |me| me.inner().send(buf))
-            .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: false,
+            writable: true,
+        };
+        self.ref_io(interest, |me| me.inner().send(buf)).await
     }
 
     pub async fn send_to<A: ToSocketAddrs + Unpin>(
@@ -104,7 +145,13 @@ impl UdpSocket {
         buf: &[u8],
         addr: A,
     ) -> io::Result<usize> {
-        self.ref_io(Interest::WRITABLE, |me| me.inner().send_to(buf, &addr))
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: false,
+            writable: true,
+        };
+        self.ref_io(interest, |me| me.inner().send_to(buf, &addr))
             .await
     }
 }
@@ -120,7 +167,13 @@ impl<'a> Stream for TcpIncoming<'a> {
             }
             Err(e) => match e.kind() {
                 io::ErrorKind::WouldBlock => {
-                    me.listener.register_reactor(Interest::READABLE, cx)?;
+                    let key = me.listener.key.load(Ordering::Relaxed);
+                    let interest = Event {
+                        key,
+                        readable: true,
+                        writable: false,
+                    };
+                    me.listener.register_reactor(interest, cx)?;
                     Poll::Pending
                 }
                 io::ErrorKind::Interrupted => Pin::new(me).poll_next(cx),
@@ -142,7 +195,13 @@ impl UnixListener {
         Ok(IoWrapper::from(inner))
     }
     pub async fn accept(&self) -> io::Result<(UnixStream, std::os::unix::net::SocketAddr)> {
-        self.ref_io(Interest::READABLE, |me| me.inner().accept())
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: false,
+        };
+        self.ref_io(interest, |me| me.inner().accept())
             .await
             .map(|(s, a)| (IoWrapper::from(s), a))
     }
@@ -179,35 +238,58 @@ impl UnixDatagram {
     }
 
     pub async fn connect<P: AsRef<Path> + Unpin>(&self, path: P) -> io::Result<()> {
-        self.ref_io(Interest::READABLE | Interest::WRITABLE, |me| {
-            me.inner().connect(path.as_ref())
-        })
-        .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: true,
+        };
+        self.ref_io(interest, |me| me.inner().connect(path.as_ref()))
+            .await
     }
 
     pub async fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
-        self.ref_io(Interest::READABLE, |me| me.inner().recv(buf))
-            .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: false,
+        };
+        self.ref_io(interest, |me| me.inner().recv(buf)).await
     }
 
     pub async fn recv_from(
         &self,
         buf: &mut [u8],
     ) -> io::Result<(usize, std::os::unix::net::SocketAddr)> {
-        self.ref_io(Interest::READABLE, |me| me.inner().recv_from(buf))
-            .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: true,
+            writable: false,
+        };
+        self.ref_io(interest, |me| me.inner().recv_from(buf)).await
     }
 
     pub async fn send(&self, buf: &[u8]) -> io::Result<usize> {
-        self.ref_io(Interest::WRITABLE, |me| me.inner().send(buf))
-            .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: false,
+            writable: true,
+        };
+        self.ref_io(interest, |me| me.inner().send(buf)).await
     }
 
     pub async fn send_to<P: AsRef<Path> + Unpin>(&self, buf: &[u8], path: P) -> io::Result<usize> {
-        self.ref_io(Interest::WRITABLE, |me| {
-            me.inner().send_to(buf, path.as_ref())
-        })
-        .await
+        let key = self.key.load(Ordering::Relaxed);
+        let interest = Event {
+            key,
+            readable: false,
+            writable: true,
+        };
+        self.ref_io(interest, |me| me.inner().send_to(buf, path.as_ref()))
+            .await
     }
 }
 
@@ -222,7 +304,13 @@ impl<'a> Stream for UnixIncoming<'a> {
             }
             Err(e) => match e.kind() {
                 io::ErrorKind::WouldBlock => {
-                    me.listener.register_reactor(Interest::READABLE, cx)?;
+                    let key = me.listener.key.load(Ordering::Relaxed);
+                    let interest = Event {
+                        key,
+                        readable: true,
+                        writable: false,
+                    };
+                    me.listener.register_reactor(interest, cx)?;
                     Poll::Pending
                 }
                 io::ErrorKind::Interrupted => Pin::new(me).poll_next(cx),

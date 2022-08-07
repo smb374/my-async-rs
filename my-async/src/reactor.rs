@@ -1,42 +1,36 @@
 use std::{io, task::Waker, time::Duration};
 
-use mio::{event::Source, Events, Interest, Poll, Registry, Token};
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::Lazy;
 use parking_lot::{Mutex, MutexGuard};
+use polling::{Event, Poller};
+use rustix::fd::AsRawFd;
 use sharded_slab::Slab;
 
-static REGISTRY: OnceCell<Registry> = OnceCell::new();
+static POLLER: Lazy<Poller> = Lazy::new(|| Poller::new().unwrap());
 static WAKER_SLAB: Lazy<Slab<Mutex<Option<Waker>>>> = Lazy::new(Slab::new);
-static POLL_WAKE_TOKEN: Token = Token(usize::MAX);
-pub(super) static POLL_WAKER: OnceCell<mio::Waker> = OnceCell::new();
 
 pub struct Reactor {
-    poll: Poll,
-    events: Events,
+    events: Vec<Event>,
     extra_wakeups: Vec<usize>,
 }
 
 impl Reactor {
     pub fn new(capacity: usize) -> Self {
-        let poll = Poll::new().expect("Failed to setup Poll");
-        let events = Events::with_capacity(capacity);
-        let extra_wakeups = Vec::with_capacity(1024);
+        let events = Vec::with_capacity(capacity);
+        let extra_wakeups = Vec::with_capacity(capacity);
         Self {
-            poll,
             events,
             extra_wakeups,
         }
     }
 
-    pub fn wait(&mut self, timeout: Option<Duration>) -> io::Result<bool> {
-        self.poll.poll(&mut self.events, timeout)?;
+    pub fn wait(&mut self, timeout: Option<Duration>) -> io::Result<()> {
+        self.events.clear();
+        let n = POLLER.wait(&mut self.events, timeout)?;
         if !self.events.is_empty() {
             log::debug!("Start process events.");
-            for e in self.events.iter() {
-                if e.token() == POLL_WAKE_TOKEN {
-                    return Ok(true);
-                }
-                let idx = e.token().0;
+            for e in self.events[..n].iter() {
+                let idx = e.key;
                 let waker_processed = process_waker(idx, |guard| {
                     if let Some(w) = guard.take() {
                         w.wake_by_ref();
@@ -48,20 +42,7 @@ impl Reactor {
                 }
             }
         }
-        Ok(false)
-    }
-
-    pub fn setup_registry(&self) {
-        let registry = self
-            .poll
-            .registry()
-            .try_clone()
-            .expect("Failed to clone registry");
-        POLL_WAKER.get_or_init(|| match mio::Waker::new(&registry, POLL_WAKE_TOKEN) {
-            Ok(waker) => waker,
-            Err(e) => panic!("Failed to setup waker for poll: {}", e),
-        });
-        REGISTRY.get_or_init(move || registry);
+        Ok(())
     }
 
     pub fn check_extra_wakeups(&mut self) -> bool {
@@ -100,8 +81,8 @@ where
     }
 }
 
-pub(crate) fn add_waker(token: usize, waker: Waker) -> Option<usize> {
-    let waker_found = process_waker(token, |guard| {
+pub(crate) fn add_waker(key: usize, waker: Waker) -> Option<usize> {
+    let waker_found = process_waker(key, |guard| {
         if let Some(w) = guard.replace(waker.clone()) {
             w.wake_by_ref();
         }
@@ -113,39 +94,22 @@ pub(crate) fn add_waker(token: usize, waker: Waker) -> Option<usize> {
     }
 }
 
-pub(crate) fn remove_waker(token: Token) -> bool {
-    WAKER_SLAB.remove(token.0)
+pub(crate) fn remove_waker(key: usize) -> bool {
+    WAKER_SLAB.remove(key)
 }
 
-pub fn register<S>(
-    source: &mut S,
-    token: Token,
-    interests: Interest,
-    reregister: bool,
-) -> io::Result<()>
-where
-    S: Source + ?Sized,
-{
-    if let Some(registry) = REGISTRY.get() {
-        if reregister {
-            registry.reregister(source, token, interests)?;
-        } else {
-            registry.register(source, token, interests)?;
-        }
+pub fn register<T: AsRawFd>(source: &T, interest: Event, reregister: bool) -> io::Result<()> {
+    if reregister {
+        POLLER.modify(source, interest)?;
     } else {
-        log::error!("Registry hasn't initialized.")
+        POLLER.add(source, interest)?;
     }
     Ok(())
 }
 
-pub fn deregister<S>(source: &mut S, token: Token) -> io::Result<()>
-where
-    S: Source + ?Sized,
-{
-    remove_waker(token);
+pub(crate) fn deregister<T: AsRawFd>(source: &T, key: usize) -> io::Result<()> {
+    remove_waker(key);
     // TODO: find a way to deregister without throwing errors.
-    if let Some(registry) = REGISTRY.get() {
-        registry.deregister(source)?;
-    }
+    POLLER.delete(source)?;
     Ok(())
 }
