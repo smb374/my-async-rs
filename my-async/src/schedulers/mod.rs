@@ -46,7 +46,7 @@ pub trait Scheduler {
 }
 
 // TODO: check if there is a better way to broadcast message instead of this naive implementation.
-pub struct Broadcast<T> {
+pub(crate) struct Broadcast<T> {
     channels: Vec<Sender<T>>,
 }
 

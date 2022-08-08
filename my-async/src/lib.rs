@@ -10,13 +10,13 @@ pub mod schedulers;
 
 use std::{
     convert::{AsMut, AsRef},
-    io::Read,
+    io::{Read, Write},
     pin::Pin,
     sync::atomic::{AtomicUsize, Ordering},
     task::{Context, Poll},
 };
 
-use futures_lite::{future::poll_fn, AsyncRead};
+use futures_lite::{future::poll_fn, AsyncRead, AsyncWrite};
 use polling::Event;
 use rustix::{
     fd::{AsFd, AsRawFd, BorrowedFd, RawFd},
@@ -25,13 +25,29 @@ use rustix::{
 
 pub use modules::{fs, io, net, stream};
 
+pub enum IoType {
+    Read,
+    Write,
+    Both,
+}
+
 pub struct IoWrapper<T: AsFd> {
     inner: T,
     key: AtomicUsize,
 }
 
+impl IoType {
+    fn to_event(&self, key: usize) -> Event {
+        match *self {
+            IoType::Read => Event::readable(key),
+            IoType::Write => Event::writable(key),
+            IoType::Both => Event::all(key),
+        }
+    }
+}
+
 impl<T: AsFd> IoWrapper<T> {
-    pub fn register_reactor(&self, interest: Event, cx: &mut Context<'_>) -> io::Result<()> {
+    pub(crate) fn register_reactor(&self, interest: Event, cx: &mut Context<'_>) -> io::Result<()> {
         let waker = cx.waker().clone();
         let current = interest.key;
         if let Some(key) = reactor::add_waker(current, waker) {
@@ -47,7 +63,8 @@ impl<T: AsFd> IoWrapper<T> {
         }
         Ok(())
     }
-    pub fn degister_reactor(&self) -> io::Result<()> {
+    #[allow(dead_code)]
+    pub(crate) fn degister_reactor(&self) -> io::Result<()> {
         let current = self.key.load(Ordering::Relaxed);
         reactor::deregister(self, current)?;
         Ok(())
@@ -83,8 +100,23 @@ impl<T: AsFd> IoWrapper<T> {
     }
 }
 
-#[allow(dead_code)]
 impl<T: AsFd + Unpin> IoWrapper<T> {
+    pub async fn io_ref<U, F>(&self, io_type: IoType, mut f: F) -> io::Result<U>
+    where
+        F: FnMut(&Self) -> io::Result<U>,
+    {
+        let interest = io_type.to_event(self.key.load(Ordering::Relaxed));
+        self.ref_io(interest, &mut f).await
+    }
+
+    pub async fn io_mut<U, F>(&mut self, io_type: IoType, mut f: F) -> io::Result<U>
+    where
+        F: FnMut(&mut Self) -> io::Result<U>,
+    {
+        let interest = io_type.to_event(self.key.load(Ordering::Relaxed));
+        self.mut_io(interest, &mut f).await
+    }
+
     async fn ref_io<U, F>(&self, interest: Event, mut f: F) -> io::Result<U>
     where
         F: FnMut(&Self) -> io::Result<U>,
@@ -193,50 +225,24 @@ impl<T: AsFd + Read + Unpin> AsyncRead for IoWrapper<T> {
         buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
         let key = self.key.load(Ordering::Relaxed);
-        self.poll_pinned(
-            cx,
-            Event {
-                key,
-                readable: true,
-                writable: false,
-            },
-            |x| x.inner.read(buf),
-        )
+        self.poll_pinned(cx, Event::readable(key), |x| x.inner.read(buf))
     }
 }
 
-#[macro_export]
-macro_rules! impl_common_write {
-    () => {
-        fn poll_write(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &[u8],
-        ) -> Poll<io::Result<usize>> {
-            use polling::Event;
-            use std::sync::atomic::Ordering;
-            let key = self.key.load(Ordering::Relaxed);
-            self.poll_pinned(
-                cx,
-                Event {
-                    key,
-                    readable: false,
-                    writable: true,
-                },
-                |x| x.inner.write(buf),
-            )
-        }
-        fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            let key = self.key.load(Ordering::Relaxed);
-            self.poll_pinned(
-                cx,
-                Event {
-                    key,
-                    readable: false,
-                    writable: true,
-                },
-                |x| x.inner.flush(),
-            )
-        }
-    };
+impl<T: AsFd + Write + Unpin> AsyncWrite for IoWrapper<T> {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        let key = self.key.load(Ordering::Relaxed);
+        self.poll_pinned(cx, Event::writable(key), |x| x.inner.write(buf))
+    }
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        let key = self.key.load(Ordering::Relaxed);
+        self.poll_pinned(cx, Event::writable(key), |x| x.inner.flush())
+    }
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.poll_flush(cx)
+    }
 }
