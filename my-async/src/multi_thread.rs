@@ -22,7 +22,6 @@ use sharded_slab::{Clear, Pool};
 use waker_fn::waker_fn;
 
 pub use schedulers::{shutdown, spawn};
-pub type WrappedTaskSender = Option<Sender<FutureIndex>>;
 
 #[derive(Clone, Copy, Eq)]
 pub struct FutureIndex {
@@ -42,8 +41,7 @@ impl Hash for FutureIndex {
     }
 }
 
-#[allow(dead_code)]
-pub struct BoxedFuture {
+pub(crate) struct BoxedFuture {
     pub(crate) future: Mutex<Option<Boxed<io::Result<()>>>>,
 }
 
@@ -90,7 +88,7 @@ impl BoxedFuture {
 }
 
 // global future allocation pool.
-pub static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
+pub(crate) static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
 
 pub struct Executor<S: Scheduler> {
     scheduler: S,

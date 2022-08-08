@@ -1,14 +1,14 @@
-use crate::{impl_common_write, Interest, IoWrapper};
+use crate::{Interest, IoWrapper};
 
 use std::{
-    io::{self, Write},
+    io,
     net::{SocketAddr, ToSocketAddrs},
     path::Path,
     pin::Pin,
     task::{Context, Poll},
 };
 
-use futures_lite::{io::AsyncWrite, Stream};
+use futures_lite::Stream;
 
 // Net Socket
 pub type TcpStream = IoWrapper<std::net::TcpStream>;
@@ -36,13 +36,6 @@ impl TcpStream {
     pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.ref_io(Interest::READABLE, |me| me.inner().peek(buf))
             .await
-    }
-}
-
-impl AsyncWrite for TcpStream {
-    impl_common_write!();
-    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        self.poll_flush(cx)
     }
 }
 
@@ -157,13 +150,6 @@ impl UnixStream {
     pub fn pair() -> io::Result<(Self, Self)> {
         std::os::unix::net::UnixStream::pair()
             .map(|(a, b)| (IoWrapper::from(a), IoWrapper::from(b)))
-    }
-}
-
-impl AsyncWrite for UnixStream {
-    impl_common_write!();
-    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        self.poll_flush(cx)
     }
 }
 

@@ -1,13 +1,13 @@
-use crate::{impl_common_write, Interest, IoWrapper};
+use crate::{Interest, IoWrapper};
 
 use std::{
-    io::{self, Seek, Write},
+    io::{self, Seek},
     path::Path,
     pin::Pin,
     task::{Context, Poll},
 };
 
-use futures_lite::io::{AsyncSeek, AsyncWrite};
+use futures_lite::io::AsyncSeek;
 
 pub type File = IoWrapper<std::fs::File>;
 
@@ -19,16 +19,6 @@ impl File {
     pub fn open<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let stdfile = std::fs::File::open(path)?;
         Ok(IoWrapper::from(stdfile))
-    }
-}
-
-impl AsyncWrite for File {
-    impl_common_write!();
-    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        // No extra close is needed
-        // since Rust will close on drop.
-        // We simply need to flush it.
-        self.poll_flush(cx)
     }
 }
 

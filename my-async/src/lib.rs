@@ -10,13 +10,13 @@ pub mod schedulers;
 
 use std::{
     convert::{AsMut, AsRef},
-    io::Read,
+    io::{Read, Write},
     pin::Pin,
     sync::atomic::{AtomicUsize, Ordering},
     task::{Context, Poll},
 };
 
-use futures_lite::{future::poll_fn, AsyncRead};
+use futures_lite::{future::poll_fn, AsyncRead, AsyncWrite};
 use mio::{event::Source, unix::SourceFd, Registry, Token};
 use rustix::{
     fd::{AsFd, AsRawFd, BorrowedFd, RawFd},
@@ -32,7 +32,7 @@ pub struct IoWrapper<T: AsFd> {
 }
 
 impl<T: AsFd> IoWrapper<T> {
-    pub fn register_reactor(&self, interests: Interest, cx: &mut Context<'_>) -> io::Result<()> {
+    fn register_reactor(&self, interests: Interest, cx: &mut Context<'_>) -> io::Result<()> {
         let waker = cx.waker().clone();
         let fd = self.as_raw_fd();
         let mut source = SourceFd(&fd);
@@ -45,7 +45,8 @@ impl<T: AsFd> IoWrapper<T> {
         }
         Ok(())
     }
-    pub fn degister_reactor(&self) -> io::Result<()> {
+    #[allow(dead_code)]
+    fn degister_reactor(&self) -> io::Result<()> {
         let fd = self.as_raw_fd();
         let mut source = SourceFd(&fd);
         let current = self.token.load(Ordering::Relaxed);
@@ -83,16 +84,15 @@ impl<T: AsFd> IoWrapper<T> {
     }
 }
 
-#[allow(dead_code)]
 impl<T: AsFd + Unpin> IoWrapper<T> {
-    async fn ref_io<U, F>(&self, interest: Interest, mut f: F) -> io::Result<U>
+    pub async fn ref_io<U, F>(&self, interest: Interest, mut f: F) -> io::Result<U>
     where
         F: FnMut(&Self) -> io::Result<U>,
     {
         poll_fn(|cx| self.poll_ref(cx, interest, &mut f)).await
     }
 
-    async fn mut_io<U, F>(&mut self, interest: Interest, mut f: F) -> io::Result<U>
+    pub async fn mut_io<U, F>(&mut self, interest: Interest, mut f: F) -> io::Result<U>
     where
         F: FnMut(&mut Self) -> io::Result<U>,
     {
@@ -225,18 +225,22 @@ impl<T: AsFd + Read + Unpin> AsyncRead for IoWrapper<T> {
     }
 }
 
-#[macro_export]
-macro_rules! impl_common_write {
-    () => {
-        fn poll_write(
-            self: Pin<&mut Self>,
-            cx: &mut Context<'_>,
-            buf: &[u8],
-        ) -> Poll<io::Result<usize>> {
-            self.poll_pinned(cx, Interest::WRITABLE, |x| x.inner.write(buf))
-        }
-        fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-            self.poll_pinned(cx, Interest::WRITABLE, |x| x.inner.flush())
-        }
-    };
+impl<T: AsFd + Write + Unpin> AsyncWrite for IoWrapper<T> {
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        self.poll_pinned(cx, Interest::WRITABLE, |x| x.inner.write(buf))
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.poll_pinned(cx, Interest::READABLE | Interest::WRITABLE, |x| {
+            x.inner.flush()
+        })
+    }
+
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.poll_flush(cx)
+    }
 }
