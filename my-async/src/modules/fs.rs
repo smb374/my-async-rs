@@ -4,6 +4,7 @@ use std::{
     io::{self, Seek},
     path::Path,
     pin::Pin,
+    sync::atomic::Ordering,
     task::{Context, Poll},
 };
 
@@ -35,7 +36,8 @@ impl AsyncSeek for File {
                 io::ErrorKind::Interrupted => Pin::new(me).poll_seek(cx, pos),
                 // Register self to reactor and wait.
                 io::ErrorKind::WouldBlock => {
-                    me.register_reactor(Interest::READABLE | Interest::WRITABLE, cx)?;
+                    let current = me.token.load(Ordering::Relaxed);
+                    me.register_reactor(current, Interest::READABLE | Interest::WRITABLE, cx)?;
                     Poll::Pending
                 }
                 // Other errors are returned directly.

@@ -1,7 +1,5 @@
-use crate::schedulers;
-
 use super::reactor::{self, POLL_WAKER};
-use super::schedulers::{ScheduleMessage, Scheduler};
+use super::schedulers::{self, ScheduleMessage, Scheduler};
 
 use std::{
     future::Future,
@@ -25,8 +23,9 @@ pub use schedulers::{shutdown, spawn};
 
 #[derive(Clone, Copy, Eq)]
 pub struct FutureIndex {
-    pub(crate) key: usize,
-    pub(crate) sleep_count: usize,
+    pub key: usize,
+    pub budget_index: usize,
+    pub sleep_count: usize,
 }
 
 impl PartialEq for FutureIndex {
@@ -66,6 +65,7 @@ impl BoxedFuture {
         if let Some(fut) = guard.as_mut() {
             let new_index = FutureIndex {
                 key: index.key,
+                budget_index: index.budget_index,
                 sleep_count: index.sleep_count + 1,
             };
             let waker = waker_fn(move || {

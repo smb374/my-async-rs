@@ -1,5 +1,5 @@
-use super::{wake_join_handle, Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
-use crate::{multi_thread::FUTURE_POOL, schedulers::reschedule};
+use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
+use crate::schedulers::reschedule;
 
 use std::{hash::BuildHasherDefault, sync::Arc, thread};
 
@@ -128,7 +128,7 @@ impl TaskRunner {
     fn run(&mut self) {
         'outer: loop {
             if let Some((index, _)) = self.queue.hot.pop() {
-                Self::process_future(index, &self.task_wakeup_sender);
+                super::process_future(index, &self.task_wakeup_sender);
             } else {
                 log::debug!("Start collecting tasks...");
                 // Step 1. cold -> hot
@@ -205,23 +205,6 @@ impl TaskRunner {
                     break 'outer;
                 }
             }
-        }
-    }
-
-    fn process_future(index: FutureIndex, tx: &Sender<FutureIndex>) {
-        if let Some(boxed) = FUTURE_POOL.get(index.key) {
-            let finished = boxed.run(&index, tx.clone());
-            if finished {
-                wake_join_handle(index.key);
-                if !FUTURE_POOL.clear(index.key) {
-                    log::error!(
-                        "Failed to remove completed future with index = {} from pool.",
-                        index.key
-                    );
-                }
-            }
-        } else {
-            log::error!("Future with index = {} is not in pool.", index.key);
         }
     }
 

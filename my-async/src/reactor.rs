@@ -20,7 +20,7 @@ impl Reactor {
     pub fn new(capacity: usize) -> Self {
         let poll = Poll::new().expect("Failed to setup Poll");
         let events = Events::with_capacity(capacity);
-        let extra_wakeups = Vec::with_capacity(1024);
+        let extra_wakeups = Vec::with_capacity(capacity);
         Self {
             poll,
             events,
@@ -89,15 +89,22 @@ fn process_waker<F>(idx: usize, f: F) -> bool
 where
     F: FnOnce(&mut MutexGuard<Option<Waker>>),
 {
-    if WAKER_SLAB.contains(idx) {
-        let mutex = WAKER_SLAB.get(idx).unwrap();
-        let mut guard = mutex.lock();
-        f(&mut guard);
-        drop(guard);
-        true
+    if is_registered(idx) {
+        if let Some(mutex) = WAKER_SLAB.get(idx) {
+            let mut guard = mutex.lock();
+            f(&mut guard);
+            drop(guard);
+            true
+        } else {
+            false
+        }
     } else {
         false
     }
+}
+
+pub(crate) fn is_registered(token: usize) -> bool {
+    WAKER_SLAB.contains(token)
 }
 
 pub(crate) fn add_waker(token: usize, waker: Waker) -> Option<usize> {

@@ -5,11 +5,12 @@ pub mod work_stealing;
 use super::multi_thread::FutureIndex;
 
 use std::{
+    cell::Cell,
     future::Future,
     io,
     pin::Pin,
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc,
     },
     task::{Context, Poll, Waker},
@@ -20,12 +21,22 @@ use futures_lite::future::FutureExt;
 use once_cell::sync::{Lazy, OnceCell};
 use parking_lot::{Mutex, RwLock};
 use rustc_hash::FxHashMap;
+use sharded_slab::Slab;
 
 use crate::multi_thread::FUTURE_POOL;
 
 static JOIN_HANDLE_MAP: Lazy<RwLock<FxHashMap<usize, Waker>>> =
     Lazy::new(|| RwLock::new(FxHashMap::default()));
 static SPAWNER: OnceCell<Spawner> = OnceCell::new();
+static BUDGET_SLAB: Lazy<Slab<AtomicUsize>> = Lazy::new(Slab::new);
+const DEFAULT_BUDGET: usize = 128;
+// thread local budget handle statics
+thread_local! {
+    pub(crate) static USING_BUDGET: Cell<bool> = Cell::new(false);
+    static CURRENT_INDEX: Cell<usize> = Cell::new(usize::MAX);
+    // cache to reduce atomic actions
+    static BUDGET_CACHE: Cell<usize> = Cell::new(usize::MAX);
+}
 
 pub enum ScheduleMessage {
     Schedule(FutureIndex),
@@ -88,9 +99,13 @@ impl Spawner {
                 seat.future.get_mut().replace(future.boxed());
             })
             .unwrap();
+        let budget_index = BUDGET_SLAB
+            .insert(AtomicUsize::new(DEFAULT_BUDGET))
+            .unwrap();
         self.tx
             .send(ScheduleMessage::Schedule(FutureIndex {
                 key,
+                budget_index,
                 sleep_count: 0,
             }))
             .expect("Failed to send message");
@@ -122,9 +137,13 @@ impl Spawner {
                 seat.future.get_mut().replace(spawn_fut.boxed());
             })
             .unwrap();
+        let budget_index = BUDGET_SLAB
+            .insert(AtomicUsize::new(DEFAULT_BUDGET))
+            .unwrap();
         self.tx
             .send(ScheduleMessage::Schedule(FutureIndex {
                 key,
+                budget_index,
                 sleep_count: 0,
             }))
             .expect("Failed to send message");
@@ -232,5 +251,77 @@ impl<'a, T> Future for FutureJoin<'a, T> {
 pub(super) fn wake_join_handle(index: usize) {
     if let Some(waker) = JOIN_HANDLE_MAP.read().get(&index) {
         waker.wake_by_ref();
+    }
+}
+
+pub(crate) fn budget_update(index: &FutureIndex) -> Option<usize> {
+    let mut result = None;
+    let budget_index = index.budget_index;
+    let current_budget = match BUDGET_SLAB.get(budget_index) {
+        Some(b) => b.load(Ordering::Relaxed),
+        None => {
+            let idx = BUDGET_SLAB
+                .insert(AtomicUsize::new(DEFAULT_BUDGET))
+                .expect("Slab is full!!!");
+            result.replace(idx);
+            DEFAULT_BUDGET
+        }
+    };
+    let old_index = CURRENT_INDEX.with(|idx| idx.replace(budget_index));
+    let old_budget = BUDGET_CACHE.with(|b| b.replace(current_budget));
+    if old_index != usize::MAX && old_budget != usize::MAX {
+        if let Some(b) = BUDGET_SLAB.get(old_index) {
+            b.store(old_budget, Ordering::Relaxed);
+        }
+    }
+    result
+}
+
+pub(crate) fn poll_with_budget<T, U>(fut: &mut T, cx: &mut Context<'_>) -> Poll<U>
+where
+    T: FutureExt<Output = U> + ?Sized + Unpin,
+{
+    USING_BUDGET.with(|x| x.replace(true));
+    BUDGET_CACHE.with(|budget| {
+        let val = budget.get();
+        // if budget is zero, reschedule it by immediately wake the waker then return Poll::Pending (yield_now)
+        if val == 0 {
+            cx.waker().wake_by_ref();
+            budget.set(DEFAULT_BUDGET);
+            return Poll::Pending;
+        }
+        match fut.poll(cx) {
+            Poll::Ready(x) => {
+                // budget decreases when ready
+                budget.set(val - 1);
+                Poll::Ready(x)
+            }
+            Poll::Pending => Poll::Pending,
+        }
+    })
+}
+
+pub(crate) fn process_future(mut index: FutureIndex, tx: &Sender<FutureIndex>) {
+    if let Some(boxed) = FUTURE_POOL.get(index.key) {
+        USING_BUDGET.with(|ub| {
+            if ub.get() {
+                if let Some(idx) = budget_update(&index) {
+                    index.budget_index = idx;
+                }
+                ub.replace(false);
+            }
+        });
+        let finished = boxed.run(&index, tx.clone());
+        if finished {
+            wake_join_handle(index.key);
+            if !FUTURE_POOL.clear(index.key) {
+                log::error!(
+                    "Failed to remove completed future with index = {} from pool.",
+                    index.key
+                );
+            }
+        }
+    } else {
+        log::error!("Future with index = {} is not in pool.", index.key);
     }
 }

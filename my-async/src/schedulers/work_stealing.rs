@@ -1,5 +1,5 @@
-use super::{wake_join_handle, Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
-use crate::{multi_thread::FUTURE_POOL, schedulers::reschedule};
+use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
+use crate::schedulers::reschedule;
 
 use std::{sync::Arc, thread};
 
@@ -124,7 +124,7 @@ impl TaskRunner {
         'outer: loop {
             if !self.worker.is_empty() {
                 while let Some(index) = self.worker.pop() {
-                    Self::process_future(index, &self.task_tx);
+                    super::process_future(index, &self.task_tx);
                 }
             } else {
                 log::debug!("Start collecting tasks...");
@@ -181,23 +181,6 @@ impl TaskRunner {
                     break 'outer;
                 }
             }
-        }
-    }
-
-    fn process_future(index: FutureIndex, tx: &Sender<FutureIndex>) {
-        if let Some(boxed) = FUTURE_POOL.get(index.key) {
-            let finished = boxed.run(&index, tx.clone());
-            if finished {
-                wake_join_handle(index.key);
-                if !FUTURE_POOL.clear(index.key) {
-                    log::error!(
-                        "Failed to remove completed future with index = {} from pool.",
-                        index.key
-                    );
-                }
-            }
-        } else {
-            log::error!("Future with index = {} is not in pool.", index.key);
         }
     }
 

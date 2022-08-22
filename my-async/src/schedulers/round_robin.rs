@@ -1,5 +1,4 @@
-use super::{wake_join_handle, FutureIndex, ScheduleMessage, Scheduler, Spawner};
-use crate::multi_thread::FUTURE_POOL;
+use super::{FutureIndex, ScheduleMessage, Scheduler, Spawner};
 
 use std::thread::{self, JoinHandle};
 
@@ -97,20 +96,7 @@ impl Worker {
             let exit_loop = Selector::new()
                 .recv(&self.task_rx, |result| match result {
                     Ok(index) => {
-                        if let Some(boxed) = FUTURE_POOL.get(index.key) {
-                            let finished = boxed.run(&index, self.task_tx.clone());
-                            if finished {
-                                wake_join_handle(index.key);
-                                if !FUTURE_POOL.clear(index.key) {
-                                    log::error!(
-                                        "Failed to remove completed future with index = {} from pool.",
-                                        index.key
-                                    );
-                                }
-                            }
-                        } else {
-                            log::error!("Future with index = {} is not in pool.", index.key);
-                        }
+                        super::process_future(index, &self.task_tx);
                         false
                     }
                     Err(_) => true,

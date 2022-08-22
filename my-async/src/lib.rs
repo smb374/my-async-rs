@@ -7,6 +7,9 @@ pub mod multi_thread;
 pub mod single_thread;
 // scheduler
 pub mod schedulers;
+pub mod utils;
+
+use crate::schedulers::poll_with_budget;
 
 use std::{
     convert::{AsMut, AsRef},
@@ -16,15 +19,23 @@ use std::{
     task::{Context, Poll},
 };
 
-use futures_lite::{future::poll_fn, AsyncRead, AsyncWrite};
+use futures_lite::{future::poll_fn, AsyncRead, AsyncWrite, FutureExt};
 use mio::{event::Source, unix::SourceFd, Registry, Token};
-use rustix::{
-    fd::{AsFd, AsRawFd, BorrowedFd, RawFd},
-    fs::{fcntl_getfl, fcntl_setfl, OFlags},
-};
+use rustix::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
 
 pub use mio::Interest;
 pub use modules::{fs, io, net, stream};
+
+pub trait BudgetFuture: FutureExt {
+    fn poll(&mut self, cx: &mut Context<'_>) -> Poll<Self::Output>
+    where
+        Self: Unpin,
+    {
+        poll_with_budget(self, cx)
+    }
+}
+
+impl<F: FutureExt + ?Sized> BudgetFuture for F {}
 
 pub struct IoWrapper<T: AsFd> {
     inner: T,
@@ -32,16 +43,20 @@ pub struct IoWrapper<T: AsFd> {
 }
 
 impl<T: AsFd> IoWrapper<T> {
-    fn register_reactor(&self, interests: Interest, cx: &mut Context<'_>) -> io::Result<()> {
+    fn register_reactor(
+        &self,
+        current_token: usize,
+        interests: Interest,
+        cx: &mut Context<'_>,
+    ) -> io::Result<()> {
         let waker = cx.waker().clone();
         let fd = self.as_raw_fd();
         let mut source = SourceFd(&fd);
-        let current = self.token.load(Ordering::Relaxed);
-        if let Some(token) = reactor::add_waker(current, waker) {
+        if let Some(token) = reactor::add_waker(current_token, waker) {
             self.token.store(token, Ordering::Relaxed);
             reactor::register(&mut source, Token(token), interests, false)?;
         } else {
-            reactor::register(&mut source, Token(current), interests, true)?;
+            reactor::register(&mut source, Token(current_token), interests, true)?;
         }
         Ok(())
     }
@@ -73,14 +88,7 @@ impl<T: AsFd> From<T> for IoWrapper<T> {
 
 impl<T: AsFd> IoWrapper<T> {
     fn set_nonblocking(fd: &T) -> io::Result<()> {
-        let mut current_flags =
-            fcntl_getfl(fd).map_err(|e| io::Error::from_raw_os_error(e.raw_os_error()))?;
-        if !current_flags.contains(OFlags::NONBLOCK) {
-            current_flags.set(OFlags::NONBLOCK, true);
-            fcntl_setfl(fd, current_flags)
-                .map_err(|e| io::Error::from_raw_os_error(e.raw_os_error()))?;
-        }
-        Ok(())
+        utils::set_nonblocking(fd)
     }
 }
 
@@ -103,23 +111,13 @@ impl<T: AsFd + Unpin> IoWrapper<T> {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         interest: Interest,
-        mut f: F,
+        f: F,
     ) -> Poll<io::Result<U>>
     where
         F: FnMut(&mut Self) -> io::Result<U>,
     {
         let me = self.get_mut();
-        match f(me) {
-            Ok(r) => Poll::Ready(Ok(r)),
-            Err(e) => match e.kind() {
-                io::ErrorKind::WouldBlock => {
-                    me.register_reactor(interest, cx)?;
-                    Poll::Pending
-                }
-                io::ErrorKind::Interrupted => Pin::new(me).poll_pinned(cx, interest, f),
-                _ => Poll::Ready(Err(e)),
-            },
-        }
+        me.poll_mut(cx, interest, f)
     }
 
     fn poll_ref<U, F>(
@@ -132,15 +130,13 @@ impl<T: AsFd + Unpin> IoWrapper<T> {
         F: FnMut(&Self) -> io::Result<U>,
     {
         match f(self) {
-            Ok(r) => Poll::Ready(Ok(r)),
-            Err(e) => match e.kind() {
-                io::ErrorKind::WouldBlock => {
-                    self.register_reactor(interest, cx)?;
-                    Poll::Pending
-                }
-                io::ErrorKind::Interrupted => self.poll_ref(cx, interest, f),
-                _ => Poll::Ready(Err(e)),
-            },
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                let current = self.token.load(Ordering::Relaxed);
+                self.register_reactor(current, interest, cx)?;
+                Poll::Pending
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::Interrupted => self.poll_ref(cx, interest, f),
+            r => Poll::Ready(r),
         }
     }
 
@@ -154,15 +150,13 @@ impl<T: AsFd + Unpin> IoWrapper<T> {
         F: FnMut(&mut Self) -> io::Result<U>,
     {
         match f(self) {
-            Ok(r) => Poll::Ready(Ok(r)),
-            Err(e) => match e.kind() {
-                io::ErrorKind::WouldBlock => {
-                    self.register_reactor(interest, cx)?;
-                    Poll::Pending
-                }
-                io::ErrorKind::Interrupted => self.poll_mut(cx, interest, f),
-                _ => Poll::Ready(Err(e)),
-            },
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                let current = self.token.load(Ordering::Relaxed);
+                self.register_reactor(current, interest, cx)?;
+                Poll::Pending
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::Interrupted => self.poll_mut(cx, interest, f),
+            r => Poll::Ready(r),
         }
     }
 }

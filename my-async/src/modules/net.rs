@@ -5,6 +5,7 @@ use std::{
     net::{SocketAddr, ToSocketAddrs},
     path::Path,
     pin::Pin,
+    sync::atomic::Ordering,
     task::{Context, Poll},
 };
 
@@ -113,7 +114,9 @@ impl<'a> Stream for TcpIncoming<'a> {
             }
             Err(e) => match e.kind() {
                 io::ErrorKind::WouldBlock => {
-                    me.listener.register_reactor(Interest::READABLE, cx)?;
+                    let current = me.listener.token.load(Ordering::Relaxed);
+                    me.listener
+                        .register_reactor(current, Interest::READABLE, cx)?;
                     Poll::Pending
                 }
                 io::ErrorKind::Interrupted => Pin::new(me).poll_next(cx),
@@ -208,7 +211,9 @@ impl<'a> Stream for UnixIncoming<'a> {
             }
             Err(e) => match e.kind() {
                 io::ErrorKind::WouldBlock => {
-                    me.listener.register_reactor(Interest::READABLE, cx)?;
+                    let current = me.listener.token.load(Ordering::Relaxed);
+                    me.listener
+                        .register_reactor(current, Interest::READABLE, cx)?;
                     Poll::Pending
                 }
                 io::ErrorKind::Interrupted => Pin::new(me).poll_next(cx),
