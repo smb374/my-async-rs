@@ -1,3 +1,18 @@
+//! Scheduler trait an various default implementation.
+//!
+//! The module defines and implements various crutial parts
+//! for [`multi_thread::Executor`][super::multi_thread::Executor]
+//! to work:
+//! * [`Scheduler`] trait: Defines the behaviour of a schduler should have
+//! for the multi-threaded executor to work.
+//! * [`JoinHandle`]: The future task handle for async and non-blocking joining a futture.
+//! * [`FutureJoin`]: [`Future`] implementation for async join.
+//! * [`Spawner`]: Multi-threaded future task spawner that is initialized during scheduler
+//! initialization.
+//! * [`spawn()`] and [`shutdown()`]: Multi-threaded version of the single-threaded version.
+//! Need [`Spawner`] to be initialized to work.
+//! * [`ScheduleMessage`]: Interthread message to communicate with [`Scheduler`].
+
 pub mod hybrid;
 pub mod round_robin;
 pub mod work_stealing;
@@ -38,21 +53,57 @@ thread_local! {
     static BUDGET_CACHE: Cell<usize> = Cell::new(usize::MAX);
 }
 
+/// Interthread message to communicate with [`Scheduler`].
+///
+/// Currently only 3 variants:
+/// 1. `Schedule`: Schedules a new future.
+/// 2. `Reschedule`: Reschedule a future. Can be used when local worker queue is full.
+/// 3. `Shutdown`: Shutdown message to shutdown the scheduler.
 pub enum ScheduleMessage {
+    /// Schedule a new future task.
+    ///
+    /// Because of the design of multi-threaded executor,
+    /// the message itself contains some counter and the task's index.
+    ///
+    /// See [`FutureIndex`] for more information.
     Schedule(FutureIndex),
+    /// Reschedule an existing future task.
     Reschedule(FutureIndex),
+    /// Shutdown signal for scheduler.
     Shutdown,
 }
 
+/// Sender for sending [`ScheduleMessage`].
+///
+/// It can be used to schedule task, reschedule task, and shutdown scheduler.
 pub struct Spawner {
     tx: Sender<ScheduleMessage>,
 }
 
+/// Defines the behaviour of a schduler should have for the multi-threaded executor to work.
+///
+/// Example schedulers are defined under [`round_robin`], [`work_stealing`], and [`hybrid`].
 pub trait Scheduler {
+    /// Initialize the [`Spawner`] and the [`Scheduler`] it self.
+    ///
+    /// It should initialize `size` threads as worker for concurrent future processing.
     fn init(size: usize) -> (Spawner, Self);
+    /// Schedules incoming future tasks to workers.
+    ///
+    /// There's no restriction as long as it accepts a [`FutureIndex`]
     fn schedule(&mut self, index: FutureIndex);
+    /// Reschedules incoming future tasks to workers.
+    ///
+    /// There's no restriction as long as it accepts a [`FutureIndex`]
     fn reschedule(&mut self, index: FutureIndex);
+    /// Shutdown the scheduler.
+    ///
+    /// It should notify all worker to shutdown and join the worker threads.
     fn shutdown(self);
+    /// Returns the receiver of [`ScheduleMessage`]
+    ///
+    /// This function should return the receiver half of the spwner for
+    /// [`Executor`][super::multi_thread::Executor] to receive the messages.
     fn receiver(&self) -> &Receiver<ScheduleMessage>;
 }
 
@@ -87,9 +138,14 @@ impl<T: Send + Clone> Broadcast<T> {
 }
 
 impl Spawner {
+    /// Create a spawner using sender half.
+    ///
+    /// The receiving half is held by the scheduler and used in executor's main
+    /// loop to receive [`ScheduleMessage`]s.
     pub fn new(tx: Sender<ScheduleMessage>) -> Self {
         Self { tx }
     }
+    /// Spawns a future task without [`JoinHandle`].
     pub fn spawn<F>(&self, future: F)
     where
         F: Future<Output = io::Result<()>> + Send + 'static,
@@ -115,6 +171,9 @@ impl Spawner {
             .send(ScheduleMessage::Reschedule(index))
             .expect("Failed to send message");
     }
+    /// Spawns a task with [`JoinHandle`]
+    ///
+    /// This is the default action used by [`spawn()`].
     pub fn spawn_with_handle<F>(&self, future: F, is_block: bool) -> JoinHandle<F::Output>
     where
         F: Future + Send + 'static,
@@ -153,6 +212,7 @@ impl Spawner {
             inner: result_arc,
         }
     }
+    /// Send shutdown signal to scheduler.
     pub fn shutdown(&self) {
         self.tx
             .send(ScheduleMessage::Shutdown)
@@ -164,6 +224,9 @@ pub(super) fn init_spawner(spawner: Spawner) {
     SPAWNER.get_or_init(move || spawner);
 }
 
+/// Spawns a future task and return a [`JoinHandle`].
+///
+/// This functions spawns a future task and returns a [`JoinHandle`] for joining the task.
 pub fn spawn<F>(future: F) -> JoinHandle<F::Output>
 where
     F: Future + Send + 'static,
@@ -186,25 +249,45 @@ pub(crate) fn reschedule(index: FutureIndex) {
     spawner.reschedule(index);
 }
 
+/// Notifies the [`Scheduler`] to shutdown.
+///
+/// Used when early exit and blocked future finishes.
 pub fn shutdown() {
     let spawner = SPAWNER.get().unwrap();
     spawner.shutdown();
 }
 
+/// Join handle for a future task.
+///
+/// The handle can do two stuff: async [`join()`][JoinHandle::join()]
+/// and non-blocking [`try_join`][JoinHandle::try_join].
 pub struct JoinHandle<T> {
     spawn_id: usize,
     registered: AtomicBool,
     inner: Arc<Mutex<Option<T>>>,
 }
 
+/// Struct for [`JoinHandle::join()`]'s [`Future`] implementation.
 pub struct FutureJoin<'a, T> {
     handle: &'a JoinHandle<T>,
 }
 
 impl<T> JoinHandle<T> {
+    /// Normal async join for a future task.
+    ///
+    /// To join a future task in a non-async function or non-blocking wait,
+    /// use [`try_join()`][JoinHandle::try_join()] instead.
     pub fn join(&self) -> FutureJoin<'_, T> {
         FutureJoin { handle: self }
     }
+    /// Non-blocking join for a future task.
+    ///
+    /// This function can be used in non-async envoironment since the implementation
+    /// doesn't use any [`Future`] related code. It can also be used when quick checking since
+    /// `.await` is not required.
+    ///
+    /// If the join is success, it will return `Some(val)`, other wise `None` indicating that the
+    /// task isn't finished yet.
     // `None`: Future not yet complete
     // `Some(val)`: Future completed with return value `val`.
     // Here we can simply use take since no one else will access after successful `try_join`

@@ -1,3 +1,10 @@
+//! Round-Robin fashion Scheduler
+//!
+//! This module implements a scheduler that will schedule the tasks
+//! in a round robin fashion.
+//!
+//! Tasks will always be resend to the original worker it was scheduled
+//! unless it's been rescheduled.
 use super::{FutureIndex, ScheduleMessage, Scheduler, Spawner};
 
 use std::thread::{self, JoinHandle};

@@ -1,3 +1,16 @@
+//! Hybrid Scheduler
+//!
+//! This module implements a [`HybridScheduler`], the `Hybrid` means
+//! the hybrid queue used in this scheduler.
+//!
+//! Basically, the hybrid queue worked as:
+//! * The new coming tasks or waked tasks will be placed in the `cold` queue, which is a ringbuffer that can be work-stealed.
+//! * The `hot` queue is a local priority queue that can orders the task based on its priority.
+//! * Whenever the `hot` queue is empty, load tasks from the `cold` queue.
+//!
+//! This implementation makes prioritized work-stealing strategy possible without implementing
+//! a thread-safe priority queue with a complex synchronization scheme plus loads of cache miss.
+
 use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
 use crate::schedulers::reschedule;
 
@@ -20,7 +33,9 @@ struct TaskQueue {
     hot: PriorityQueue<FutureIndex, usize, BuildHasherDefault<FxHasher>>,
 }
 
-// A prioritized work stealing scheduler with a hybrid task queue.
+/// A prioritized work stealing scheduler with a hybrid task queue.
+///
+/// See [module documentation](./index.html) for more information.
 pub struct HybridScheduler {
     wait_group: WaitGroup,
     _stealers: Vec<Stealer<FutureIndex>>,

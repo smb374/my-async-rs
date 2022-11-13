@@ -1,3 +1,26 @@
+//! My implementation of async IO runtime in Rust.
+//!
+//! The goal of this runtime is to provide a relatively short code
+//! with clear documentation on library interface and architechture design
+//! to help understanding the underlying mechanism of an asynchronous runtime.
+//!
+//! The crate has the following components:
+//!
+//! * Future implementation for [`AsFd`] types: You can encapsulate any type that
+//! implements [`AsFd`] + [`Unpin`] using [`IoWrapper`].
+//! * Predefined type and API for file and net operation under [`fs`] and [`net`] for convenience.
+//! * [Single-threaded executor][single_thread::Executor] and [multi-threaded executor][multi_thread::Executor]
+//! for executing futures.
+//! * [Future scheduler][`schedulers`] for multi-thread executor. Currently implements
+//! [`HybridScheduler`][a], [`WorkStealingScheduler`][b], [`RoundRobinScheduler`][c].
+//! * Reactor based on [`mio`].
+//!
+//!
+//!
+//! [a]: schedulers::hybrid::HybridScheduler
+//! [b]: schedulers::work_stealing::WorkStealingScheduler
+//! [c]: schedulers::round_robin::RoundRobinScheduler
+
 // reactor, not exposed
 mod reactor;
 // modules
@@ -7,7 +30,7 @@ pub mod multi_thread;
 pub mod single_thread;
 // scheduler
 pub mod schedulers;
-pub mod utils;
+mod utils;
 
 use crate::schedulers::poll_with_budget;
 
@@ -26,6 +49,22 @@ use rustix::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
 pub use mio::Interest;
 pub use modules::{fs, io, net, stream};
 
+/// Token bucket based auto task yielding implementation.
+///
+/// An implementation using the idea from [`tokio`'s per-task operation budget](https://tokio.rs/blog/2020-04-preemption)
+/// using a token bucket like algorithm.
+///
+/// To enable the budget use when using this runtime, `use` this trait on top of your module
+/// for overriding [`Future`][f]'s `poll` definition.
+///
+/// This trait is auto-implemented for all types that implements [`FutureExt`], which
+/// itself is auto-implemented for all types implementing future [`Future`][f].
+///
+/// # Note
+/// This trait hasn't been tested thoroughly, the trait may have little or no improvement
+/// compare to normal usage.
+///
+/// [f]: std::future::Future
 pub trait BudgetFuture: FutureExt {
     fn poll(&mut self, cx: &mut Context<'_>) -> Poll<Self::Output>
     where
@@ -37,6 +76,58 @@ pub trait BudgetFuture: FutureExt {
 
 impl<F: FutureExt + ?Sized> BudgetFuture for F {}
 
+/// Wrapper around [`AsFd`] + [`Unpin`] types.
+///
+/// You can use [`IoWrapper::from()`] for easy convertion over [`AsFd`] types.
+///
+/// There are various predefined under [`fs`] and [`net`] with convenient alias functions.
+/// # Note
+/// If you need to perform other operations that is not [`AsyncRead`], [`AsyncWrite`],
+/// or other predefined alias functions, consider:
+/// 1. Non-IO and synchronous operations: use [`IoWrapper::inner()`] for reference and
+///    [`IoWrapper::inner_mut()`] for mutable reference to the wrapped type.
+/// 2. Operations need `&self`: use [`IoWrapper::ref_io()`]:
+/// ```
+/// // Read Operations
+/// let result = self.ref_io(Interest::READABLE, |me| {
+///     let inner = me.inner();
+///     // do IO stuff on inner type...
+///     result
+/// }).await;
+/// // Write Operations
+/// let result = self.ref_io(Interest::WRITABLE, |me| {
+///     let inner = me.inner();
+///     // do IO stuff on inner type...
+///     result
+/// }).await;
+/// // Both
+/// let result = self.ref_io(Interest::READABLE | Interest::WRITABLE, |me| {
+///     let inner = me.inner();
+///     // do IO stuff on inner type...
+///     result
+/// }).await;
+/// ```
+/// 3. Operations need `&mut self`: use [`IoWrapper::mut_io()`]:
+/// ```
+/// // Read Operations
+/// let result = self.mut_io(Interest::READABLE, |me| {
+///     let mut inner = me.inner_mut();
+///     // do IO stuff on inner type...
+///     result
+/// }).await;
+/// // Write Operations
+/// let result = self.mut_io(Interest::WRITABLE, |me| {
+///     let mut inner = me.inner_mut();
+///     // do IO stuff on inner type...
+///     result
+/// }).await;
+/// // Both
+/// let result = self.mut_io(Interest::READABLE | Interest::WRITABLE, |me| {
+///     let mut inner = me.inner_mut();
+///     // do IO stuff on inner type...
+///     result
+/// }).await;
+/// ```
 pub struct IoWrapper<T: AsFd> {
     inner: T,
     token: AtomicUsize,
@@ -93,6 +184,25 @@ impl<T: AsFd> IoWrapper<T> {
 }
 
 impl<T: AsFd + Unpin> IoWrapper<T> {
+    /// Performing async IO with `F` without self mutation.
+    ///
+    /// This function supports calling `f` that takes `&self`, which
+    /// allows mutating external variables but self.
+    ///
+    /// You should specify the [`Interest`] of this IO, which is the combination
+    /// of [`READABLE`][Interest::READABLE] and [`WRITABLE`][Interest::WRITABLE].
+    ///
+    /// For example, take a look on the implementation of
+    /// [`Tcpstream::peek()`][crate::net::TcpStream::peek()]:
+    ///
+    /// ```rust
+    /// pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+    ///     self.ref_io(Interest::READABLE, |me| me.inner().peek(buf))
+    ///         .await
+    /// }
+    /// ```
+    ///
+    /// To mutate self, call [`mut_io`][IoWrapper::mut_io] instead.
     pub async fn ref_io<U, F>(&self, interest: Interest, mut f: F) -> io::Result<U>
     where
         F: FnMut(&Self) -> io::Result<U>,
@@ -100,6 +210,9 @@ impl<T: AsFd + Unpin> IoWrapper<T> {
         poll_fn(|cx| self.poll_ref(cx, interest, &mut f)).await
     }
 
+    /// Performing async IO with `F` with self mutation.
+    ///
+    /// The usage is as same as [`ref_io`][IoWrapper::ref_io], refer it for documentation.
     pub async fn mut_io<U, F>(&mut self, interest: Interest, mut f: F) -> io::Result<U>
     where
         F: FnMut(&mut Self) -> io::Result<U>,

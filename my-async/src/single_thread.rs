@@ -1,3 +1,41 @@
+//! Single-threaded executor.
+//!
+//! This executor is capable of executing futures without priority.
+//! To spawn a future on it, use [`spawn()`] to add a future to its queue, and use
+//! [`Executor::block_on()`] to block on a single main future until it's finished.
+//!
+//! You need to at least block on one future in order to run this executor.
+//!
+//! # Example
+//!
+//! The example shows how you should write your async code using this executor:
+//!
+//! ```no_run
+//! use std::io;
+//!
+//! use my_async::{
+//!     single_thread::{spawn, Executor},
+//! };
+//!
+//! async fn block_future() -> io::Result<()> {
+//!     loop {
+//!         // ... do stuff
+//!         spawn(async move{
+//!             handle().await;
+//!         }); // spawn future
+//!     }
+//! }
+//!
+//! async fn handle() -> io::Result<()> {
+//!     // ... do stuff
+//! }
+//!
+//! fn main() -> io::Result<()> {
+//!     let mut rt: Executor = Executor::new(); // create executor instance.
+//!     rt.block_on(block_future())
+//! }
+//! ```
+
 use super::reactor;
 
 use std::{
@@ -21,7 +59,7 @@ static SPAWNER: OnceCell<Spawner> = OnceCell::new();
 static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
 
 #[derive(Clone, Copy, Eq)]
-pub struct FutureIndex {
+struct FutureIndex {
     key: usize,
 }
 
@@ -38,7 +76,7 @@ impl Hash for FutureIndex {
 }
 
 #[allow(dead_code)]
-pub struct BoxedFuture {
+struct BoxedFuture {
     future: Mutex<Option<Boxed<io::Result<()>>>>,
     sleep_count: usize,
 }
@@ -59,7 +97,7 @@ impl Clear for BoxedFuture {
 }
 
 impl BoxedFuture {
-    pub fn run(&self, index: &FutureIndex, tx: Sender<FutureIndex>) -> bool {
+    fn run(&self, index: &FutureIndex, tx: Sender<FutureIndex>) -> bool {
         let mut guard = self.future.lock();
         // run *ONCE*
         if let Some(fut) = guard.as_mut() {
@@ -91,6 +129,7 @@ enum Message {
     Close,
 }
 
+/// Executor that can run futures.
 pub struct Executor {
     task_tx: Sender<FutureIndex>,
     task_rx: Receiver<FutureIndex>,
@@ -103,6 +142,10 @@ struct Spawner {
 }
 
 impl Executor {
+    /// Create executor instance for [`spawn()`] and [`Executor::block_on()`].
+    ///
+    /// Yout should create the [`Executor`] instance first before trying to spawn any future,
+    /// otherwise it won't have any effect.
     pub fn new() -> Self {
         let (tx, rx) = flume::unbounded();
         let (task_tx, task_rx) = flume::unbounded();
@@ -162,12 +205,20 @@ impl Executor {
             }
         }
     }
-    pub fn block_on<F, T>(mut self, future: F) -> T
+    /// Blocks on a single future.
+    ///
+    /// The executor will continue to run until this future finishes.
+    ///
+    /// You can imagine that this will execute the "main" future function
+    /// to complete before the executor shutdown.
+    ///
+    /// Note that it requires the future and its return type to be [`Send`] and `'static`.
+    pub fn block_on<F>(mut self, future: F) -> F::Output
     where
-        T: Send + 'static,
-        F: Future<Output = T> + Send + 'static,
+        F: Future + Send + 'static,
+        F::Output: Send + 'static,
     {
-        let result_arc: Arc<Mutex<Option<T>>> = Arc::new(Mutex::new(None));
+        let result_arc: Arc<Mutex<Option<F::Output>>> = Arc::new(Mutex::new(None));
         let clone = Arc::clone(&result_arc);
         spawn(async move {
             let result = future.await;
@@ -229,6 +280,12 @@ impl Spawner {
     }
 }
 
+/// Spawns a future to executor's queue.
+///
+/// Note that until you create [`Executor`] instance,
+/// this fuction won't have any effect.
+///
+/// Currently doesn't implement join handle in single thread.
 pub fn spawn<F>(fut: F)
 where
     F: Future<Output = io::Result<()>> + 'static + Send,
@@ -238,6 +295,9 @@ where
     }
 }
 
+/// Notify the executor to shutdown.
+///
+/// Useful for some early exit condition. E.g. error handling.
 pub fn shutdown() {
     if let Some(spawner) = SPAWNER.get() {
         spawner.shutdown();

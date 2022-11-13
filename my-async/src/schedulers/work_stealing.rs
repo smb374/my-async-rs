@@ -1,3 +1,7 @@
+//! Work-Stealing Scheduler
+//!
+//! This module implements a scheduler that uses the work-stealing strategy.
+//! The tasks in local queue can be stolen by other worker that is not busy.
 use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
 use crate::schedulers::reschedule;
 

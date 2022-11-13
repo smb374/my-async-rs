@@ -1,3 +1,14 @@
+//! Multi-threaded executor.
+//!
+//! This multi-threaded executor needs a [`Scheduler`] for thread creation
+//! and task scheduling.
+//!
+//! The executor itself on main thread won't do any work since it's main job is to receive
+//! scheduling message from the spawner. There is also a IO polling thread for event notification.
+//! The worker threads will be `(n - 2)` threads where `n` is the cpu number.
+//!
+//! For more information, see documentation for [`schedulers`].
+
 use super::reactor::{self, POLL_WAKER};
 use super::schedulers::{self, ScheduleMessage, Scheduler};
 
@@ -21,11 +32,25 @@ use waker_fn::waker_fn;
 
 pub use schedulers::{shutdown, spawn};
 
+/// Index for accessing future task.
+///
+/// By design, all future tasks will be store in a global [`Pool`][sharded_slab::Pool]
+/// to reuse any allocation of previous future tasks.
+///
+/// The pool will return a unique index to access the future task in pool.
+///
+/// Since the future access is index-based, other interthread communication method will
+/// be much trivial and easier to use/implement.
+///
+/// It also contains other counters for priority use in [`HybridScheduler`][1] and [`BudgetFuture`][2].
+///
+/// [1]: crate::schedulers::hybrid::HybridScheduler
+/// [2]: crate::BudgetFuture
 #[derive(Clone, Copy, Eq)]
 pub struct FutureIndex {
     pub key: usize,
-    pub budget_index: usize,
-    pub sleep_count: usize,
+    pub(crate) budget_index: usize,
+    pub(crate) sleep_count: usize,
 }
 
 impl PartialEq for FutureIndex {
@@ -90,6 +115,7 @@ impl BoxedFuture {
 // global future allocation pool.
 pub(crate) static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
 
+/// Executor that can run futures.
 pub struct Executor<S: Scheduler> {
     scheduler: S,
     poll_thread_handle: JoinHandle<()>,
@@ -102,13 +128,19 @@ impl<S: Scheduler> Default for Executor<S> {
 }
 
 impl<S: Scheduler> Executor<S> {
+    /// Create an executor instance.
+    ///
+    /// The function will setup the global spawner for [`spawn()`],
+    /// and an IO polling thread for event notification.
+    ///
+    /// You should call this before [`spawn()`] or it won't have any effect.
     pub fn new() -> Self {
         let cpus = num_cpus::get();
         assert!(
             cpus > 0,
             "Failed to detect core number of current cpu, panic!"
         );
-        let size = cpus;
+        let size = if cpus > 2 { cpus - 2 } else { cpus };
         let (spawner, scheduler) = S::init(size);
         log::debug!("Scheduler initialized");
         // set up spawner
@@ -184,6 +216,14 @@ impl<S: Scheduler> Executor<S> {
         }
         log::info!("Runtime shutdown complete.")
     }
+    /// Blocks on a single future.
+    ///
+    /// The executor will continue to run until this future finishes.
+    ///
+    /// You can imagine that this will execute the "main" future function
+    /// to complete before the executor shutdown.
+    ///
+    /// Note that it requires the future and its return type to be [`Send`] and `'static`.
     pub fn block_on<F>(self, future: F) -> F::Output
     where
         F: Future + Send + 'static,

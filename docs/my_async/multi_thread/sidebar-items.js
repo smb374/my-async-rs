@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["Executor","Executor that can run futures."],["FutureIndex","Index for accessing future task."]]};

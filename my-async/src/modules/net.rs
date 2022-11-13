@@ -1,3 +1,7 @@
+//! Convenient alias for types under [`std::net`].
+//!
+//! The module contains predefined operations for creating and operating on these types.
+
 use crate::{Interest, IoWrapper};
 
 use std::{
@@ -12,19 +16,120 @@ use std::{
 use futures_lite::Stream;
 
 // Net Socket
+/// [`TcpStream`][std::net::TcpStream] wrapper type.
+///
+/// This type implements:
+/// - [`connect()`][TcpStream::connect()]: For convenient `IoWrapper<std::net::TcpStream>`
+/// creation. See [`std::net::TcpStream::connect()`].
+/// - [`peek()`][TcpStream::peek()]: Async [`std::net::TcpStream::peek()`].
+///
+/// For other operations, refer to [`IoWrapper`'s documentation][IoWrapper].
 pub type TcpStream = IoWrapper<std::net::TcpStream>;
+/// [`TcpListener`][std::net::TcpListener] wrapper type.
+///
+/// This type implements:
+/// - [`bind()`][TcpListener::bind()]: For convenient `IoWrapper<std::net::TcpListener>` bind
+/// address. See [`std::net::TcpListener::bind()`].
+/// - [`incoming()`][TcpListener::bind()]: Returns [`TcpIncoming`] which implements [`Stream`]
+/// for accepting loop.
+/// - [`accept()`][TcpListener::accept()]: Async [`std::net::TcpListener::accept()`].
+///
+/// For other operations, refer to [`IoWrapper`'s documentation][IoWrapper].
 pub type TcpListener = IoWrapper<std::net::TcpListener>;
+/// [`UdpSocket`][std::net::UdpSocket] wrapper type.
+///
+/// This type implements:
+/// - [`bind()`][UdpSocket::bind()]: For convenient `IoWrapper<std::net::UdpSocket>` bind
+/// address. See [`std::net::UdpSocket::bind()`].
+/// - [`connect()`][UdpSocket::connect()]: Async [`std::net::UdpSocket::connect()`].
+/// - [`peek()`][UdpSocket::peek()]: Async [`std::net::UdpSocket::peek()`].
+/// - [`peek_from()`][UdpSocket::peek_from()]: Async [`std::net::UdpSocket::peek_from()`].
+/// - [`recv()`][UdpSocket::recv()]: Async [`std::net::UdpSocket::recv()`].
+/// - [`recv_from()`][UdpSocket::recv_from()]: Async [`std::net::UdpSocket::recv_from()`].
+/// - [`send()`][UdpSocket::send()]: Async [`std::net::UdpSocket::send()`].
+/// - [`send_to()`][UdpSocket::send_to()]: Async [`std::net::UdpSocket::send_to()`].
+///
+/// For other operations, refer to [`IoWrapper`'s documentation][IoWrapper].
 pub type UdpSocket = IoWrapper<std::net::UdpSocket>;
 
+/// [`Stream`] implmentation for [`TcpListener::incoming()`][a].
+///
+/// This struct implements [`Stream`] allowing to use it like an iterator
+/// for looping needs.
+///
+/// # Example
+/// ```
+/// // example usage for incoming() in a accept loop.
+/// async fn server() -> io::Result<()> {
+///     let mut listener = TcpListener::bind("127.0.0.1:6699")?;
+///     let mut incoming = listener.incoming();
+///     // Using incoming in a while-let loop for convenience.
+///     while let Ok(next) = incoming.try_next().await {
+///         match next {
+///             Some((stream, _)) => {
+///                 // spawn a handler for stream
+///                 let _ = spawn(handler(stream));
+///             }
+///             None => {
+///                 break;
+///             }
+///         }
+///     }
+///     Ok(())
+/// }
+/// ```
+///
+/// [a]: std::net::TcpListener::incoming()
 pub struct TcpIncoming<'a> {
     listener: &'a mut TcpListener,
 }
 
 // UDS
+/// [`UnixStream`][std::os::unix::net::UnixStream] wrapper type.
+///
+/// This type implements:
+/// - [`connect()`][UnixStream::connect()]: For convenient `IoWrapper<std::os::unix::net::UnixStream>`
+/// creation. See [`std::os::unix::net::UnixStream::connect()`].
+/// - [`pair()`][UnixStream::pair()]: For convenient
+/// `IoWrapper<std::os::unix::net::UnixStream>` pair creation. See [`std::os::unix::net::UnixStream::pair()`].
+///
+/// For other operations, refer to [`IoWrapper`'s documentation][IoWrapper].
 pub type UnixStream = IoWrapper<std::os::unix::net::UnixStream>;
+/// [`UnixListener`][std::os::unix::net::UnixListener] wrapper type.
+///
+/// This type implements:
+/// - [`bind()`][UnixListener::bind()]: For convenient `IoWrapper<std::os::unix::net::UnixListener>` bind
+/// address. See [`std::os::unix::net::UnixListener::bind()`].
+/// - [`incoming()`][UnixListener::bind()]: Returns [`UnixIncoming`] which implements [`Stream`]
+/// for accepting loop.
+/// - [`accept()`][UnixListener::accept()]: Async [`std::os::unix::net::UnixListener::accept()`].
+///
+/// For other operations, refer to [`IoWrapper`'s documentation][IoWrapper].
 pub type UnixListener = IoWrapper<std::os::unix::net::UnixListener>;
+/// [`UnixDatagram`][std::os::unix::net::UnixDatagram] wrapper type.
+///
+/// This type implements:
+/// - [`bind()`][UnixDatagram::bind()]: For convenient `IoWrapper<std::os::unix::net::UnixDatagram>` bind
+/// address. See [`std::os::unix::net::UnixDatagram::bind()`].
+/// - [`pair()`][UnixDatagram::pair()]: For convenient
+/// `IoWrapper<std::os::unix::net::UnixDatagram>` pair creation. See [`std::os::unix::net::UnixDatagram::pair()`].
+/// - [`connect()`][UnixDatagram::connect()]: Async [`std::os::unix::net::UnixDatagram::connect()`].
+/// - [`recv()`][UnixDatagram::recv()]: Async [`std::os::unix::net::UnixDatagram::recv()`].
+/// - [`recv_from()`][UnixDatagram::recv_from()]: Async [`std::os::unix::net::UnixDatagram::recv_from()`].
+/// - [`send()`][UnixDatagram::send()]: Async [`std::os::unix::net::UnixDatagram::send()`].
+/// - [`send_to()`][UnixDatagram::send_to()]: Async [`std::os::unix::net::UnixDatagram::send_to()`].
+///
+/// For other operations, refer to [`IoWrapper`'s documentation][IoWrapper].
 pub type UnixDatagram = IoWrapper<std::os::unix::net::UnixDatagram>;
 
+/// [`Stream`] implmentation for [`UnixListener::incoming()`][a].
+///
+/// This struct implements [`Stream`] allowing to use it like an iterator
+/// for looping needs.
+///
+/// See [`TcpIncoming`] for example.
+///
+/// [a]: std::os::unix::net::UnixListener::incoming()
 pub struct UnixIncoming<'a> {
     listener: &'a mut UnixListener,
 }
