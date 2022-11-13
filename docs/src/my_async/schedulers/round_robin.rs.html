@@ -149,7 +149,7 @@
     <span class="ident">tx</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">Message</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Worker</span> {
+<span class="kw">struct</span> <span class="ident">Worker</span> {
     <span class="ident">_idx</span>: <span class="ident">usize</span>,
     <span class="ident">task_tx</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">FutureIndex</span><span class="op">&gt;</span>,
     <span class="ident">task_rx</span>: <span class="ident">Receiver</span><span class="op">&lt;</span><span class="ident">FutureIndex</span><span class="op">&gt;</span>,

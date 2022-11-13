@@ -351,6 +351,11 @@
 <span id="351">351</span>
 <span id="352">352</span>
 <span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
 </pre><pre class="rust"><code><span class="doccomment">//! My implementation of async IO runtime in Rust.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The goal of this runtime is to provide a relatively short code</span>
@@ -359,20 +364,22 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The crate has the following components:</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! * Future implementation for [`AsFd`] types: You can encapsulate any type that</span>
-<span class="doccomment">//! implements [`AsFd`] + [`Unpin`] using [`IoWrapper`].</span>
+<span class="doccomment">//! * Future implementation for [`AsFd`][d] types: You can encapsulate any type that</span>
+<span class="doccomment">//! implements [`AsFd`][d] + [`Unpin`] using [`IoWrapper`].</span>
 <span class="doccomment">//! * Predefined type and API for file and net operation under [`fs`] and [`net`] for convenience.</span>
 <span class="doccomment">//! * [Single-threaded executor][single_thread::Executor] and [multi-threaded executor][multi_thread::Executor]</span>
 <span class="doccomment">//! for executing futures.</span>
 <span class="doccomment">//! * [Future scheduler][`schedulers`] for multi-thread executor. Currently implements</span>
 <span class="doccomment">//! [`HybridScheduler`][a], [`WorkStealingScheduler`][b], [`RoundRobinScheduler`][c].</span>
-<span class="doccomment">//! * Reactor based on [`mio`].</span>
+<span class="doccomment">//! * Reactor based on [`mio`][e].</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! [a]: schedulers::hybrid::HybridScheduler</span>
 <span class="doccomment">//! [b]: schedulers::work_stealing::WorkStealingScheduler</span>
 <span class="doccomment">//! [c]: schedulers::round_robin::RoundRobinScheduler</span>
+<span class="doccomment">//! [d]: https://docs.rs/rustix/0.35.13/rustix/fd/trait.AsFd.html</span>
+<span class="doccomment">//! [e]: https://docs.rs/mio/0.8.5/mio/index.html</span>
 
 <span class="comment">// reactor, not exposed</span>
 <span class="kw">mod</span> <span class="ident">reactor</span>;
@@ -408,16 +415,17 @@
 <span class="doccomment">/// using a token bucket like algorithm.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// To enable the budget use when using this runtime, `use` this trait on top of your module</span>
-<span class="doccomment">/// for overriding [`Future`][f]&#39;s `poll` definition.</span>
+<span class="doccomment">/// for overriding [`Future`][b]&#39;s `poll` definition.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// This trait is auto-implemented for all types that implements [`FutureExt`], which</span>
-<span class="doccomment">/// itself is auto-implemented for all types implementing future [`Future`][f].</span>
+<span class="doccomment">/// This trait is auto-implemented for all types that implements [`FutureExt`][a], which</span>
+<span class="doccomment">/// itself is auto-implemented for all types implementing future [`Future`][b].</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// # Note</span>
 <span class="doccomment">/// This trait hasn&#39;t been tested thoroughly, the trait may have little or no improvement</span>
 <span class="doccomment">/// compare to normal usage.</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// [f]: std::future::Future</span>
+<span class="doccomment">/// [a]: https://docs.rs/futures-lite/1.12.0/futures_lite/future/trait.FutureExt.html</span>
+<span class="doccomment">/// [b]: std::future::Future</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BudgetFuture</span>: <span class="ident">FutureExt</span> {
     <span class="kw">fn</span> <span class="ident">poll</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">cx</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Context</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">Poll</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Output</span><span class="op">&gt;</span>
     <span class="kw">where</span>
@@ -429,7 +437,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">FutureExt</span> <span class="op">+</span> <span class="question-mark">?</span><span class="ident">Sized</span><span class="op">&gt;</span> <span class="ident">BudgetFuture</span> <span class="kw">for</span> <span class="ident">F</span> {}
 
-<span class="doccomment">/// Wrapper around [`AsFd`] + [`Unpin`] types.</span>
+<span class="doccomment">/// Wrapper around [`AsFd`][a] + [`Unpin`] types.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// You can use [`IoWrapper::from()`] for easy convertion over [`AsFd`] types.</span>
 <span class="doccomment">///</span>
@@ -481,6 +489,8 @@
 <span class="doccomment">///     result</span>
 <span class="doccomment">/// }).await;</span>
 <span class="doccomment">/// ```</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// [a]: https://docs.rs/rustix/0.35.13/rustix/fd/trait.AsFd.html</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IoWrapper</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">AsFd</span><span class="op">&gt;</span> {
     <span class="ident">inner</span>: <span class="ident">T</span>,
     <span class="ident">token</span>: <span class="ident">AtomicUsize</span>,

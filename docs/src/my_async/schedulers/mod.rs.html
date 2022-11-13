@@ -670,7 +670,7 @@
 <span class="doccomment">/// Join handle for a future task.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// The handle can do two stuff: async [`join()`][JoinHandle::join()]</span>
-<span class="doccomment">/// and non-blocking [`try_join`][JoinHandle::try_join].</span>
+<span class="doccomment">/// and non-blocking [`try_join()`][JoinHandle::try_join()].</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">JoinHandle</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="ident">spawn_id</span>: <span class="ident">usize</span>,
     <span class="ident">registered</span>: <span class="ident">AtomicBool</span>,
