@@ -260,7 +260,7 @@ pub fn shutdown() {
 /// Join handle for a future task.
 ///
 /// The handle can do two stuff: async [`join()`][JoinHandle::join()]
-/// and non-blocking [`try_join`][JoinHandle::try_join].
+/// and non-blocking [`try_join()`][JoinHandle::try_join()].
 pub struct JoinHandle<T> {
     spawn_id: usize,
     registered: AtomicBool,

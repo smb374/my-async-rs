@@ -28,7 +28,7 @@ struct WorkerInfo {
     tx: Sender<Message>,
 }
 
-pub struct Worker {
+struct Worker {
     _idx: usize,
     task_tx: Sender<FutureIndex>,
     task_rx: Receiver<FutureIndex>,

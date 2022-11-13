@@ -6,20 +6,22 @@
 //!
 //! The crate has the following components:
 //!
-//! * Future implementation for [`AsFd`] types: You can encapsulate any type that
-//! implements [`AsFd`] + [`Unpin`] using [`IoWrapper`].
+//! * Future implementation for [`AsFd`][d] types: You can encapsulate any type that
+//! implements [`AsFd`][d] + [`Unpin`] using [`IoWrapper`].
 //! * Predefined type and API for file and net operation under [`fs`] and [`net`] for convenience.
 //! * [Single-threaded executor][single_thread::Executor] and [multi-threaded executor][multi_thread::Executor]
 //! for executing futures.
 //! * [Future scheduler][`schedulers`] for multi-thread executor. Currently implements
 //! [`HybridScheduler`][a], [`WorkStealingScheduler`][b], [`RoundRobinScheduler`][c].
-//! * Reactor based on [`mio`].
+//! * Reactor based on [`mio`][e].
 //!
 //!
 //!
 //! [a]: schedulers::hybrid::HybridScheduler
 //! [b]: schedulers::work_stealing::WorkStealingScheduler
 //! [c]: schedulers::round_robin::RoundRobinScheduler
+//! [d]: https://docs.rs/rustix/0.35.13/rustix/fd/trait.AsFd.html
+//! [e]: https://docs.rs/mio/0.8.5/mio/index.html
 
 // reactor, not exposed
 mod reactor;
@@ -55,16 +57,17 @@ pub use modules::{fs, io, net, stream};
 /// using a token bucket like algorithm.
 ///
 /// To enable the budget use when using this runtime, `use` this trait on top of your module
-/// for overriding [`Future`][f]'s `poll` definition.
+/// for overriding [`Future`][b]'s `poll` definition.
 ///
-/// This trait is auto-implemented for all types that implements [`FutureExt`], which
-/// itself is auto-implemented for all types implementing future [`Future`][f].
+/// This trait is auto-implemented for all types that implements [`FutureExt`][a], which
+/// itself is auto-implemented for all types implementing future [`Future`][b].
 ///
 /// # Note
 /// This trait hasn't been tested thoroughly, the trait may have little or no improvement
 /// compare to normal usage.
 ///
-/// [f]: std::future::Future
+/// [a]: https://docs.rs/futures-lite/1.12.0/futures_lite/future/trait.FutureExt.html
+/// [b]: std::future::Future
 pub trait BudgetFuture: FutureExt {
     fn poll(&mut self, cx: &mut Context<'_>) -> Poll<Self::Output>
     where
@@ -76,7 +79,7 @@ pub trait BudgetFuture: FutureExt {
 
 impl<F: FutureExt + ?Sized> BudgetFuture for F {}
 
-/// Wrapper around [`AsFd`] + [`Unpin`] types.
+/// Wrapper around [`AsFd`][a] + [`Unpin`] types.
 ///
 /// You can use [`IoWrapper::from()`] for easy convertion over [`AsFd`] types.
 ///
@@ -128,6 +131,8 @@ impl<F: FutureExt + ?Sized> BudgetFuture for F {}
 ///     result
 /// }).await;
 /// ```
+///
+/// [a]: https://docs.rs/rustix/0.35.13/rustix/fd/trait.AsFd.html
 pub struct IoWrapper<T: AsFd> {
     inner: T,
     token: AtomicUsize,
