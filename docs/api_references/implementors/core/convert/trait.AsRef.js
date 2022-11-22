@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"my_async":[["impl&lt;T:&nbsp;AsFd&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.65.0/core/convert/trait.AsRef.html\" title=\"trait core::convert::AsRef\">AsRef</a>&lt;T&gt; for <a class=\"struct\" href=\"my_async/struct.IoWrapper.html\" title=\"struct my_async::IoWrapper\">IoWrapper</a>&lt;T&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

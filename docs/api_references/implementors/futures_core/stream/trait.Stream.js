@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"my_async":[["impl&lt;'a&gt; <a class=\"trait\" href=\"my_async/stream/trait.Stream.html\" title=\"trait my_async::stream::Stream\">Stream</a> for <a class=\"struct\" href=\"my_async/net/struct.TcpIncoming.html\" title=\"struct my_async::net::TcpIncoming\">TcpIncoming</a>&lt;'a&gt;"],["impl&lt;'a&gt; <a class=\"trait\" href=\"my_async/stream/trait.Stream.html\" title=\"trait my_async::stream::Stream\">Stream</a> for <a class=\"struct\" href=\"my_async/net/struct.UnixIncoming.html\" title=\"struct my_async::net::UnixIncoming\">UnixIncoming</a>&lt;'a&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

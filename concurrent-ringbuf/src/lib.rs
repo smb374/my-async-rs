@@ -1,3 +1,5 @@
+//! A ringbuf that is capable of thread-safe push, pop, and steal for work-stealing.
+
 use std::{
     cell::UnsafeCell,
     marker::PhantomData,
@@ -11,6 +13,7 @@ use std::{
 
 use cache_padded::CachePadded;
 
+/// Steal status enum.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Steal<T> {
     Empty,
@@ -89,6 +92,7 @@ struct Inner<T> {
 unsafe impl<T> Send for Inner<T> {}
 unsafe impl<T> Sync for Inner<T> {}
 
+/// A ringbuf that is capable of thread-safe push, pop, and steal for work-stealing.
 // marker for thread-local only.
 // omits some checks on push/pop
 pub struct Ringbuf<T> {
@@ -96,6 +100,7 @@ pub struct Ringbuf<T> {
     _marker: PhantomData<UnsafeCell<()>>,
 }
 
+/// Steal end for the ringbuf for work-stealing.
 #[derive(Clone)]
 pub struct Stealer<T> {
     inner: Arc<CachePadded<Inner<T>>>,
@@ -123,6 +128,9 @@ impl<T> Drop for Inner<T> {
 }
 
 impl<T> Ringbuf<T> {
+    /// Creates a new instance of the ringbuf.
+    ///
+    /// Note that the capacity will be round to the next power of two for fast modulo.
     pub fn new(cap: usize) -> Self {
         let capacity = if cap < usize::MAX && !cap.is_power_of_two() {
             cap.next_power_of_two()
@@ -143,12 +151,14 @@ impl<T> Ringbuf<T> {
         }
     }
 
+    /// Creates a stealer for work-stealing's steal operation.
     pub fn stealer(&self) -> Stealer<T> {
         Stealer {
             inner: self.inner.clone(),
         }
     }
 
+    /// Push an item to the ringbuf.
     // Ok(()): push success
     // Err(item): buffer full
     pub fn push(&self, item: T) -> Result<(), T> {
@@ -156,6 +166,7 @@ impl<T> Ringbuf<T> {
         let tail = self.inner.tail.load(Ordering::Acquire);
         let capacity = self.inner.capacity;
         if tail.wrapping_sub(head) < *capacity {
+            // Fast modulo with 2's power.
             let new_tail = tail.wrapping_add(1) & (*capacity - 1);
             self.inner.tail.store(new_tail, Ordering::Release);
             // SAFETY:
@@ -169,12 +180,18 @@ impl<T> Ringbuf<T> {
         }
     }
 
+    /// Pop an item from the ringbuf.
+    ///
+    /// This implementation makes `pop()` works like a stack's pop as
+    /// the steal operation works on the other end of queue, pop as the same
+    /// side as the push occurrs will lower synchronization need.
     pub fn pop(&self) -> Option<T> {
         let head = self.inner.head.load(Ordering::Relaxed);
         let tail = self.inner.tail.load(Ordering::Acquire);
         if head == tail {
             None
         } else {
+            // Fast modulo with 2's power.
             let new_tail = tail.wrapping_sub(1) & (*self.inner.capacity - 1);
             self.inner.tail.store(new_tail, Ordering::Release);
             // SAFETY:
@@ -184,20 +201,29 @@ impl<T> Ringbuf<T> {
         }
     }
 
+    /// Get the length of the ringbuf.
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
+    /// Check if the ringbuf is empty.
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
-    pub fn strong_count(&self) -> usize {
+    #[allow(dead_code)]
+    pub(crate) fn strong_count(&self) -> usize {
         Arc::strong_count(&self.inner)
     }
 }
 
 impl<T> Stealer<T> {
+    /// Failable steal operation for work-stealing's steal operation.
+    ///
+    /// The steal operation will fail under 2 circumstances:
+    /// 1. The ringbuf is empty. Returns `Steal::Empty`.
+    /// 2. `compare_exchange()` failed. Returns `Steal::Retry`, it's up to you whether to retry or
+    ///    giveup.
     pub fn steal(&self) -> Steal<T> {
         let tail = self.inner.tail.load(Ordering::Relaxed);
         let head = self.inner.head.load(Ordering::Acquire);
@@ -221,10 +247,12 @@ impl<T> Stealer<T> {
         }
     }
 
+    /// Get the length of the ringbuf.
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
+    /// Check if the ringbuf is empty.
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }

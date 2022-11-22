@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["concurrent_ringbuf"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"https://doc.rust-lang.org/1.64.0/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.64.0/core/fmt/trait.Debug.html\" title=\"trait core::fmt::Debug\">Debug</a> for <a class=\"enum\" href=\"concurrent_ringbuf/enum.Steal.html\" title=\"enum concurrent_ringbuf::Steal\">Steal</a>&lt;T&gt;","synthetic":false,"types":["concurrent_ringbuf::Steal"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

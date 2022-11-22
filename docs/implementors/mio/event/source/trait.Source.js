@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["my_async"] = [{"text":"impl&lt;T:&nbsp;AsFd&gt; Source for <a class=\"struct\" href=\"my_async/struct.IoWrapper.html\" title=\"struct my_async::IoWrapper\">IoWrapper</a>&lt;T&gt;","synthetic":false,"types":["my_async::IoWrapper"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

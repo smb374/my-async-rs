@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["my_async"] = [{"text":"impl <a class=\"trait\" href=\"my_async/io/trait.AsyncSeek.html\" title=\"trait my_async::io::AsyncSeek\">AsyncSeek</a> for <a class=\"type\" href=\"my_async/fs/type.File.html\" title=\"type my_async::fs::File\">File</a>","synthetic":false,"types":["my_async::modules::fs::File"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
