@@ -303,6 +303,15 @@
 <span id="303">303</span>
 <span id="304">304</span>
 <span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Single-threaded executor.
 //!
 //! This executor is capable of executing futures without priority.
@@ -344,24 +353,25 @@
 </span><span class="kw">use </span><span class="kw">super</span>::reactor;
 
 <span class="kw">use </span>std::{
+    cell::RefCell,
     collections::VecDeque,
     future::Future,
     hash::Hash,
     io,
-    sync::Arc,
-    task::{Context, Poll},
+    rc::Rc,
+    task::{Context, Poll}, pin::Pin,
 };
 
 <span class="kw">use </span>flume::{Receiver, Sender, TryRecvError};
-<span class="kw">use </span>futures_lite::future::Boxed;
-<span class="kw">use </span>futures_lite::future::FutureExt;
-<span class="kw">use </span>once_cell::sync::{Lazy, OnceCell};
-<span class="kw">use </span>parking_lot::Mutex;
 <span class="kw">use </span>sharded_slab::{Clear, Pool};
 <span class="kw">use </span>waker_fn::waker_fn;
 
-<span class="kw">static </span>SPAWNER: OnceCell&lt;Spawner&gt; = OnceCell::new();
-<span class="kw">static </span>FUTURE_POOL: Lazy&lt;Pool&lt;BoxedFuture&gt;&gt; = Lazy::new(Pool::new);
+<span class="macro">thread_local! </span>{
+    <span class="kw">static </span>SPAWNER: RefCell&lt;<span class="prelude-ty">Option</span>&lt;Spawner&gt;&gt; = RefCell::new(<span class="prelude-val">None</span>);
+    <span class="kw">static </span>FUTURE_POOL: Pool&lt;BoxedFuture&gt; = Pool::new();
+}
+
+<span class="kw">type </span>BoxedLocal&lt;T&gt; = Pin&lt;Box&lt;<span class="kw">dyn </span>Future&lt;Output = T&gt; + <span class="lifetime">&#39;static</span>&gt;&gt;;
 
 <span class="attribute">#[derive(Clone, Copy, Eq)]
 </span><span class="kw">struct </span>FutureIndex {
@@ -380,30 +390,27 @@
     }
 }
 
-<span class="attribute">#[allow(dead_code)]
-</span><span class="kw">struct </span>BoxedFuture {
-    future: Mutex&lt;<span class="prelude-ty">Option</span>&lt;Boxed&lt;io::Result&lt;()&gt;&gt;&gt;&gt;,
-    sleep_count: usize,
+<span class="kw">struct </span>BoxedFuture {
+    future: RefCell&lt;<span class="prelude-ty">Option</span>&lt;BoxedLocal&lt;io::Result&lt;()&gt;&gt;&gt;&gt;,
 }
 
 <span class="kw">impl </span>Default <span class="kw">for </span>BoxedFuture {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
         BoxedFuture {
-            future: Mutex::new(<span class="prelude-val">None</span>),
-            sleep_count: <span class="number">0</span>,
+            future: RefCell::new(<span class="prelude-val">None</span>),
         }
     }
 }
 
 <span class="kw">impl </span>Clear <span class="kw">for </span>BoxedFuture {
     <span class="kw">fn </span>clear(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
-        <span class="self">self</span>.future.get_mut().clear();
+        <span class="self">self</span>.future.borrow_mut().clear();
     }
 }
 
 <span class="kw">impl </span>BoxedFuture {
     <span class="kw">fn </span>run(<span class="kw-2">&amp;</span><span class="self">self</span>, index: <span class="kw-2">&amp;</span>FutureIndex, tx: Sender&lt;FutureIndex&gt;) -&gt; bool {
-        <span class="kw">let </span><span class="kw-2">mut </span>guard = <span class="self">self</span>.future.lock();
+        <span class="kw">let </span><span class="kw-2">mut </span>guard = <span class="self">self</span>.future.borrow_mut();
         <span class="comment">// run *ONCE*
         </span><span class="kw">if let </span><span class="prelude-val">Some</span>(fut) = guard.as_mut() {
             <span class="kw">let </span>new_index = FutureIndex {
@@ -455,7 +462,7 @@
         <span class="kw">let </span>(tx, rx) = flume::unbounded();
         <span class="kw">let </span>(task_tx, task_rx) = flume::unbounded();
         <span class="kw">let </span>spawner = Spawner { tx };
-        SPAWNER.get_or_init(<span class="kw">move </span>|| spawner);
+        SPAWNER.with(|s| s.borrow_mut().replace(spawner));
         <span class="self">Self </span>{
             task_tx,
             task_rx,
@@ -469,17 +476,19 @@
         reactor.setup_registry();
         <span class="lifetime">&#39;outer</span>: <span class="kw">loop </span>{
             <span class="kw">if let </span><span class="prelude-val">Some</span>(index) = <span class="self">self</span>.queue.pop_back() {
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(boxed) = FUTURE_POOL.get(index.key) {
-                    <span class="kw">let </span>finished = boxed.run(<span class="kw-2">&amp;</span>index, <span class="self">self</span>.task_tx.clone());
-                    <span class="kw">if </span>finished &amp;&amp; !FUTURE_POOL.clear(index.key) {
-                        <span class="macro">log::error!</span>(
-                            <span class="string">&quot;Failed to remove completed future with index = {} from pool.&quot;</span>,
-                            index.key
-                        );
+                FUTURE_POOL.with(|p| {
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(boxed) = p.get(index.key) {
+                        <span class="kw">let </span>finished = boxed.run(<span class="kw-2">&amp;</span>index, <span class="self">self</span>.task_tx.clone());
+                        <span class="kw">if </span>finished &amp;&amp; !p.clear(index.key) {
+                            <span class="macro">log::error!</span>(
+                                <span class="string">&quot;Failed to remove completed future with index = {} from pool.&quot;</span>,
+                                index.key
+                            );
+                        }
+                    } <span class="kw">else </span>{
+                        <span class="macro">log::error!</span>(<span class="string">&quot;Future with index = {} is not in pool.&quot;</span>, index.key);
                     }
-                } <span class="kw">else </span>{
-                    <span class="macro">log::error!</span>(<span class="string">&quot;Future with index = {} is not in pool.&quot;</span>, index.key);
-                }
+                });
             } <span class="kw">else </span>{
                 <span class="kw">let </span><span class="kw-2">mut </span>wakeup_count = <span class="number">0</span>;
                 <span class="kw">loop </span>{
@@ -516,19 +525,16 @@
     ///
     /// You can imagine that this will execute the &quot;main&quot; future function
     /// to complete before the executor shutdown.
-    ///
-    /// Note that it requires the future and its return type to be [`Send`] and `&#39;static`.
     </span><span class="kw">pub fn </span>block_on&lt;F&gt;(<span class="kw-2">mut </span><span class="self">self</span>, future: F) -&gt; F::Output
     <span class="kw">where
-        </span>F: Future + Send + <span class="lifetime">&#39;static</span>,
-        F::Output: Send + <span class="lifetime">&#39;static</span>,
+        </span>F: Future + <span class="lifetime">&#39;static</span>,
     {
-        <span class="kw">let </span>result_arc: Arc&lt;Mutex&lt;<span class="prelude-ty">Option</span>&lt;F::Output&gt;&gt;&gt; = Arc::new(Mutex::new(<span class="prelude-val">None</span>));
-        <span class="kw">let </span>clone = Arc::clone(<span class="kw-2">&amp;</span>result_arc);
+        <span class="kw">let </span>result_arc: Rc&lt;RefCell&lt;<span class="prelude-ty">Option</span>&lt;F::Output&gt;&gt;&gt; = Rc::new(RefCell::new(<span class="prelude-val">None</span>));
+        <span class="kw">let </span>clone = Rc::clone(<span class="kw-2">&amp;</span>result_arc);
         spawn(<span class="kw">async move </span>{
             <span class="kw">let </span>result = future.<span class="kw">await</span>;
             <span class="comment">// should put any result inside the arc, even if it&#39;s `()`!
-            </span>clone.lock().replace(result);
+            </span>clone.borrow_mut().replace(result);
             <span class="macro">log::debug!</span>(<span class="string">&quot;Blocked future finished.&quot;</span>);
             shutdown();
             <span class="prelude-val">Ok</span>(())
@@ -536,7 +542,7 @@
         <span class="macro">log::info!</span>(<span class="string">&quot;Start blocking...&quot;</span>);
         <span class="self">self</span>.run();
         <span class="macro">log::debug!</span>(<span class="string">&quot;Waiting result...&quot;</span>);
-        <span class="kw">let </span><span class="kw-2">mut </span>guard = result_arc.lock();
+        <span class="kw">let </span><span class="kw-2">mut </span>guard = result_arc.borrow_mut();
         <span class="kw">let </span>result = guard.take();
         <span class="macro">assert!</span>(
             result.is_some(),
@@ -548,12 +554,14 @@
 
 <span class="kw">impl </span>Drop <span class="kw">for </span>Executor {
     <span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(spawner) = SPAWNER.get() {
-            spawner
-                .tx
-                .send(Message::Close)
-                .expect(<span class="string">&quot;Message queue is full.&quot;</span>);
-        }
+        SPAWNER.with(|s| {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(spawner) = s.borrow().as_ref() {
+                spawner
+                    .tx
+                    .send(Message::Close)
+                    .expect(<span class="string">&quot;Message queue is full.&quot;</span>);
+            }
+        });
     }
 }
 
@@ -566,13 +574,19 @@
 <span class="kw">impl </span>Spawner {
     <span class="kw">fn </span>spawn&lt;F&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, future: F)
     <span class="kw">where
-        </span>F: Future&lt;Output = io::Result&lt;()&gt;&gt; + <span class="lifetime">&#39;static </span>+ Send,
+        </span>F: Future&lt;Output = io::Result&lt;()&gt;&gt; + <span class="lifetime">&#39;static</span>,
     {
-        <span class="kw">let </span>key = FUTURE_POOL
-            .create_with(|seat| {
-                seat.future.get_mut().replace(future.boxed());
+        <span class="comment">// let key = FUTURE_POOL
+        //     .create_with(|seat| {
+        //         seat.future.get_mut().replace(future.boxed());
+        //     })
+        //     .unwrap();
+        </span><span class="kw">let </span>key = FUTURE_POOL.with(|p| {
+            p.create_with(|seat| {
+                seat.future.borrow_mut().replace(Box::pin(future));
             })
-            .unwrap();
+            .unwrap()
+        });
         <span class="self">self</span>.tx
             .send(Message::Run(FutureIndex {
                 key,
@@ -593,20 +607,24 @@
 /// Currently doesn&#39;t implement join handle in single thread.
 </span><span class="kw">pub fn </span>spawn&lt;F&gt;(fut: F)
 <span class="kw">where
-    </span>F: Future&lt;Output = io::Result&lt;()&gt;&gt; + <span class="lifetime">&#39;static </span>+ Send,
+    </span>F: Future&lt;Output = io::Result&lt;()&gt;&gt; + <span class="lifetime">&#39;static</span>,
 {
-    <span class="kw">if let </span><span class="prelude-val">Some</span>(spawner) = SPAWNER.get() {
-        spawner.spawn(fut);
-    }
+    SPAWNER.with(|s| {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(spawner) = s.borrow().as_ref() {
+            spawner.spawn(fut);
+        }
+    })
 }
 
 <span class="doccomment">/// Notify the executor to shutdown.
 ///
 /// Useful for some early exit condition. E.g. error handling.
 </span><span class="kw">pub fn </span>shutdown() {
-    <span class="kw">if let </span><span class="prelude-val">Some</span>(spawner) = SPAWNER.get() {
-        spawner.shutdown();
-    }
+    SPAWNER.with(|s| {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(spawner) = s.borrow().as_ref() {
+            spawner.shutdown();
+        }
+    })
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="my_async" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>
