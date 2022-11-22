@@ -3,7 +3,7 @@ authors = ["Po-Yeh Chen"]
 language = "en"
 multilingual = false
 src = "src"
-title = "The Design and Implementation Detail of `my-async`"
+title = "The Design and Implementation Detail of my-async"
 
 [output.html]
 mathjax-support = true

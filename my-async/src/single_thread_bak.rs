@@ -39,25 +39,24 @@
 use super::reactor;
 
 use std::{
-    cell::RefCell,
     collections::VecDeque,
     future::Future,
     hash::Hash,
     io,
-    rc::Rc,
-    task::{Context, Poll}, pin::Pin,
+    sync::Arc,
+    task::{Context, Poll},
 };
 
 use flume::{Receiver, Sender, TryRecvError};
+use futures_lite::future::Boxed;
+use futures_lite::future::FutureExt;
+use once_cell::sync::{Lazy, OnceCell};
+use parking_lot::Mutex;
 use sharded_slab::{Clear, Pool};
 use waker_fn::waker_fn;
 
-thread_local! {
-    static SPAWNER: RefCell<Option<Spawner>> = RefCell::new(None);
-    static FUTURE_POOL: Pool<BoxedFuture> = Pool::new();
-}
-
-type BoxedLocal<T> = Pin<Box<dyn Future<Output = T> + 'static>>;
+static SPAWNER: OnceCell<Spawner> = OnceCell::new();
+static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
 
 #[derive(Clone, Copy, Eq)]
 struct FutureIndex {
@@ -76,27 +75,30 @@ impl Hash for FutureIndex {
     }
 }
 
+#[allow(dead_code)]
 struct BoxedFuture {
-    future: RefCell<Option<BoxedLocal<io::Result<()>>>>,
+    future: Mutex<Option<Boxed<io::Result<()>>>>,
+    sleep_count: usize,
 }
 
 impl Default for BoxedFuture {
     fn default() -> Self {
         BoxedFuture {
-            future: RefCell::new(None),
+            future: Mutex::new(None),
+            sleep_count: 0,
         }
     }
 }
 
 impl Clear for BoxedFuture {
     fn clear(&mut self) {
-        self.future.borrow_mut().clear();
+        self.future.get_mut().clear();
     }
 }
 
 impl BoxedFuture {
     fn run(&self, index: &FutureIndex, tx: Sender<FutureIndex>) -> bool {
-        let mut guard = self.future.borrow_mut();
+        let mut guard = self.future.lock();
         // run *ONCE*
         if let Some(fut) = guard.as_mut() {
             let new_index = FutureIndex {
@@ -148,7 +150,7 @@ impl Executor {
         let (tx, rx) = flume::unbounded();
         let (task_tx, task_rx) = flume::unbounded();
         let spawner = Spawner { tx };
-        SPAWNER.with(|s| s.borrow_mut().replace(spawner));
+        SPAWNER.get_or_init(move || spawner);
         Self {
             task_tx,
             task_rx,
@@ -162,19 +164,17 @@ impl Executor {
         reactor.setup_registry();
         'outer: loop {
             if let Some(index) = self.queue.pop_back() {
-                FUTURE_POOL.with(|p| {
-                    if let Some(boxed) = p.get(index.key) {
-                        let finished = boxed.run(&index, self.task_tx.clone());
-                        if finished && !p.clear(index.key) {
-                            log::error!(
-                                "Failed to remove completed future with index = {} from pool.",
-                                index.key
-                            );
-                        }
-                    } else {
-                        log::error!("Future with index = {} is not in pool.", index.key);
+                if let Some(boxed) = FUTURE_POOL.get(index.key) {
+                    let finished = boxed.run(&index, self.task_tx.clone());
+                    if finished && !FUTURE_POOL.clear(index.key) {
+                        log::error!(
+                            "Failed to remove completed future with index = {} from pool.",
+                            index.key
+                        );
                     }
-                });
+                } else {
+                    log::error!("Future with index = {} is not in pool.", index.key);
+                }
             } else {
                 let mut wakeup_count = 0;
                 loop {
@@ -211,16 +211,19 @@ impl Executor {
     ///
     /// You can imagine that this will execute the "main" future function
     /// to complete before the executor shutdown.
+    ///
+    /// Note that it requires the future and its return type to be [`Send`] and `'static`.
     pub fn block_on<F>(mut self, future: F) -> F::Output
     where
-        F: Future + 'static,
+        F: Future + Send + 'static,
+        F::Output: Send + 'static,
     {
-        let result_arc: Rc<RefCell<Option<F::Output>>> = Rc::new(RefCell::new(None));
-        let clone = Rc::clone(&result_arc);
+        let result_arc: Arc<Mutex<Option<F::Output>>> = Arc::new(Mutex::new(None));
+        let clone = Arc::clone(&result_arc);
         spawn(async move {
             let result = future.await;
             // should put any result inside the arc, even if it's `()`!
-            clone.borrow_mut().replace(result);
+            clone.lock().replace(result);
             log::debug!("Blocked future finished.");
             shutdown();
             Ok(())
@@ -228,7 +231,7 @@ impl Executor {
         log::info!("Start blocking...");
         self.run();
         log::debug!("Waiting result...");
-        let mut guard = result_arc.borrow_mut();
+        let mut guard = result_arc.lock();
         let result = guard.take();
         assert!(
             result.is_some(),
@@ -240,14 +243,12 @@ impl Executor {
 
 impl Drop for Executor {
     fn drop(&mut self) {
-        SPAWNER.with(|s| {
-            if let Some(spawner) = s.borrow().as_ref() {
-                spawner
-                    .tx
-                    .send(Message::Close)
-                    .expect("Message queue is full.");
-            }
-        });
+        if let Some(spawner) = SPAWNER.get() {
+            spawner
+                .tx
+                .send(Message::Close)
+                .expect("Message queue is full.");
+        }
     }
 }
 
@@ -260,19 +261,13 @@ impl Default for Executor {
 impl Spawner {
     fn spawn<F>(&self, future: F)
     where
-        F: Future<Output = io::Result<()>> + 'static,
+        F: Future<Output = io::Result<()>> + 'static + Send,
     {
-        // let key = FUTURE_POOL
-        //     .create_with(|seat| {
-        //         seat.future.get_mut().replace(future.boxed());
-        //     })
-        //     .unwrap();
-        let key = FUTURE_POOL.with(|p| {
-            p.create_with(|seat| {
-                seat.future.borrow_mut().replace(Box::pin(future));
+        let key = FUTURE_POOL
+            .create_with(|seat| {
+                seat.future.get_mut().replace(future.boxed());
             })
-            .unwrap()
-        });
+            .unwrap();
         self.tx
             .send(Message::Run(FutureIndex {
                 key,
@@ -293,22 +288,18 @@ impl Spawner {
 /// Currently doesn't implement join handle in single thread.
 pub fn spawn<F>(fut: F)
 where
-    F: Future<Output = io::Result<()>> + 'static,
+    F: Future<Output = io::Result<()>> + 'static + Send,
 {
-    SPAWNER.with(|s| {
-        if let Some(spawner) = s.borrow().as_ref() {
-            spawner.spawn(fut);
-        }
-    })
+    if let Some(spawner) = SPAWNER.get() {
+        spawner.spawn(fut);
+    }
 }
 
 /// Notify the executor to shutdown.
 ///
 /// Useful for some early exit condition. E.g. error handling.
 pub fn shutdown() {
-    SPAWNER.with(|s| {
-        if let Some(spawner) = s.borrow().as_ref() {
-            spawner.shutdown();
-        }
-    })
+    if let Some(spawner) = SPAWNER.get() {
+        spawner.shutdown();
+    }
 }
