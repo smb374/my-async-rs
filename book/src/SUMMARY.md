@@ -1,10 +1,15 @@
 # Summary
 [Introduction](intro.md)
 
-# Prerequiste Knowledges
+# Prerequisite Knowledges
 - [Async in Rust](pre/async_in_rust.md)
 - [Overview of an executor's architechture](pre/overview.md)
 - [A minimal single-threded Future evaluator](pre/single_thread_executor.md)
+  - [Future handling](pre/single_future_handle.md)
+  - [Global Storages](pre/single_global_storage.md)
+  - [Message Passing](pre/single_message_passing.md)
+  - [Executor Main Loop](pre/single_executor.md)
+  - [Final Code](pre/single_final_code.md)
 
 # First layer - Future and IoWrapper
 - [Bone of async - Future trait](layer/fst/future_trait.md)

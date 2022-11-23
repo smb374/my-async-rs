@@ -7,3 +7,6 @@ title = "The Design and Implementation Detail of my-async"
 
 [output.html]
 mathjax-support = true
+
+[output.html.playground]
+runnable = false
