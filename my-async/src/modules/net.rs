@@ -58,7 +58,7 @@ pub type UdpSocket = IoWrapper<std::net::UdpSocket>;
 /// for looping needs.
 ///
 /// # Example
-/// ```
+/// ```ignore
 /// // example usage for incoming() in a accept loop.
 /// async fn server() -> io::Result<()> {
 ///     let mut listener = TcpListener::bind("127.0.0.1:6699")?;

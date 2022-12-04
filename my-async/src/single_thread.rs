@@ -21,13 +21,16 @@
 //!     loop {
 //!         // ... do stuff
 //!         spawn(async move{
-//!             handle().await;
+//!             handle().await?;
+//!             Ok(())
 //!         }); // spawn future
 //!     }
+//!     Ok(())
 //! }
 //!
 //! async fn handle() -> io::Result<()> {
 //!     // ... do stuff
+//!     Ok(())
 //! }
 //!
 //! fn main() -> io::Result<()> {

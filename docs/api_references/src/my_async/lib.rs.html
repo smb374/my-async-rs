@@ -390,7 +390,7 @@
 <span class="kw">pub mod </span>single_thread;
 <span class="comment">// scheduler
 </span><span class="kw">pub mod </span>schedulers;
-<span class="kw">mod </span>utils;
+<span class="kw">pub mod </span>utils;
 
 <span class="kw">use </span><span class="kw">crate</span>::schedulers::poll_with_budget;
 
@@ -448,7 +448,7 @@
 /// 1. Non-IO and synchronous operations: use [`IoWrapper::inner()`] for reference and
 ///    [`IoWrapper::inner_mut()`] for mutable reference to the wrapped type.
 /// 2. Operations need `&amp;self`: use [`IoWrapper::ref_io()`]:
-/// ```
+/// ```ignore
 /// // Read Operations
 /// let result = self.ref_io(Interest::READABLE, |me| {
 ///     let inner = me.inner();
@@ -469,7 +469,7 @@
 /// }).await;
 /// ```
 /// 3. Operations need `&amp;mut self`: use [`IoWrapper::mut_io()`]:
-/// ```
+/// ```ignore
 /// // Read Operations
 /// let result = self.mut_io(Interest::READABLE, |me| {
 ///     let mut inner = me.inner_mut();
@@ -558,7 +558,7 @@
     /// For example, take a look on the implementation of
     /// [`Tcpstream::peek()`][crate::net::TcpStream::peek()]:
     ///
-    /// ```rust
+    /// ```ignore
     /// pub async fn peek(&amp;self, buf: &amp;mut [u8]) -&gt; io::Result&lt;usize&gt; {
     ///     self.ref_io(Interest::READABLE, |me| me.inner().peek(buf))
     ///         .await

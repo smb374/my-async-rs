@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["set_nonblocking","A convenient function that sets the file descriptor with `O_NONBLOCK`."]]};

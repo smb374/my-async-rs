@@ -84,7 +84,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">Prerequisite Knowledges</li><li class="chapter-item expanded "><a href="pre/async_in_rust.html"><strong aria-hidden="true">1.</strong> Async in Rust</a></li><li class="chapter-item expanded "><a href="pre/overview.html"><strong aria-hidden="true">2.</strong> Overview of an executor's architechture</a></li><li class="chapter-item expanded "><a href="pre/single_thread_executor.html"><strong aria-hidden="true">3.</strong> A minimal single-threded Future evaluator</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="pre/single_future_handle.html"><strong aria-hidden="true">3.1.</strong> Future handling</a></li><li class="chapter-item expanded "><a href="pre/single_global_storage.html"><strong aria-hidden="true">3.2.</strong> Global Storages</a></li><li class="chapter-item expanded "><a href="pre/single_message_passing.html"><strong aria-hidden="true">3.3.</strong> Message Passing</a></li><li class="chapter-item expanded "><a href="pre/single_executor.html"><strong aria-hidden="true">3.4.</strong> Executor Main Loop</a></li><li class="chapter-item expanded "><a href="pre/single_final_code.html"><strong aria-hidden="true">3.5.</strong> Final Code</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">First layer - Future and IoWrapper</li><li class="chapter-item expanded "><a href="layer/fst/future_trait.html"><strong aria-hidden="true">4.</strong> Bone of async - Future trait</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/future_in_depth.html"><strong aria-hidden="true">4.1.</strong> Future in depth</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/fsm.html"><strong aria-hidden="true">4.1.1.</strong> Future desugar - a Finite State Machine</a></li><li class="chapter-item expanded "><a href="layer/fst/mechanism.html"><strong aria-hidden="true">4.1.2.</strong> Future trait mechanism</a></li><li class="chapter-item expanded "><a href="layer/fst/challenge.html"><strong aria-hidden="true">4.1.3.</strong> The challenge of implementing an executor</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/handling.html"><strong aria-hidden="true">4.2.</strong> Generic Future handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/heap_alloc.html"><strong aria-hidden="true">4.2.1.</strong> General heap-allocated Future object</a></li><li class="chapter-item expanded "><a href="layer/fst/pool.html"><strong aria-hidden="true">4.2.2.</strong> Global Reusable Object Pool for fragment controll and Future managment</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper.html"><strong aria-hidden="true">5.</strong> IO Adapter for general file descriptor - IoWrapper</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/io_handling.html"><strong aria-hidden="true">5.1.</strong> General IO handling</a></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper_design.html"><strong aria-hidden="true">5.2.</strong> IoWrapper design</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Second layer - Executor and message passing</li><li class="chapter-item expanded "><a href="layer/snd/executor.html"><strong aria-hidden="true">6.</strong> Heart of a runtime - Executor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/commands.html"><strong aria-hidden="true">6.1.</strong> General commands of a runtime</a></li><li class="chapter-item expanded "><a href="layer/snd/message_handling.html"><strong aria-hidden="true">6.2.</strong> Design of Executor - an abstraction to scheduler and reactor</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/message_passing.html"><strong aria-hidden="true">7.</strong> Passing messages</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/spawner.html"><strong aria-hidden="true">7.1.</strong> Spawner - message sender</a></li><li class="chapter-item expanded "><a href="layer/snd/message_payload.html"><strong aria-hidden="true">7.2.</strong> Message payload</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/join_handle.html"><strong aria-hidden="true">8.</strong> Join Handle for Future</a></li><li class="chapter-item expanded affix "><li class="part-title">Third layer - Scheduler and schedule problems</li><li class="chapter-item expanded "><a href="layer/trd/scheduler.html"><strong aria-hidden="true">9.</strong> Multithread mania - Scheduler</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/scheduler_trait.html"><strong aria-hidden="true">9.1.</strong> Scheduler trait design</a></li><li class="chapter-item expanded "><a href="layer/trd/worker_structure.html"><strong aria-hidden="true">9.2.</strong> General Worker structure and logic</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/threading_method.html"><strong aria-hidden="true">10.</strong> Threading Method</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/round_robin.html"><strong aria-hidden="true">10.1.</strong> Round Robin</a></li><li class="chapter-item expanded "><a href="layer/trd/work_stealing.html"><strong aria-hidden="true">10.2.</strong> Work Stealing</a></li><li class="chapter-item expanded "><a href="layer/trd/hybrid.html"><strong aria-hidden="true">10.3.</strong> Hybrid Queue for Prioritized Work Stealing</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/token_bucket.html"><strong aria-hidden="true">11.</strong> A token bucket like algorithm for auto task yielding</a></li><li class="chapter-item expanded affix "><li class="part-title">Fourth layer - Reactor and Waker handling</li><li class="chapter-item expanded "><a href="layer/fth/reactor.html"><strong aria-hidden="true">12.</strong> System IO Event Harvester - Reactor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/io_registration.html"><strong aria-hidden="true">12.1.</strong> IO event registeration</a></li><li class="chapter-item expanded "><a href="layer/fth/event_handling.html"><strong aria-hidden="true">12.2.</strong> Event handling</a></li><li class="chapter-item expanded "><a href="layer/fth/event_maintain.html"><strong aria-hidden="true">12.3.</strong> Event maintain for late use</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fth/waker_handling.html"><strong aria-hidden="true">13.</strong> Waker handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/global_map.html"><strong aria-hidden="true">13.1.</strong> Global slab for wakers</a></li><li class="chapter-item expanded "><a href="layer/fth/registration.html"><strong aria-hidden="true">13.2.</strong> Waker registration</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Unresolved Problems and Future Works</li><li class="chapter-item expanded "><a href="prob/load_balancing.html"><strong aria-hidden="true">14.</strong> Load Balancing</a></li><li class="chapter-item expanded "><a href="prob/generic_payload.html"><strong aria-hidden="true">15.</strong> Generic Message Payload</a></li><li class="chapter-item expanded "><a href="prob/reactor_abstract.html"><strong aria-hidden="true">16.</strong> Reactor abstraction for different systems</a></li><li class="chapter-item expanded affix "><li class="part-title">References</li><li class="chapter-item expanded "><a href="references.html"><strong aria-hidden="true">17.</strong> References</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">Prerequisite Knowledges</li><li class="chapter-item expanded "><a href="pre/async_in_rust.html"><strong aria-hidden="true">1.</strong> Async in Rust</a></li><li class="chapter-item expanded "><a href="pre/overview.html"><strong aria-hidden="true">2.</strong> Overview of an executor's architechture</a></li><li class="chapter-item expanded "><a href="pre/single_thread_executor.html"><strong aria-hidden="true">3.</strong> A minimal single-threded Future evaluator</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="pre/single_future_handle.html"><strong aria-hidden="true">3.1.</strong> Future handling</a></li><li class="chapter-item expanded "><a href="pre/single_global_storage.html"><strong aria-hidden="true">3.2.</strong> Global Storages</a></li><li class="chapter-item expanded "><a href="pre/single_message_passing.html"><strong aria-hidden="true">3.3.</strong> Message Passing</a></li><li class="chapter-item expanded "><a href="pre/single_executor.html"><strong aria-hidden="true">3.4.</strong> Executor Main Loop</a></li><li class="chapter-item expanded "><a href="pre/single_final_code.html"><strong aria-hidden="true">3.5.</strong> Final Code</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">First layer - Future and IoWrapper</li><li class="chapter-item expanded "><a href="layer/fst/future_trait.html"><strong aria-hidden="true">4.</strong> Bone of async - Future trait</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/future_in_depth.html"><strong aria-hidden="true">4.1.</strong> Future in depth</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/mechanism.html"><strong aria-hidden="true">4.1.1.</strong> Future trait mechanism</a></li><li class="chapter-item expanded "><a href="layer/fst/fsm.html"><strong aria-hidden="true">4.1.2.</strong> Future desugar - a Finite State Machine</a></li><li class="chapter-item expanded "><a href="layer/fst/challenge.html"><strong aria-hidden="true">4.1.3.</strong> The challenge of managing Future objects</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/handling.html"><strong aria-hidden="true">4.2.</strong> Generic Future handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/heap_alloc.html"><strong aria-hidden="true">4.2.1.</strong> General heap-allocated Future object</a></li><li class="chapter-item expanded "><a href="layer/fst/pool.html"><strong aria-hidden="true">4.2.2.</strong> Global Reusable Object Pool for allocation reuse, fragment control, and easy managment</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper.html"><strong aria-hidden="true">5.</strong> IO Adapter for general file descriptor - IoWrapper</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/io_handling.html"><strong aria-hidden="true">5.1.</strong> General IO handling</a></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper_design.html"><strong aria-hidden="true">5.2.</strong> IoWrapper design</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Second layer - Executor and message passing</li><li class="chapter-item expanded "><a href="layer/snd/executor.html"><strong aria-hidden="true">6.</strong> Heart of a runtime - Executor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/commands.html"><strong aria-hidden="true">6.1.</strong> General commands of a runtime</a></li><li class="chapter-item expanded "><a href="layer/snd/message_handling.html"><strong aria-hidden="true">6.2.</strong> Design of Executor - an abstraction to scheduler and reactor</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/message_passing.html"><strong aria-hidden="true">7.</strong> Passing messages</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/spawner.html"><strong aria-hidden="true">7.1.</strong> Spawner - message sender</a></li><li class="chapter-item expanded "><a href="layer/snd/message_payload.html"><strong aria-hidden="true">7.2.</strong> Message payload</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/join_handle.html"><strong aria-hidden="true">8.</strong> Join Handle for Future</a></li><li class="chapter-item expanded affix "><li class="part-title">Third layer - Scheduler and schedule problems</li><li class="chapter-item expanded "><a href="layer/trd/scheduler.html"><strong aria-hidden="true">9.</strong> Multithread mania - Scheduler</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/scheduler_trait.html"><strong aria-hidden="true">9.1.</strong> Scheduler trait design</a></li><li class="chapter-item expanded "><a href="layer/trd/worker_structure.html"><strong aria-hidden="true">9.2.</strong> General Worker structure and logic</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/threading_method.html"><strong aria-hidden="true">10.</strong> Threading Method</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/round_robin.html"><strong aria-hidden="true">10.1.</strong> Round Robin</a></li><li class="chapter-item expanded "><a href="layer/trd/work_stealing.html"><strong aria-hidden="true">10.2.</strong> Work Stealing</a></li><li class="chapter-item expanded "><a href="layer/trd/hybrid.html"><strong aria-hidden="true">10.3.</strong> Hybrid Queue for Prioritized Work Stealing</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/token_bucket.html"><strong aria-hidden="true">11.</strong> A token bucket like algorithm for auto task yielding</a></li><li class="chapter-item expanded affix "><li class="part-title">Fourth layer - Reactor and Waker handling</li><li class="chapter-item expanded "><a href="layer/fth/reactor.html"><strong aria-hidden="true">12.</strong> System IO Event Harvester - Reactor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/io_registration.html"><strong aria-hidden="true">12.1.</strong> IO event registeration</a></li><li class="chapter-item expanded "><a href="layer/fth/event_handling.html"><strong aria-hidden="true">12.2.</strong> Event handling</a></li><li class="chapter-item expanded "><a href="layer/fth/event_maintain.html"><strong aria-hidden="true">12.3.</strong> Event maintain for late use</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fth/waker_handling.html"><strong aria-hidden="true">13.</strong> Waker handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/global_map.html"><strong aria-hidden="true">13.1.</strong> Global slab for wakers</a></li><li class="chapter-item expanded "><a href="layer/fth/registration.html"><strong aria-hidden="true">13.2.</strong> Waker registration</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Unresolved Problems and Future Works</li><li class="chapter-item expanded "><a href="prob/load_balancing.html"><strong aria-hidden="true">14.</strong> Load Balancing</a></li><li class="chapter-item expanded "><a href="prob/generic_payload.html"><strong aria-hidden="true">15.</strong> Generic Message Payload</a></li><li class="chapter-item expanded "><a href="prob/reactor_abstract.html"><strong aria-hidden="true">16.</strong> Reactor abstraction for different systems</a></li><li class="chapter-item expanded affix "><li class="part-title">References</li><li class="chapter-item expanded "><a href="references.html"><strong aria-hidden="true">17.</strong> References</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -749,16 +749,468 @@ pub fn shutdown() {
 }
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="bone-of-async---future-trait"><a class="header" href="#bone-of-async---future-trait">Bone of async - Future trait</a></h1>
+<p><code>Future</code> trait is the core of asynchronous IO in Rust.
+Without it, the <code>async</code>/<code>await</code> keyword won't work, and
+designer of a runtime will have to implement a callback
+system to cooperate with the system IO event handle
+loop.</p>
+<p>In this section, we will take a deeper look into
+the <code>Future</code> trait and talk about the technique I
+use to handle it.</p>
+<p>Without a second thought, let's dig in...</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="future-in-depth"><a class="header" href="#future-in-depth">Future in depth</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="future-desugar---a-finite-state-machine"><a class="header" href="#future-desugar---a-finite-state-machine">Future desugar - a Finite State Machine</a></h1>
+<p>In this part, we will:</p>
+<ul>
+<li>Desugar the generated <code>Future</code> object from the <code>async fn</code> functions by the compiler.</li>
+<li>Take a deeper look into <code>Future</code>'s trait definition and the <code>Waker</code> mechanism.</li>
+<li>Discuss the challenge we will face under this mechanism.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="future-trait-mechanism"><a class="header" href="#future-trait-mechanism">Future trait mechanism</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="the-challenge-of-implementing-an-executor"><a class="header" href="#the-challenge-of-implementing-an-executor">The challenge of implementing an executor</a></h1>
+<p>The <code>Future</code> trait is defined as:</p>
+<pre><code class="language-rust">pub trait Future {
+    type Output;
+
+    fn poll(self: Pin&lt;&amp;mut Self&gt;, cx: &amp;mut Context&lt;'_&gt;) -&gt; Poll&lt;Self::Output&gt;;
+}
+</code></pre>
+<p>The trait defines:</p>
+<ol>
+<li><code>Output</code>: The execution result of the underlying <code>Future</code>.</li>
+<li><code>poll</code>: The method that triggers the execution of a <code>Future</code> object. Returns <code>Poll</code> with two states:
+<ul>
+<li><code>Poll::Ready(Output)</code>: The <code>Future</code> successfully executes with its return value.</li>
+<li><code>Poll::Pending</code>: The <code>Future</code> is currently pending, check it later to get the execution result.</li>
+</ul>
+</li>
+</ol>
+<p>By design, a <code>Future</code> object is lazy unless someone triggers the <code>poll</code> method defined
+by the trait. The <code>poll</code> method contains a few unusual structs in it, including:</p>
+<ol>
+<li><code>Pin</code></li>
+<li><code>Context</code></li>
+</ol>
+<p>We will look into these two struct in the following sections.</p>
+<h2 id="1-the-pinp-smart-pointer"><a class="header" href="#1-the-pinp-smart-pointer">1. The <code>Pin&lt;P&gt;</code> smart pointer</a></h2>
+<p>The <code>Pin&lt;P&gt;</code> smart pointer is a wrapper around the <code>P</code> pointer that ensures the pointee
+will not move out of it's current address, i.e. the address that <code>P</code> points to. This effect is
+canceled if the pointee type implements the <code>Unpin</code> auto trait.</p>
+<p>For example, the <code>std::mem::swap</code> can swap the pointee of two pointers, which essentially &quot;moves&quot;
+the pointee out of its original place. If we wrap the two pointers with <code>Pin</code>, the use of <code>swap</code>
+is forbidden, the code will failed to compile.</p>
+<p>The reason of the use of <code>Pin</code> is mostly for the self referral structures.
+Consider the following structure:</p>
+<pre><code class="language-rust">struct SelfRef {
+    buf: [u8; 4096],
+    p: &amp;[u8],
+}
+</code></pre>
+<p>If the field <code>p</code> points to the field <code>buf</code>, when the whole struct is moved, the underlying fields will also be moved
+while the pointer <code>p</code> is still pointing the location of <code>buf</code> before the move occurs. We can clearly see that
+the following access <code>p</code> will cause undefined behavior since the pointee may be a different type or <code>p</code> becomes
+a dangling pointer. With the use of <code>Pin</code>, we can avoid this kind of stuff and prevent undefined behavior.
+These kind of type will also implements <code>!Unpin</code> to make <code>Pin</code> has its effect on the type.</p>
+<p>The reason that <code>poll</code> requires this bound is related to the next section. For now, we will discuss <code>Unpin</code> and <code>Context</code> first.</p>
+<h3 id="the-unpin-auto-trait"><a class="header" href="#the-unpin-auto-trait">The <code>Unpin</code> auto trait</a></h3>
+<p>The type with <code>Unpin</code> auto trait implemented will cancel the effect of <code>Pin</code>, e.g. <code>Pin&lt;Box&lt;T&gt;&gt;</code> is as same as <code>Box&lt;T&gt;</code> when <code>T: Unpin</code>.
+The reason is that these types doesn't depend on its location to work properly. The only exception is those types who implements <code>!Unpin</code>.</p>
+<p>There are only 4 kinds of types that implements <code>!Unpin</code>:</p>
+<ol>
+<li><code>Future</code> generated by the compiler with the <code>async fn</code> syntax.</li>
+<li><code>PhantomPinned</code> marker type.</li>
+<li>Structs that contains <code>!Unpin</code> type in its field.</li>
+<li><code>unsafe impl !Unpin for [what ever type here]</code></li>
+</ol>
+<p>The reason of why the compiler generated <code>Future</code> will be discussed in the next section. Now let's focus on <code>Context</code> first.</p>
+<h2 id="2-contexta"><a class="header" href="#2-contexta">2. <code>Context&lt;'a&gt;</code></a></h2>
+<p>This type defines the context of a async task. It's currently used to provide the access to a reference of a <code>Waker</code> that can wake
+up the current task.</p>
+<p>A <code>Waker</code> is essentially a wrapper to a vtable (<code>RawWakerVTable</code>) and some extra payloads (<code>data</code> pointer). The vtable contains:</p>
+<ol>
+<li><code>clone</code>: Function to run when the waker is cloned.</li>
+<li><code>wake</code>: Function to run when <code>Waker::wake</code> is called. It will consume the <code>data</code> pointer.</li>
+<li><code>wake_by_ref</code>: Function to run when <code>Waker::wake_by_ref</code> is called. It won't consume the <code>data</code> pointer.</li>
+<li><code>drop</code>: Function to run when the <code>Waker</code> is dropped.</li>
+</ol>
+<p>Typically, the creation of a <code>Waker</code> is done by some other libraries (e.g. <code>waker_fn</code> for my implementation).
+The <code>Waker</code>s' management will be discussed in <a href="layer/fst/../fth/waker_handling.html">Waker handling</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="future-desugar---a-finite-state-machine"><a class="header" href="#future-desugar---a-finite-state-machine">Future desugar - a Finite State Machine</a></h1>
+<p>In Rust, we can create an async function as simple as the following code:</p>
+<pre><code class="language-rust">async fn async_func() {
+    init_step();
+    f().await;
+    g().await;
+    h().await;
+    final_step();
+}
+</code></pre>
+<p>From a user's perspective, we can quickly conclude that the function will run
+<code>f()</code>, <code>g()</code>, <code>h()</code> in order asynchrnously. But how this snippet is related
+to the <code>Future</code> trait? It turns out that the compiler will translate the code snippet
+into the following:</p>
+<pre><code class="language-rust">struct AsyncFunc {
+    fut_f: FutF,
+    fut_g: FutG,
+    fut_h: FutH,
+    state: AsyncFuncState,
+}
+
+enum AsyncFuncState {
+    Init,
+    AwaitF,
+    AwaitG,
+    AwaitH,
+    Final,
+}
+
+impl Future for AsyncFunc {
+    type Output = ();
+
+    fn poll(self: Pin&lt;&amp;mut Self&gt;, cx: &amp;mut Context&lt;'_&gt;) -&gt; Poll&lt;Self::Output&gt; {
+        let me = self.get_mut();
+        loop {
+            match me.state {
+                AsyncFuncState::Init =&gt; {
+                    init_step();
+                    me.state = AsyncFuncState::AwaitF;
+                },
+                AsyncFuncState::AwaitF =&gt; match me.fut_f.poll(cx) {
+                    Poll::Ready(()) =&gt; me.state = AsyncFuncState::AwaitG,
+                    Poll::Pending =&gt; break Poll::Pending,
+                },
+                AsyncFuncState::AwaitG =&gt; match me.fut_g.poll(cx) {
+                    Poll::Ready(()) =&gt; me.state = AsyncFuncState::AwaitH,
+                    Poll::Pending =&gt; break Poll::Pending,
+                },
+                AsyncFuncState::AwaitH =&gt; match me.fut_h.poll(cx) {
+                    Poll::Ready(()) =&gt; me.state = AsyncFuncState::Final,
+                    Poll::Pending =&gt; break Poll::Pending,
+                },
+                AsyncFuncState::Final =&gt; {
+                    final_step();
+                    break Poll::Ready(());
+                },
+            }
+        }
+    }
+}
+</code></pre>
+<p>This code can be viewed as an finite state machine, and can be visualized as the following diagram:
+<img src="https://i2.lensdump.com/i/RkBbkv.png" alt="" /></p>
+<p>Since the code is compiled to a finite state machine, the state can store the arguments for the future to run,
+the return value of previous future execution, etc. Because of this, the use of <code>Pin</code> and <code>!Unpin</code> is necessary.</p>
+<h2 id="why-use-pin-and-why-the-generated-code-implements-unpin"><a class="header" href="#why-use-pin-and-why-the-generated-code-implements-unpin">Why use <code>Pin</code> and why the generated code implements <code>!Unpin</code>?</a></h2>
+<p>Consider the following async block:</p>
+<pre><code class="language-rust">async {
+    let mut x = [0u8; 4096];
+    let fut = read_to_buf(&amp;mut x);
+    let n = fut.await;
+    println!(&quot;got {:?}&quot;, &amp;x[..n]);
+}
+</code></pre>
+<p>The compiler will generate the following structure:</p>
+<pre><code class="language-rust">struct ReadToBuf&lt;'a&gt; {
+    buf: &amp;'a mut [u8],
+}
+struct AsyncBlock1 {
+    x: [u8; 4096],
+    fut: ReadToBuf&lt;'_&gt;, // self refer to x field
+    state: State,
+}
+</code></pre>
+<p>We can see that the generated <code>AsyncBlock1</code> contains a future <code>ReadToBuf&lt;'_&gt;</code> that uses <code>&amp;mut x</code> for reading.
+If this async block is moved, so will <code>x</code>, and since <code>x</code> is moved, the pointer in <code>ReadToBuf&lt;'_&gt;</code> can point
+to an invalid location or dangle, causing undefined behavior. To prevent this, the generated <code>Future</code> object
+will always be <code>!Unpin</code> to enable the effect that <code>Pin</code> brings, and thus the <code>poll</code> function takes
+<code>self: Pin&lt;&amp;mut Self&gt;</code> rather than <code>&amp;mut self</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="the-challenge-of-managing-future-objects"><a class="header" href="#the-challenge-of-managing-future-objects">The challenge of managing Future objects</a></h1>
+<p>With the previous sections, we can know that:</p>
+<ol>
+<li><code>Future</code> object is lazy.</li>
+<li><code>Future</code> object needs a <code>Context</code>, which is obtained by a <code>Waker</code>, to be polled.</li>
+<li>Generated <code>Future</code> object can contain numbers of anonymous states and fields.</li>
+<li>Generated <code>Future</code> object is always <code>!Unpin</code>.</li>
+</ol>
+<p>Managing the generated <code>Future</code> objects is quite a hurdle, as it's impossible to type
+any <code>Future</code> statically so that all the generated <code>Future</code> objects runs on stack,
+and it's quite inefficient to actively poll every <code>Future</code> object you get with a
+empty <code>Waker</code> (basically busy waiting).</p>
+<p>In the next section, I will discuss how to manage these generated bastards using heap.
+While it's not zero-cost, managing the generated <code>Futures</code> as heap-allocated trait objects
+is much simpler tahn fighting with the borrowchecker and the moving problems caused by <code>!Unpin</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="generic-future-handling"><a class="header" href="#generic-future-handling">Generic Future handling</a></h1>
+<p>In this part, we will:</p>
+<ul>
+<li>Dicuss how to handle generic <code>Future</code> objects.</li>
+<li>Talk about my approach to solve this problem.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="general-heap-allocated-future-object"><a class="header" href="#general-heap-allocated-future-object">General heap-allocated Future object</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="global-reusable-object-pool-for-fragment-controll-and-future-managment"><a class="header" href="#global-reusable-object-pool-for-fragment-controll-and-future-managment">Global Reusable Object Pool for fragment controll and Future managment</a></h1>
+<p>Rust has the following ways to handle generic objects:</p>
+<ol>
+<li>By <code>&lt;T: Trait + 'lifetime&gt;</code>: Specifies a type parameter with trait bound and lifetime bound.</li>
+<li>By <code>impl Trait</code>: Use an anonymous type parameter bound by trait.</li>
+<li>By <code>dyn Trait</code>: Use an trait object to dynamic dispatch type.</li>
+</ol>
+<p>Method 1 needs to know the exactly type in compile time, and method 2 can be only used at function signature,
+our only option is by method 3, trait objects.</p>
+<p>Since a trait object is an opaque type that the size is only known at runtime,
+we need to use a pointer to access it.
+As storing on stack needs to play with lots of lifetime bounds, w only consider these heap-allocated pointer types:</p>
+<ul>
+<li><code>Pin&lt;Box&lt;dyn Future + AutoTraits + 'a&gt;&gt;</code></li>
+<li><code>Pin&lt;Rc&lt;dyn Future + AutoTraits + 'a&gt;&gt;</code></li>
+<li><code>Pin&lt;Arc&lt;dyn Future + AutoTraits + 'a&gt;&gt;</code></li>
+</ul>
+<p>A natural choice will be the <code>Box</code> one, since we only need to put it on heap.
+You might think that doesn't <code>Future</code>'s <code>poll</code> function require <code>Pin&lt;&amp;mut Self&gt;</code>? We don't need internal mutability inside?
+As it turns out, we can make use of <code>AsMut</code> trait, that using <code>.as_mut()</code> will result in:</p>
+<pre><code>&amp;mut Pin&lt;P&lt;T&gt;&gt; -&gt; Pin&lt;&amp;mut T&gt;
+</code></pre>
+<p>We only need the internal mutability stuff out side:</p>
+<pre><code class="language-rust">RefCell&lt;Pin&lt;Box&lt;dyn Future + 'a&gt;&gt;&gt; // Single thread.
+Mutex&lt;Pin&lt;Box&lt;dyn Future + 'a&gt;&gt;&gt; // Multi thread.
+</code></pre>
+<p>These internal mutability needs a reference counted pointers to access properly, so we need to wrap it with <code>Rc</code> or <code>Arc</code>:</p>
+<pre><code class="language-rust">Rc&lt;RefCell&lt;Pin&lt;Box&lt;dyn Future + 'a&gt;&gt;&gt;&gt; // Single thread.
+Arc&lt;Mutex&lt;Pin&lt;Box&lt;dyn Future + 'a&gt;&gt;&gt;&gt; // Multi thread.
+</code></pre>
+<p>or:</p>
+<pre><code class="language-rust">Pin&lt;Rc&lt;RefCell&lt;dyn Future + 'a&gt;&gt;&gt; // Single thread.
+Pin&lt;Arc&lt;Mutex&lt;dyn Future + 'a&gt;&gt;&gt; // Multi thread.
+</code></pre>
+<p>with newer stable version of Rust as <code>Rc</code> and <code>Arc</code> also put stuff on heap (Note that <code>Pin</code> can only contain a pointer type).</p>
+<p>At this point, you are good to go, although there may be a problem.
+You see, you need to allocate every time a <code>Future</code> is spawned in your runtime. For an server type program
+that spawns multiple handler that may be inefficient:</p>
+<ol>
+<li><code>Future</code> objects are allocated and destoryed multiple times, which can cause fragmentation depending on the global allocator.</li>
+<li>The allocated space can actually be reused to reduce heap size and have a better performance as no allocation occurred when we reuse it.</li>
+</ol>
+<p>That's why I change to use a global object pool provided by <code>sharded_slab</code>.
+The next section I will talk about how to use a global object pool to handle <code>Future</code> objects.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="global-reusable-object-pool-for-allocation-reuse-fragment-control-and-easy-managment"><a class="header" href="#global-reusable-object-pool-for-allocation-reuse-fragment-control-and-easy-managment">Global Reusable Object Pool for allocation reuse, fragment control, and easy managment</a></h1>
+<p><code>sharded_slab</code> provides <code>Pool</code> for object pool that can:</p>
+<ol>
+<li>Allocate inside the pool.</li>
+<li>Retain the allocation inside the pool when an entry is cleared.</li>
+<li>Reuse the retained allocation when allocation occurs.</li>
+</ol>
+<p>The pool requires <code>T: Clear + Default</code>, that the <code>Clear</code> trait is used to clear value and retain allocation.
+We can use this to design the type we want to store. In this case, the follwoing type is choosed:</p>
+<pre><code class="language-rust">// type Boxed&lt;T&gt; = Pin&lt;Box&lt;dyn Future&lt;Output = T&gt; + Send + 'static&gt;&gt;;
+pub(crate) struct BoxedFuture {
+    pub(crate) future: Mutex&lt;Option&lt;Boxed&lt;io::Result&lt;()&gt;&gt;&gt;&gt;,
+}
+</code></pre>
+<p>By default, <code>Option&lt;T&gt;</code> implements <code>Clear</code> by default, which uses <code>Option::take()</code> to do the clear job.
+<code>Option::take()</code> itself is implmented by <code>std::mem::replace(self, None)</code>, which the <code>std::mem::replace</code>
+won't dealloc the left hand side. This property makes it capable to do the allocation retain job, so we can
+put the <code>Boxed</code> type under it. The <code>Mutex</code> wraps around it is to provide internal mutability for <code>Future</code>'s <code>poll</code> requirement.</p>
+<p>We can implement <code>Clear</code> for <code>BoxedFuture</code> with <code>Option::clear()</code>:</p>
+<pre><code class="language-rust">impl Default for BoxedFuture {
+    fn default() -&gt; Self {
+        BoxedFuture {
+            future: Mutex::new(None),
+        }
+    }
+}
+
+impl Clear for BoxedFuture {
+    fn clear(&amp;mut self) {
+        self.future.get_mut().clear();
+    }
+}
+</code></pre>
+<p>Then create a global future object pool with <code>Lazy</code> from <code>once_cell</code>:</p>
+<pre><code class="language-rust">// global future allocation pool.
+pub(crate) static FUTURE_POOL: Lazy&lt;Pool&lt;BoxedFuture&gt;&gt; = Lazy::new(Pool::new);
+</code></pre>
+<p>The key will be wrpped inside <code>FutureIndex</code> that contains other payloads:</p>
+<pre><code class="language-rust">#[derive(Clone, Copy, Eq)]
+pub struct FutureIndex {
+    pub key: usize,
+    // Other payloads...
+}
+
+impl PartialEq for FutureIndex {
+    fn eq(&amp;self, other: &amp;Self) -&gt; bool {
+        self.key == other.key
+    }
+}
+
+impl Hash for FutureIndex {
+    fn hash&lt;H: std::hash::Hasher&gt;(&amp;self, state: &amp;mut H) {
+        self.key.hash(state);
+    }
+}
+</code></pre>
+<h2 id="the-overall-step-of-future-processing"><a class="header" href="#the-overall-step-of-future-processing">The overall step of <code>Future</code> processing</a></h2>
+<ol>
+<li>Allocate future object inside the pool when a future is spawned. The pool will return a key to access the entry where the future is.
+<pre><code class="language-rust">// in Spawner::spawn_with_handle()
+// ...
+let key = FUTURE_POOL
+    .create_with(|seat| {
+        seat.future.get_mut().replace(spawn_fut.boxed());
+    })
+    .unwrap();
+// ...
+</code></pre>
+</li>
+<li>The key is used instead of a pointer to be processed by the message system and the schedule system.
+<pre><code class="language-rust">// in Spawner::spawn_with_handle(), after step 1
+// ...
+self.tx
+    .send(ScheduleMessage::Schedule(FutureIndex {
+        key,
+        // Other payloads...
+    }))
+    .expect(&quot;Failed to send message&quot;);
+// ...
+</code></pre>
+</li>
+<li>When the future is going to be processed:
+<ol>
+<li>The worker will use the key to gain the access of the future in pool.
+<pre><code class="language-rust">// in scheduler::process_future()
+if let Some(boxed) = FUTURE_POOL.get(index.key) {
+    let finished = boxed.run(&amp;index, tx.clone());
+} // ...
+</code></pre>
+</li>
+<li>Lock the future and gain <code>&amp;mut</code> to use <code>Future::poll</code> and poll the future. Return if the future is <code>Ready</code>.
+<pre><code class="language-rust">// in BoxedFuture::run()
+let mut guard = self.future.lock();
+// run *ONCE*
+if let Some(fut) = guard.as_mut() {
+    let waker = waker_fn(move || {
+        // Create waker
+    });
+    let cx = &amp;mut Context::from_waker(&amp;waker);
+    match fut.as_mut().poll(cx) {
+        Poll::Ready(r) =&gt; {
+            if let Err(e) = r {
+                // log error
+            }
+            true
+        }
+        Poll::Pending =&gt; false,
+    }
+} else {
+    true
+}
+</code></pre>
+</li>
+</ol>
+</li>
+<li>If the future is <code>Poll::Ready</code>, clear the future for future allocation reuse.
+<pre><code class="language-rust">// in scheduler::process_future()
+if finished {
+    // ...
+    if !FUTURE_POOL.clear(index.key) {
+        // ...
+    }
+}
+</code></pre>
+</li>
+</ol>
+<h2 id="note"><a class="header" href="#note">Note</a></h2>
+<p>The <code>Future</code> object is now single accessed by a single thread, why use <code>Mutex</code> instead of <code>RefCell</code> as they both implement <code>Send</code>?
+This is because that the pool itself needs <code>Sync</code> for the global pool encapsulate in <code>Lazy</code> to wrok properly in multi-threaded environment.
+We need to use <code>Mutex</code> to make the type store inside the pool <code>Sync</code>.</p>
+<p>The <code>Mutex</code> will have small impact since it's already single accessed, its function will be like a <code>RefCell</code> that the thread-blocking function is canceled by our design.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="io-adapter-for-general-file-descriptor---iowrapper"><a class="header" href="#io-adapter-for-general-file-descriptor---iowrapper">IO Adapter for general file descriptor - IoWrapper</a></h1>
+<p>Other than <code>Future</code> object handling, we also need IO source to make
+<code>async</code> a thing as IO is the reason why we need asynchronous runtime.</p>
+<p>In this section, we will talk about:</p>
+<ol>
+<li>General IO handling</li>
+<li><code>IoWrapper</code> design</li>
+</ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="general-io-handling"><a class="header" href="#general-io-handling">General IO handling</a></h1>
+<p>Generally, when using asynchronous runtime in Rust, you're dealing with non-blocking IO,
+you'll want to make the file descriptors you're working on.</p>
+<p>Setting a file descriptor is easy by using <code>fcntl</code> to set the <code>O_NONBLOCK</code>.</p>
+<p>Next we'll talk about the error handling part.</p>
+<p>A non-blocking IO handling can be described by the following pseudo code:</p>
+<pre><code>run_nbio(io):
+    n &lt;- io()
+    if n == -1 then
+        if (errno == EWOULDBLOCK) then
+            // The io action will block, try again later
+            return PENDING, nil
+        else if (errno == EINTERRUPT) then
+            // The action is interrupted by system, retry immediately
+            return nbio()
+        else
+            // io is completed with error
+            // other errors are handled by the user
+            return READY, -1
+        end
+    else
+        // io is completed
+        return READY, n
+    end
+</code></pre>
+<p>Basically the code will only handle two kinds of error itself: <code>EWOULDBLOCK</code> and <code>EINTERRUPT</code>:</p>
+<ol>
+<li><code>EWOULDBLOCK</code> means that <code>io()</code> will block the thread, return <code>PENDING</code> to make the user try again later.</li>
+<li><code>EINTERRUPT</code> means that an interrupt occurs when running <code>io()</code>, retry immediately.</li>
+</ol>
+<p>We can then bring this to Rust:</p>
+<pre><code class="language-rust">// in IoWrapper::poll_ref()
+fn poll_ref&lt;U, F&gt;(
+    &amp;self,
+    cx: &amp;mut Context&lt;'_&gt;, // context for polling
+    interest: Interest, // READ or WRITE
+    mut f: F, // action
+) -&gt; Poll&lt;io::Result&lt;U&gt;&gt;
+where
+    F: FnMut(&amp;Self) -&gt; io::Result&lt;U&gt;,
+{
+    match f(self) {
+        // WouldBlock, do it when the io is available.
+        Err(ref e) if e.kind() == io::ErrorKind::WouldBlock =&gt; {
+            let current = self.token.load(Ordering::Relaxed);
+            // Register to the reactor.
+            // The reactor will wake the task to run this again
+            // when it gets the event correspoding to the interst.
+            self.register_reactor(current, interest, cx)?;
+            Poll::Pending
+        }
+        // Interrupt, retry immediately
+        Err(ref e) if e.kind() == io::ErrorKind::Interrupted =&gt; self.poll_ref(cx, interest, f),
+        // Ready with Success or other Error
+        r =&gt; Poll::Ready(r),
+    }
+}
+</code></pre>
+<p>Next, we'll talk about <code>IoWrapper</code>'s design.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="iowrapper-design"><a class="header" href="#iowrapper-design">IoWrapper design</a></h1>
+<p><code>IoWrapper</code> is a wrapper for IO sources like <code>File</code>, <code>TcpStream</code>, etc. to become an IO event provider
+for the runtime. The wrapper provides varios defaults and methods for users to define a new IO source quickly.</p>
+<p>The <code>IoWrapper</code> is defined as:</p>
+<pre><code class="language-rust">pub struct IoWrapper&lt;T: AsFd&gt; {
+    inner: T,
+    token: AtomicUsize,
+}
+</code></pre>
+<p>where <code>inner</code> is the type being wrapped, and <code>token</code> is the token that can identify the struct.</p>
+<p>The wrapped type is bounded by <code>AsFd</code> since the runtime only accecpts registering IO events related
+to system IO, the wrapper thus requires the types to be wrapped should be <code>AsFd</code> that can extracxt
+the underlying file descripter.</p>
+<p><code>IoWrapper</code> provides:</p>
+<ul>
+<li>A convenient wrapper over <code>AsFd</code> types that set to non-blocking mode automatically.</li>
+<li><code>ref_io</code> and <code>mut_io</code> for IO that doesn't require/require mutating self.
+<ul>
+<li><code>ref_io</code> and <code>mut_io</code> are also async function by themselves, you don't need to implement <code>Future</code> yourself.</li>
+<li>You can use these function to perform IO operations that aren't defined by the runtime or other async traits.</li>
+<li>For usage, see <a href="https://smb374.github.io/my-async-rs/api_references/my_async/struct.IoWrapper.html">API documentation</a></li>
+</ul>
+</li>
+<li>Auto implementation of <code>AsyncRead</code> and <code>AsyncWrite</code> for types implementing <code>std::io::Read</code> and <code>std::io::Write</code>.</li>
+<li>Get reference/mutable reference of the inner type by <code>IoWrapper::inner()</code>/<code>IoWrapper::inner_mut()</code>.</li>
+</ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="heart-of-a-runtime---executor"><a class="header" href="#heart-of-a-runtime---executor">Heart of a runtime - Executor</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="general-commands-of-a-runtime"><a class="header" href="#general-commands-of-a-runtime">General commands of a runtime</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="design-of-executor---an-abstraction-to-scheduler-and-reactor"><a class="header" href="#design-of-executor---an-abstraction-to-scheduler-and-reactor">Design of Executor - an abstraction to scheduler and reactor</a></h1>

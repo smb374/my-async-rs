@@ -32,7 +32,7 @@ pub mod multi_thread;
 pub mod single_thread;
 // scheduler
 pub mod schedulers;
-mod utils;
+pub mod utils;
 
 use crate::schedulers::poll_with_budget;
 
@@ -90,7 +90,7 @@ impl<F: FutureExt + ?Sized> BudgetFuture for F {}
 /// 1. Non-IO and synchronous operations: use [`IoWrapper::inner()`] for reference and
 ///    [`IoWrapper::inner_mut()`] for mutable reference to the wrapped type.
 /// 2. Operations need `&self`: use [`IoWrapper::ref_io()`]:
-/// ```
+/// ```ignore
 /// // Read Operations
 /// let result = self.ref_io(Interest::READABLE, |me| {
 ///     let inner = me.inner();
@@ -111,7 +111,7 @@ impl<F: FutureExt + ?Sized> BudgetFuture for F {}
 /// }).await;
 /// ```
 /// 3. Operations need `&mut self`: use [`IoWrapper::mut_io()`]:
-/// ```
+/// ```ignore
 /// // Read Operations
 /// let result = self.mut_io(Interest::READABLE, |me| {
 ///     let mut inner = me.inner_mut();
@@ -200,7 +200,7 @@ impl<T: AsFd + Unpin> IoWrapper<T> {
     /// For example, take a look on the implementation of
     /// [`Tcpstream::peek()`][crate::net::TcpStream::peek()]:
     ///
-    /// ```rust
+    /// ```ignore
     /// pub async fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
     ///     self.ref_io(Interest::READABLE, |me| me.inner().peek(buf))
     ///         .await

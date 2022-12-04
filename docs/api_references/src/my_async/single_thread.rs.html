@@ -306,6 +306,9 @@
 <span id="306">306</span>
 <span id="307">307</span>
 <span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Single-threaded executor.
 //!
 //! This executor is capable of executing futures without priority.
@@ -329,13 +332,16 @@
 //!     loop {
 //!         // ... do stuff
 //!         spawn(async move{
-//!             handle().await;
+//!             handle().await?;
+//!             Ok(())
 //!         }); // spawn future
 //!     }
+//!     Ok(())
 //! }
 //!
 //! async fn handle() -&gt; io::Result&lt;()&gt; {
 //!     // ... do stuff
+//!     Ok(())
 //! }
 //!
 //! fn main() -&gt; io::Result&lt;()&gt; {

@@ -5,6 +5,7 @@ use rustix::{
     fs::{fcntl_getfl, fcntl_setfl, OFlags},
 };
 
+/// A convenient function that sets the file descriptor with `O_NONBLOCK`.
 pub fn set_nonblocking<Fd: AsFd>(fd: &Fd) -> io::Result<()> {
     let mut current_flags =
         fcntl_getfl(fd).map_err(|e| io::Error::from_raw_os_error(e.raw_os_error()))?;

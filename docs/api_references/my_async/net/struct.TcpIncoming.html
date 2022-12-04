@@ -2,7 +2,7 @@
 <p>This struct implements <a href="../stream/trait.Stream.html" title="Stream"><code>Stream</code></a> allowing to use it like an iterator
 for looping needs.</p>
 <h2 id="example"><a href="#example">Example</a></h2>
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// example usage for incoming() in a accept loop.
+<div class="example-wrap ignore"><div class='tooltip'>ⓘ</div><pre class="rust rust-example-rendered"><code><span class="comment">// example usage for incoming() in a accept loop.
 </span><span class="kw">async fn </span>server() -&gt; io::Result&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>listener = TcpListener::bind(<span class="string">&quot;127.0.0.1:6699&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>incoming = listener.incoming();

@@ -10,7 +10,7 @@ or other predefined alias functions, consider:</p>
 <li>Operations need <code>&amp;self</code>: use <a href="struct.IoWrapper.html#method.ref_io" title="IoWrapper::ref_io()"><code>IoWrapper::ref_io()</code></a>:</li>
 </ol>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Read Operations
+<div class="example-wrap ignore"><div class='tooltip'>ⓘ</div><pre class="rust rust-example-rendered"><code><span class="comment">// Read Operations
 </span><span class="kw">let </span>result = <span class="self">self</span>.ref_io(Interest::READABLE, |me| {
     <span class="kw">let </span>inner = me.inner();
     <span class="comment">// do IO stuff on inner type...
@@ -32,7 +32,7 @@ or other predefined alias functions, consider:</p>
 <li>Operations need <code>&amp;mut self</code>: use <a href="struct.IoWrapper.html#method.mut_io" title="IoWrapper::mut_io()"><code>IoWrapper::mut_io()</code></a>:</li>
 </ol>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Read Operations
+<div class="example-wrap ignore"><div class='tooltip'>ⓘ</div><pre class="rust rust-example-rendered"><code><span class="comment">// Read Operations
 </span><span class="kw">let </span>result = <span class="self">self</span>.mut_io(Interest::READABLE, |me| {
     <span class="kw">let </span><span class="kw-2">mut </span>inner = me.inner_mut();
     <span class="comment">// do IO stuff on inner type...
@@ -60,7 +60,7 @@ of <a href="struct.Interest.html#associatedconstant.READABLE" title="Interest::R
 <p>For example, take a look on the implementation of
 <a href="struct.IoWrapper.html#method.peek" title="crate::net::TcpStream::peek()"><code>Tcpstream::peek()</code></a>:</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">pub async fn </span>peek(<span class="kw-2">&amp;</span><span class="self">self</span>, buf: <span class="kw-2">&amp;mut </span>[u8]) -&gt; io::Result&lt;usize&gt; {
+<div class="example-wrap ignore"><div class='tooltip'>ⓘ</div><pre class="rust rust-example-rendered"><code><span class="kw">pub async fn </span>peek(<span class="kw-2">&amp;</span><span class="self">self</span>, buf: <span class="kw-2">&amp;mut </span>[u8]) -&gt; io::Result&lt;usize&gt; {
     <span class="self">self</span>.ref_io(Interest::READABLE, |me| me.inner().peek(buf))
         .<span class="kw">await
 </span>}</code></pre></div>

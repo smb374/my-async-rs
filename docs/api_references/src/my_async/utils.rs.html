@@ -15,6 +15,7 @@
 <span id="15">15</span>
 <span id="16">16</span>
 <span id="17">17</span>
+<span id="18">18</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::io;
 
 <span class="kw">use </span>rustix::{
@@ -22,7 +23,8 @@
     fs::{fcntl_getfl, fcntl_setfl, OFlags},
 };
 
-<span class="kw">pub fn </span>set_nonblocking&lt;Fd: AsFd&gt;(fd: <span class="kw-2">&amp;</span>Fd) -&gt; io::Result&lt;()&gt; {
+<span class="doccomment">/// A convenient function that sets the file descriptor with `O_NONBLOCK`.
+</span><span class="kw">pub fn </span>set_nonblocking&lt;Fd: AsFd&gt;(fd: <span class="kw-2">&amp;</span>Fd) -&gt; io::Result&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>current_flags =
         fcntl_getfl(fd).map_err(|e| io::Error::from_raw_os_error(e.raw_os_error()))<span class="question-mark">?</span>;
     <span class="kw">if </span>!current_flags.contains(OFlags::NONBLOCK) {
