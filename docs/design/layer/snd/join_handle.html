@@ -145,6 +145,109 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="join-handle-for-future"><a class="header" href="#join-handle-for-future">Join Handle for Future</a></h1>
+<p>As shown before, we use a shared memory to store the result of the spawned future, then we put the
+shared memory into <code>JoinHandle</code> and return to the user.</p>
+<p>The <code>JoinHandle</code> is defined as:</p>
+<pre><code class="language-rust">pub struct JoinHandle&lt;T&gt; {
+    spawn_id: usize,
+    registered: AtomicBool,
+    inner: Arc&lt;Mutex&lt;Option&lt;T&gt;&gt;&gt;,
+}
+</code></pre>
+<p>where</p>
+<ul>
+<li><code>spawn_id</code> is the id of the spawned future.</li>
+<li><code>registered</code> is a flag to check if the waker of it is registered.</li>
+<li><code>inner</code> is the shared memory.</li>
+</ul>
+<p>We can take a look at <code>join()</code> and <code>try_join()</code> with other structs and functions to see how it works:</p>
+<pre><code class="language-rust">static JOIN_HANDLE_MAP: Lazy&lt;RwLock&lt;FxHashMap&lt;usize, Waker&gt;&gt;&gt; =
+    Lazy::new(|| RwLock::new(FxHashMap::default()));
+
+pub struct FutureJoin&lt;'a, T&gt; {
+    handle: &amp;'a JoinHandle&lt;T&gt;,
+}
+
+impl&lt;T&gt; JoinHandle&lt;T&gt; {
+    pub fn join(&amp;self) -&gt; FutureJoin&lt;'_, T&gt; {
+        FutureJoin { handle: self }
+    }
+    pub fn try_join(&amp;self) -&gt; Option&lt;T&gt; {
+        let mut guard = self.inner.lock();
+        guard.take()
+    }
+    fn register_waker(&amp;self, waker: Waker) {
+        JOIN_HANDLE_MAP.write().insert(self.spawn_id, waker);
+        self.registered.store(true, Ordering::Relaxed);
+    }
+    fn deregister_waker(&amp;self) {
+        JOIN_HANDLE_MAP.write().remove(&amp;self.spawn_id);
+        self.registered.store(false, Ordering::Relaxed);
+    }
+}
+
+impl&lt;'a, T&gt; Future for FutureJoin&lt;'a, T&gt; {
+    type Output = T;
+    fn poll(self: Pin&lt;&amp;mut Self&gt;, cx: &amp;mut Context&lt;'_&gt;) -&gt; Poll&lt;Self::Output&gt; {
+        let me = self.handle;
+        // Lock the shared memory and try to take the content of it.
+        let mut guard = me.inner.lock();
+        match guard.take() {
+            // If success
+            Some(val) =&gt; {
+                // Deregister the waker from JOIN_HANDLE_MAP
+                if me.registered.load(Ordering::Relaxed) {
+                    me.deregister_waker();
+                }
+                // Return Ready(val)
+                Poll::Ready(val)
+            }
+            // Else
+            None =&gt; {
+                // Register waker if the waker is not registered
+                if !me.registered.load(Ordering::Relaxed) {
+                    // spawned future can use it's own id to wake JoinHandle.
+                    me.register_waker(cx.waker().clone());
+                }
+                // Return Pending
+                Poll::Pending
+            }
+        }
+    }
+}
+
+// Called when a spawned future finishes running
+// If the waker is registered, we wake it up
+// Otherwise, the JoinHandle hasn't request join.
+pub(super) fn wake_join_handle(index: usize) {
+    if let Some(waker) = JOIN_HANDLE_MAP.read().get(&amp;index) {
+        waker.wake_by_ref();
+    }
+}
+</code></pre>
+<p>Since we use a shared memory that is <code>Arc&lt;Mutex&lt;Option&lt;T&gt;&gt;&gt;</code>, the <code>try_join()</code> can be implemented easily
+by lock <code>inner</code> and take it. The <code>Option&lt;T&gt;</code>'s value can indicate the success or not.</p>
+<p><code>join()</code> is a async function that will wait until the future of the handle finishes execution, that is,
+if <code>inner</code> is <code>None</code>, we register the waker of the context where you call <code>join()</code> to a map.
+The entry will use the spawned future's key (<code>spawn_id</code>) as its key so that the future can use the waker to wake
+the context where <code>join()</code> is being called.</p>
+<p>Take the following code as an example:</p>
+<pre><code class="language-rust">async fn parent() {
+    let handle = spawn(child());
+    let result: T = handle.join().await; // waker is from parent's context
+}
+
+async fn child() -&gt; T {
+    // do stuff...
+    result
+}
+</code></pre>
+<p><code>handle</code> will use the waker from context <code>cx</code> that is used to poll <code>parent</code>, while the waker registration uses
+<code>child</code>'s index as its key so that <code>child</code> can wake <code>parent</code> to poll <code>handle.join()</code>.</p>
+<p>Since we need to use the key of the spawned future as its key to the waker map, we can only use
+a regular hashmap with a <code>RwLock</code> so that we can specify its key. This is the simplest way I've
+tried so far, otherwise we need to make more complicated code so that we don't need to use a hashmap.</p>
+<p>Anyways, that's all for the <code>Executor</code>, we'll now move one to the <code>Scheduler</code>.</p>
 
                     </main>
 

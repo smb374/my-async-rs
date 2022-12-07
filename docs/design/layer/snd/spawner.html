@@ -211,7 +211,9 @@ where
     }
 }
 </code></pre>
-<p>For, <code>Shutdown</code> and <code>Reschedule</code>, the implementation is simple: simply send the corresponding message with necessary arguments.</p>
+<p>For, <code>Shutdown</code> and <code>Reschedule</code>, the implementation is simple: simply send the corresponding message with necessary arguments.
+We can also define <code>spawn()</code> and <code>shutdown()</code> now as their just a wrapper to call the global spawner and use its method call
+to send messages to the <code>Executor</code>.</p>
 
                     </main>
 

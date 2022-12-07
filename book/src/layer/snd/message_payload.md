@@ -20,4 +20,4 @@ struct FutureIndex<'a> {
 }
 ```
 
-Anyways, that's all for this layer, we'll move on to the `Scheduler`.
+Next, we'll move onb to `JoinHandle`'s design.
