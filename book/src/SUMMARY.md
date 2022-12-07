@@ -27,9 +27,9 @@
 # Second layer - Executor and message passing
 - [Heart of a runtime - Executor](layer/snd/executor.md)
     - [General commands of a runtime](layer/snd/commands.md)
-    - [Design of Executor - an abstraction to scheduler and reactor](layer/snd/message_handling.md)
+    - [Design of Executor](layer/snd/message_handling.md)
 - [Passing messages](layer/snd/message_passing.md)
-    - [Spawner - message sender](layer/snd/spawner.md)
+    - [Spawner - a message sender](layer/snd/spawner.md)
     - [Message payload](layer/snd/message_payload.md)
 - [Join Handle for Future](layer/snd/join_handle.md)
 
@@ -37,6 +37,7 @@
 - [Multithread mania - Scheduler](layer/trd/scheduler.md)
     - [Scheduler trait design](layer/trd/scheduler_trait.md)
     - [General Worker structure and logic](layer/trd/worker_structure.md)
+    - [The procedure of task scheduling](layer/trd/schedule_procedure.md)
 - [Threading Method](layer/trd/threading_method.md)
     - [Round Robin](layer/trd/round_robin.md)
     - [Work Stealing](layer/trd/work_stealing.md)

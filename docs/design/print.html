@@ -84,7 +84,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">Prerequisite Knowledges</li><li class="chapter-item expanded "><a href="pre/async_in_rust.html"><strong aria-hidden="true">1.</strong> Async in Rust</a></li><li class="chapter-item expanded "><a href="pre/overview.html"><strong aria-hidden="true">2.</strong> Overview of an executor's architechture</a></li><li class="chapter-item expanded "><a href="pre/single_thread_executor.html"><strong aria-hidden="true">3.</strong> A minimal single-threded Future evaluator</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="pre/single_future_handle.html"><strong aria-hidden="true">3.1.</strong> Future handling</a></li><li class="chapter-item expanded "><a href="pre/single_global_storage.html"><strong aria-hidden="true">3.2.</strong> Global Storages</a></li><li class="chapter-item expanded "><a href="pre/single_message_passing.html"><strong aria-hidden="true">3.3.</strong> Message Passing</a></li><li class="chapter-item expanded "><a href="pre/single_executor.html"><strong aria-hidden="true">3.4.</strong> Executor Main Loop</a></li><li class="chapter-item expanded "><a href="pre/single_final_code.html"><strong aria-hidden="true">3.5.</strong> Final Code</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">First layer - Future and IoWrapper</li><li class="chapter-item expanded "><a href="layer/fst/future_trait.html"><strong aria-hidden="true">4.</strong> Bone of async - Future trait</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/future_in_depth.html"><strong aria-hidden="true">4.1.</strong> Future in depth</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/mechanism.html"><strong aria-hidden="true">4.1.1.</strong> Future trait mechanism</a></li><li class="chapter-item expanded "><a href="layer/fst/fsm.html"><strong aria-hidden="true">4.1.2.</strong> Future desugar - a Finite State Machine</a></li><li class="chapter-item expanded "><a href="layer/fst/challenge.html"><strong aria-hidden="true">4.1.3.</strong> The challenge of managing Future objects</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/handling.html"><strong aria-hidden="true">4.2.</strong> Generic Future handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/heap_alloc.html"><strong aria-hidden="true">4.2.1.</strong> General heap-allocated Future object</a></li><li class="chapter-item expanded "><a href="layer/fst/pool.html"><strong aria-hidden="true">4.2.2.</strong> Global Reusable Object Pool for allocation reuse, fragment control, and easy managment</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper.html"><strong aria-hidden="true">5.</strong> IO Adapter for general file descriptor - IoWrapper</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/io_handling.html"><strong aria-hidden="true">5.1.</strong> General IO handling</a></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper_design.html"><strong aria-hidden="true">5.2.</strong> IoWrapper design</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Second layer - Executor and message passing</li><li class="chapter-item expanded "><a href="layer/snd/executor.html"><strong aria-hidden="true">6.</strong> Heart of a runtime - Executor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/commands.html"><strong aria-hidden="true">6.1.</strong> General commands of a runtime</a></li><li class="chapter-item expanded "><a href="layer/snd/message_handling.html"><strong aria-hidden="true">6.2.</strong> Design of Executor - an abstraction to scheduler and reactor</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/message_passing.html"><strong aria-hidden="true">7.</strong> Passing messages</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/spawner.html"><strong aria-hidden="true">7.1.</strong> Spawner - message sender</a></li><li class="chapter-item expanded "><a href="layer/snd/message_payload.html"><strong aria-hidden="true">7.2.</strong> Message payload</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/join_handle.html"><strong aria-hidden="true">8.</strong> Join Handle for Future</a></li><li class="chapter-item expanded affix "><li class="part-title">Third layer - Scheduler and schedule problems</li><li class="chapter-item expanded "><a href="layer/trd/scheduler.html"><strong aria-hidden="true">9.</strong> Multithread mania - Scheduler</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/scheduler_trait.html"><strong aria-hidden="true">9.1.</strong> Scheduler trait design</a></li><li class="chapter-item expanded "><a href="layer/trd/worker_structure.html"><strong aria-hidden="true">9.2.</strong> General Worker structure and logic</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/threading_method.html"><strong aria-hidden="true">10.</strong> Threading Method</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/round_robin.html"><strong aria-hidden="true">10.1.</strong> Round Robin</a></li><li class="chapter-item expanded "><a href="layer/trd/work_stealing.html"><strong aria-hidden="true">10.2.</strong> Work Stealing</a></li><li class="chapter-item expanded "><a href="layer/trd/hybrid.html"><strong aria-hidden="true">10.3.</strong> Hybrid Queue for Prioritized Work Stealing</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/token_bucket.html"><strong aria-hidden="true">11.</strong> A token bucket like algorithm for auto task yielding</a></li><li class="chapter-item expanded affix "><li class="part-title">Fourth layer - Reactor and Waker handling</li><li class="chapter-item expanded "><a href="layer/fth/reactor.html"><strong aria-hidden="true">12.</strong> System IO Event Harvester - Reactor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/io_registration.html"><strong aria-hidden="true">12.1.</strong> IO event registeration</a></li><li class="chapter-item expanded "><a href="layer/fth/event_handling.html"><strong aria-hidden="true">12.2.</strong> Event handling</a></li><li class="chapter-item expanded "><a href="layer/fth/event_maintain.html"><strong aria-hidden="true">12.3.</strong> Event maintain for late use</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fth/waker_handling.html"><strong aria-hidden="true">13.</strong> Waker handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/global_map.html"><strong aria-hidden="true">13.1.</strong> Global slab for wakers</a></li><li class="chapter-item expanded "><a href="layer/fth/registration.html"><strong aria-hidden="true">13.2.</strong> Waker registration</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Unresolved Problems and Future Works</li><li class="chapter-item expanded "><a href="prob/load_balancing.html"><strong aria-hidden="true">14.</strong> Load Balancing</a></li><li class="chapter-item expanded "><a href="prob/generic_payload.html"><strong aria-hidden="true">15.</strong> Generic Message Payload</a></li><li class="chapter-item expanded "><a href="prob/reactor_abstract.html"><strong aria-hidden="true">16.</strong> Reactor abstraction for different systems</a></li><li class="chapter-item expanded affix "><li class="part-title">References</li><li class="chapter-item expanded "><a href="references.html"><strong aria-hidden="true">17.</strong> References</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">Prerequisite Knowledges</li><li class="chapter-item expanded "><a href="pre/async_in_rust.html"><strong aria-hidden="true">1.</strong> Async in Rust</a></li><li class="chapter-item expanded "><a href="pre/overview.html"><strong aria-hidden="true">2.</strong> Overview of an executor's architechture</a></li><li class="chapter-item expanded "><a href="pre/single_thread_executor.html"><strong aria-hidden="true">3.</strong> A minimal single-threded Future evaluator</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="pre/single_future_handle.html"><strong aria-hidden="true">3.1.</strong> Future handling</a></li><li class="chapter-item expanded "><a href="pre/single_global_storage.html"><strong aria-hidden="true">3.2.</strong> Global Storages</a></li><li class="chapter-item expanded "><a href="pre/single_message_passing.html"><strong aria-hidden="true">3.3.</strong> Message Passing</a></li><li class="chapter-item expanded "><a href="pre/single_executor.html"><strong aria-hidden="true">3.4.</strong> Executor Main Loop</a></li><li class="chapter-item expanded "><a href="pre/single_final_code.html"><strong aria-hidden="true">3.5.</strong> Final Code</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">First layer - Future and IoWrapper</li><li class="chapter-item expanded "><a href="layer/fst/future_trait.html"><strong aria-hidden="true">4.</strong> Bone of async - Future trait</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/future_in_depth.html"><strong aria-hidden="true">4.1.</strong> Future in depth</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/mechanism.html"><strong aria-hidden="true">4.1.1.</strong> Future trait mechanism</a></li><li class="chapter-item expanded "><a href="layer/fst/fsm.html"><strong aria-hidden="true">4.1.2.</strong> Future desugar - a Finite State Machine</a></li><li class="chapter-item expanded "><a href="layer/fst/challenge.html"><strong aria-hidden="true">4.1.3.</strong> The challenge of managing Future objects</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/handling.html"><strong aria-hidden="true">4.2.</strong> Generic Future handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/heap_alloc.html"><strong aria-hidden="true">4.2.1.</strong> General heap-allocated Future object</a></li><li class="chapter-item expanded "><a href="layer/fst/pool.html"><strong aria-hidden="true">4.2.2.</strong> Global Reusable Object Pool for allocation reuse, fragment control, and easy managment</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper.html"><strong aria-hidden="true">5.</strong> IO Adapter for general file descriptor - IoWrapper</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/io_handling.html"><strong aria-hidden="true">5.1.</strong> General IO handling</a></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper_design.html"><strong aria-hidden="true">5.2.</strong> IoWrapper design</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Second layer - Executor and message passing</li><li class="chapter-item expanded "><a href="layer/snd/executor.html"><strong aria-hidden="true">6.</strong> Heart of a runtime - Executor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/commands.html"><strong aria-hidden="true">6.1.</strong> General commands of a runtime</a></li><li class="chapter-item expanded "><a href="layer/snd/message_handling.html"><strong aria-hidden="true">6.2.</strong> Design of Executor</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/message_passing.html"><strong aria-hidden="true">7.</strong> Passing messages</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/spawner.html"><strong aria-hidden="true">7.1.</strong> Spawner - a message sender</a></li><li class="chapter-item expanded "><a href="layer/snd/message_payload.html"><strong aria-hidden="true">7.2.</strong> Message payload</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/join_handle.html"><strong aria-hidden="true">8.</strong> Join Handle for Future</a></li><li class="chapter-item expanded affix "><li class="part-title">Third layer - Scheduler and schedule problems</li><li class="chapter-item expanded "><a href="layer/trd/scheduler.html"><strong aria-hidden="true">9.</strong> Multithread mania - Scheduler</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/scheduler_trait.html"><strong aria-hidden="true">9.1.</strong> Scheduler trait design</a></li><li class="chapter-item expanded "><a href="layer/trd/worker_structure.html"><strong aria-hidden="true">9.2.</strong> General Worker structure and logic</a></li><li class="chapter-item expanded "><a href="layer/trd/schedule_procedure.html"><strong aria-hidden="true">9.3.</strong> The procedure of task scheduling</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/threading_method.html"><strong aria-hidden="true">10.</strong> Threading Method</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/round_robin.html"><strong aria-hidden="true">10.1.</strong> Round Robin</a></li><li class="chapter-item expanded "><a href="layer/trd/work_stealing.html"><strong aria-hidden="true">10.2.</strong> Work Stealing</a></li><li class="chapter-item expanded "><a href="layer/trd/hybrid.html"><strong aria-hidden="true">10.3.</strong> Hybrid Queue for Prioritized Work Stealing</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/token_bucket.html"><strong aria-hidden="true">11.</strong> A token bucket like algorithm for auto task yielding</a></li><li class="chapter-item expanded affix "><li class="part-title">Fourth layer - Reactor and Waker handling</li><li class="chapter-item expanded "><a href="layer/fth/reactor.html"><strong aria-hidden="true">12.</strong> System IO Event Harvester - Reactor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/io_registration.html"><strong aria-hidden="true">12.1.</strong> IO event registeration</a></li><li class="chapter-item expanded "><a href="layer/fth/event_handling.html"><strong aria-hidden="true">12.2.</strong> Event handling</a></li><li class="chapter-item expanded "><a href="layer/fth/event_maintain.html"><strong aria-hidden="true">12.3.</strong> Event maintain for late use</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fth/waker_handling.html"><strong aria-hidden="true">13.</strong> Waker handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/global_map.html"><strong aria-hidden="true">13.1.</strong> Global slab for wakers</a></li><li class="chapter-item expanded "><a href="layer/fth/registration.html"><strong aria-hidden="true">13.2.</strong> Waker registration</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Unresolved Problems and Future Works</li><li class="chapter-item expanded "><a href="prob/load_balancing.html"><strong aria-hidden="true">14.</strong> Load Balancing</a></li><li class="chapter-item expanded "><a href="prob/generic_payload.html"><strong aria-hidden="true">15.</strong> Generic Message Payload</a></li><li class="chapter-item expanded "><a href="prob/reactor_abstract.html"><strong aria-hidden="true">16.</strong> Reactor abstraction for different systems</a></li><li class="chapter-item expanded affix "><li class="part-title">References</li><li class="chapter-item expanded "><a href="references.html"><strong aria-hidden="true">17.</strong> References</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -1187,7 +1187,7 @@ where
 <p>Next, we'll talk about <code>IoWrapper</code>'s design.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="iowrapper-design"><a class="header" href="#iowrapper-design">IoWrapper design</a></h1>
 <p><code>IoWrapper</code> is a wrapper for IO sources like <code>File</code>, <code>TcpStream</code>, etc. to become an IO event provider
-for the runtime. The wrapper provides varios defaults and methods for users to define a new IO source quickly.</p>
+for the runtime. The wrapper provides varius defaults and methods for users to define a new IO source quickly.</p>
 <p>The <code>IoWrapper</code> is defined as:</p>
 <pre><code class="language-rust">pub struct IoWrapper&lt;T: AsFd&gt; {
     inner: T,
@@ -1211,16 +1211,245 @@ the underlying file descripter.</p>
 <li>Auto implementation of <code>AsyncRead</code> and <code>AsyncWrite</code> for types implementing <code>std::io::Read</code> and <code>std::io::Write</code>.</li>
 <li>Get reference/mutable reference of the inner type by <code>IoWrapper::inner()</code>/<code>IoWrapper::inner_mut()</code>.</li>
 </ul>
+<p>In addition to these features, since an <code>IoWrapper</code> wraps over any <code>AsFd</code> type with a token, we can register it with the token
+to the reactor of the runtime. The reactor will then look after its events, and thus can wake up tasks related to it corresponding
+to <code>Interest::READABLE</code> or <code>Interest::WRITABLE</code>. In this way, <code>IoWrapper</code> can play the role of IO events provider
+to wake async tasks. The rest of the details will be discussed in the subsections of <a href="layer/fst/layer/fth/reactor.html">System IO Event Harvester - Reactor</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="heart-of-a-runtime---executor"><a class="header" href="#heart-of-a-runtime---executor">Heart of a runtime - Executor</a></h1>
+<p>In the previous section, we've described:</p>
+<ol>
+<li>How to prperly handle compiler generated <code>Future</code> objects</li>
+<li><code>IoWrapper</code> that is capable of being an IO source that provides IO events for waking tasks.</li>
+</ol>
+<p>But defineing these won't fire up the execution procedure, we still need an executor to process these
+tasks. In this section, we'll discuss:</p>
+<ol>
+<li><code>Executor</code> for executing <code>Future</code>s.
+<ul>
+<li>General commands of a runtime.</li>
+<li><code>Executor</code>'s design.</li>
+</ul>
+</li>
+<li>Passing messages.
+<ul>
+<li><code>Spawner</code> - a message sender.</li>
+<li>Message payload.</li>
+</ul>
+</li>
+<li><code>JoinHandle</code> for spawned future.</li>
+</ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="general-commands-of-a-runtime"><a class="header" href="#general-commands-of-a-runtime">General commands of a runtime</a></h1>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="design-of-executor---an-abstraction-to-scheduler-and-reactor"><a class="header" href="#design-of-executor---an-abstraction-to-scheduler-and-reactor">Design of Executor - an abstraction to scheduler and reactor</a></h1>
+<p>Imagine you're user that holds a pool of <code>Future</code> objects that is ready to execute, and the <code>Executor</code>
+as a server that is capable to execute your <code>Future</code> objects with their results return to you.</p>
+<p>Naturally, you'll want to send a request that asks the server to execute your task. You can, of course, choose
+to wait until the server finishes the task and retrieves its result, or you can choose to tell the server: Give
+me a handle and I'll check its status later. Let's call the latter one <code>spawn</code>.</p>
+<p>We can show the differences with the following snippet:</p>
+<pre><code class="language-rust">// Wait until `f()` finishes and retrieve its result.
+async fn af1() {
+    let result = f().await;
+    // Do the rest of stuff...
+}
+async fn af2() {
+    let handle = spawn(f());
+    // Do other stuff...
+    // Check the result of execution.
+    let result = handle.join().await;
+}
+</code></pre>
+<p>As you can see, we need to define a <code>spawn</code> function to handle these kind of requests.
+Note that in the first case, no extra <code>Future</code> object is created as it will become a state of the <code>Future</code>
+object generated by <code>af1()</code>'s code, so we don't need a command to handle it.</p>
+<p>Now, let's say that you're done with the works, and you want to shutdown the server. Naturally,
+you'll call the <code>shutdown</code> command to close the server before exit.</p>
+<p>By the above situation, we can see that we need two essential commands: <code>spawn()</code> and <code>shutdown()</code> to control
+the <code>Executor</code> we need to use. Of course there can be more commands, but for <code>my-async</code>, these commands are enough.
+Now, let's talk about how we can design the <code>Executor</code> we need with the requirements.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="design-of-executor"><a class="header" href="#design-of-executor">Design of Executor</a></h1>
+<p>By the previous section, we can now create a pseudocode to illustrate the command handling:</p>
+<pre><code>HandleRequests():
+    while true:
+        r &lt;- GetRequest()
+        match r:
+            Spawn(Task) -&gt; Put the Task to the execution system
+            Shutdown -&gt; break
+</code></pre>
+<p>The execution system is done by the <code>Scheduler</code>, and we also need to call <code>Reactor</code> to look up for
+IO events to wake tasks. By these facts and the above pseudo code, the <code>Executor</code> can be viewed
+as an abstraction layer that handles messages and relay the actual actions to <code>Scheduler</code> and <code>Reactor</code>.</p>
+<p>In the code, the <code>Executor</code> will do almost the same thing with one more message to handle. The <code>Executor</code>
+will also spawn a thread for <code>Reactor</code> to run, as the IO events will need to be checked separately if
+we have the message handling loop in the main thread.</p>
+<p>The <code>Executor</code> also provides a function: <code>block_on</code>. The async function that's spawned by the <code>block_on</code> function
+is just like the <code>main</code> function in a normal program: the runtime won't exit before this function ends without
+furthur errors or interrupts occur during runtime.</p>
+<p>The complete pseudocode for the <code>Executor</code>:</p>
+<pre><code>Init():
+    Initialize the Scheduler.
+    Spawn a thread to init and run the Reactor.
+    Set error hook for graceful shutdown to clean storages.
+    Return instance of self
+
+HandleRequests():
+    while true:
+        r &lt;- GetRequest()
+        match r:
+            Spawn(Task) -&gt; Put the Task to the execution system
+            Shutdown -&gt; break
+
+Run():
+    HandleRequests()
+    Send Shutdown message to the Reactor
+    Join the thread for the Reactor
+
+block_on(f):
+    handle &lt;- spawn(f())
+    Run()
+    Get the result from handle
+    Return result of f()
+</code></pre>
+<p>Next, we'll talk about the message passing in this design.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="passing-messages"><a class="header" href="#passing-messages">Passing messages</a></h1>
+<p>According to the previous section, we have two commands to handle:</p>
+<ol>
+<li>spawn</li>
+<li>shutdown</li>
+</ol>
+<p>The corresponding messages is defined:</p>
+<pre><code class="language-rust">// in src/schedulers/mod.rs:
+pub enum ScheduleMessage {
+    Schedule(FutureIndex),
+    Reschedule(FutureIndex),
+    Shutdown,
+}
+</code></pre>
+<p>where <code>Schedule</code> is to handle spawn, and <code>Shutdown</code> is to handle shutdown.</p>
+<p>The <code>Reschedule</code> message is an internal message that is used to requeue a task, usually used when
+a worker's queue is full that the worker can put excessive tasks back to global queue for others to taks.
+For more details, see <a href="layer/snd/layer/trd/schedule_procedure.html">The procedure of task scheduling</a>.</p>
+<p>With the message defined, we can code the message handle loop of <code>Executor</code>:</p>
+<pre><code class="language-rust">// Executor::run() code
+fn run(mut self) {
+    loop {
+        // The sender half will send message.
+        match self.scheduler.receiver().recv() { // Blocking receive
+            Ok(msg) =&gt; match msg {
+                ScheduleMessage::Schedule(future) =&gt; // Scheduler schedule future,
+                ScheduleMessage::Reschedule(task) =&gt; // Scheduler reschedule task,
+                ScheduleMessage::Shutdown =&gt; break,
+            },
+            Err(_) =&gt; { // sender disconnected
+                log::debug!(&quot;exit...&quot;);
+                break;
+            }
+        }
+    }
+    // Shutdown procedures...
+}
+</code></pre>
+<p>The <code>Executor</code> will receive messages until:</p>
+<ol>
+<li>Sender half of the channel is diconnected.</li>
+<li>Got <code>ScheduleMessage::Shutdown</code>.</li>
+</ol>
+<p>In the subsections, we'll look at:</p>
+<ol>
+<li>The sender half.</li>
+<li>The message payload.</li>
+</ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="spawner---message-sender"><a class="header" href="#spawner---message-sender">Spawner - message sender</a></h1>
+<p>The sender half is defined as <code>Spawner</code>, which contains the sender half of the message passing channel.
+When the <code>Executor</code> initialize, it will also initialize a global <code>Spawner</code> for user to use <code>spawn()</code> and <code>shutdown()</code>.</p>
+<p>When calling <code>spawn()</code> or <code>Executor::block_on()</code>, the <code>Spawner</code> will do the following stufff before
+<code>ScheduleMessage::Schedule</code> is send:</p>
+<ol>
+<li>Create a shared memory for the future handle to use</li>
+<li>Add extra code after the future need to spawned that
+<ul>
+<li>Put the execution result to the shared memory.</li>
+<li>Check if it is called by <code>block_on</code>, if yes, shutdown the runtime.</li>
+</ul>
+</li>
+<li>Allocate the <code>Future</code> in global <code>Future</code> object pool and get its key.</li>
+<li>Construct the <code>FuturIndex</code> with the key and other payloads.</li>
+<li>Send <code>ScheduleMessage::Schedule</code> with the <code>FutureIndex</code>.</li>
+<li>Return the handle to the spawned future.</li>
+</ol>
+<p>The code:</p>
+<pre><code class="language-rust">// Spawner::spawn_with_handle()
+pub fn spawn_with_handle&lt;F&gt;(&amp;self, future: F, is_block: bool) -&gt; JoinHandle&lt;F::Output&gt;
+where
+    F: Future + Send + 'static,
+    F::Output: Send + 'static,
+{
+    // Step 1.
+    let result_arc: Arc&lt;Mutex&lt;Option&lt;F::Output&gt;&gt;&gt; = Arc::new(Mutex::new(None));
+    // Step 2.
+    let clone = result_arc.clone();
+    let spawn_fut = async move {
+        let output = future.await;
+        // Store the result.
+        let mut guard = clone.lock();
+        guard.replace(output);
+        // Check if the function is called by `Executor::block_on()`
+        if is_block {
+            log::info!(&quot;Shutting down...&quot;);
+            shutdown();
+        }
+        Ok(())
+    };
+    // Step 3.
+    let key = FUTURE_POOL
+        .create_with(|seat| {
+            seat.future.get_mut().replace(spawn_fut.boxed());
+        })
+        .unwrap();
+    // Used in auto task yielding if enabled.
+    let budget_index = BUDGET_SLAB
+        .insert(AtomicUsize::new(DEFAULT_BUDGET))
+        .unwrap();
+    // Step 4., Step 5.
+    self.tx
+        .send(ScheduleMessage::Schedule(FutureIndex {
+            key,
+            budget_index,
+            sleep_count: 0,
+        }))
+        .expect(&quot;Failed to send message&quot;);
+    // Step 6.
+    JoinHandle {
+        spawn_id: key,
+        registered: AtomicBool::new(false),
+        inner: result_arc,
+    }
+}
+</code></pre>
+<p>For, <code>Shutdown</code> and <code>Reschedule</code>, the implementation is simple: simply send the corresponding message with necessary arguments.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="message-payload"><a class="header" href="#message-payload">Message payload</a></h1>
+<p>The code in the previous section shows that the <code>FutureIndex</code> contains two extra payloads.
+The two payloads are related to scheduling, that:</p>
+<ol>
+<li><code>sleep_count</code>: The sleep count is used in <code>HybridScheduler</code>, that it is used to prioritize the tasks. See <a href="layer/snd/layer/trd/hybrid.html">Hybrid Queue for Prioritized Work Stealing</a></li>
+<li><code>budget_index</code>: Index for retrieving budgets, that is used for auto task yielding. See <a href="layer/snd/layer/trd/token_bucket.html">A token bucket like algorithm for auto task yielding</a></li>
+</ol>
+<p>Although the payloads is hard coded, when you design your own executor, you can store informations that is used for
+runtime metrics.</p>
+<p>For generic payloads, you can use a trait object to achieve, such as:</p>
+<pre><code class="language-rust">trait GenericPayload {
+    // methods and associated types in here
+}
+
+struct FutureIndex&lt;'a&gt; {
+    key: usize,
+    payload: Arc&lt;Mutex&lt;dyn GenericPayload + 'a&gt;&gt;, // for payload mutation
+}
+</code></pre>
+<p>Anyways, that's all for this layer, we'll move on to the <code>Scheduler</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="join-handle-for-future"><a class="header" href="#join-handle-for-future">Join Handle for Future</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="multithread-mania---scheduler"><a class="header" href="#multithread-mania---scheduler">Multithread mania - Scheduler</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="scheduler-trait-design"><a class="header" href="#scheduler-trait-design">Scheduler trait design</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="general-worker-structure-and-logic"><a class="header" href="#general-worker-structure-and-logic">General Worker structure and logic</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="the-procedure-of-task-scheduling"><a class="header" href="#the-procedure-of-task-scheduling">The procedure of task scheduling</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="threading-method"><a class="header" href="#threading-method">Threading Method</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="round-robin"><a class="header" href="#round-robin">Round Robin</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="work-stealing"><a class="header" href="#work-stealing">Work Stealing</a></h1>

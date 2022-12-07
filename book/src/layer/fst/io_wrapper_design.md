@@ -1,7 +1,7 @@
 # IoWrapper design
 
 `IoWrapper` is a wrapper for IO sources like `File`, `TcpStream`, etc. to become an IO event provider
-for the runtime. The wrapper provides varios defaults and methods for users to define a new IO source quickly.
+for the runtime. The wrapper provides varius defaults and methods for users to define a new IO source quickly.
 
 The `IoWrapper` is defined as:
 ```rust
@@ -24,3 +24,8 @@ the underlying file descripter.
     - For usage, see [API documentation](https://smb374.github.io/my-async-rs/api_references/my_async/struct.IoWrapper.html)
 - Auto implementation of `AsyncRead` and `AsyncWrite` for types implementing `std::io::Read` and `std::io::Write`.
 - Get reference/mutable reference of the inner type by `IoWrapper::inner()`/`IoWrapper::inner_mut()`.
+
+In addition to these features, since an `IoWrapper` wraps over any `AsFd` type with a token, we can register it with the token
+to the reactor of the runtime. The reactor will then look after its events, and thus can wake up tasks related to it corresponding
+to `Interest::READABLE` or `Interest::WRITABLE`. In this way, `IoWrapper` can play the role of IO events provider
+to wake async tasks. The rest of the details will be discussed in the subsections of [System IO Event Harvester - Reactor](layer/fth/reactor.md).
