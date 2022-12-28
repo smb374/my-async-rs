@@ -1,7 +1,7 @@
 # Overview of an executor's architechture
 
 The diagram of the executor's architechture:
-![Executor Layer](https://i2.lensdump.com/i/RR65QP.png)
+![Executor Layer](../assets/Executor_Layer_Bright.png)
 
 By the above diagram, we can divide the executor into 4 layers:
 

@@ -38,7 +38,7 @@
     - [Scheduler trait design](layer/trd/scheduler_trait.md)
     - [General Worker structure and logic](layer/trd/worker_structure.md)
     - [The procedure of task scheduling](layer/trd/schedule_procedure.md)
-- [Threading Method](layer/trd/threading_method.md)
+- [Scheduling Method](layer/trd/scheduling_method.md)
     - [Round Robin](layer/trd/round_robin.md)
     - [Work Stealing](layer/trd/work_stealing.md)
     - [Hybrid Queue for Prioritized Work Stealing](layer/trd/hybrid.md)
@@ -47,11 +47,7 @@
 # Fourth layer - Reactor and Waker handling
 - [System IO Event Harvester - Reactor](layer/fth/reactor.md)
     - [IO event registeration](layer/fth/io_registration.md)
-    - [Event handling](layer/fth/event_handling.md)
-    - [Event maintain for late use](layer/fth/event_maintain.md)
-- [Waker handling](layer/fth/waker_handling.md)
-    - [Global slab for wakers](layer/fth/global_map.md)
-    - [Waker registration](layer/fth/registration.md)
+    - [Poll loop](layer/fth/loop.md)
 
 # Unresolved Problems and Future Works
 - [Load Balancing](prob/load_balancing.md)

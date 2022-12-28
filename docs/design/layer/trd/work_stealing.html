@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../../intro.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">Prerequisite Knowledges</li><li class="chapter-item expanded "><a href="../../pre/async_in_rust.html"><strong aria-hidden="true">1.</strong> Async in Rust</a></li><li class="chapter-item expanded "><a href="../../pre/overview.html"><strong aria-hidden="true">2.</strong> Overview of an executor's architechture</a></li><li class="chapter-item expanded "><a href="../../pre/single_thread_executor.html"><strong aria-hidden="true">3.</strong> A minimal single-threded Future evaluator</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../pre/single_future_handle.html"><strong aria-hidden="true">3.1.</strong> Future handling</a></li><li class="chapter-item expanded "><a href="../../pre/single_global_storage.html"><strong aria-hidden="true">3.2.</strong> Global Storages</a></li><li class="chapter-item expanded "><a href="../../pre/single_message_passing.html"><strong aria-hidden="true">3.3.</strong> Message Passing</a></li><li class="chapter-item expanded "><a href="../../pre/single_executor.html"><strong aria-hidden="true">3.4.</strong> Executor Main Loop</a></li><li class="chapter-item expanded "><a href="../../pre/single_final_code.html"><strong aria-hidden="true">3.5.</strong> Final Code</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">First layer - Future and IoWrapper</li><li class="chapter-item expanded "><a href="../../layer/fst/future_trait.html"><strong aria-hidden="true">4.</strong> Bone of async - Future trait</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fst/future_in_depth.html"><strong aria-hidden="true">4.1.</strong> Future in depth</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fst/mechanism.html"><strong aria-hidden="true">4.1.1.</strong> Future trait mechanism</a></li><li class="chapter-item expanded "><a href="../../layer/fst/fsm.html"><strong aria-hidden="true">4.1.2.</strong> Future desugar - a Finite State Machine</a></li><li class="chapter-item expanded "><a href="../../layer/fst/challenge.html"><strong aria-hidden="true">4.1.3.</strong> The challenge of managing Future objects</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/fst/handling.html"><strong aria-hidden="true">4.2.</strong> Generic Future handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fst/heap_alloc.html"><strong aria-hidden="true">4.2.1.</strong> General heap-allocated Future object</a></li><li class="chapter-item expanded "><a href="../../layer/fst/pool.html"><strong aria-hidden="true">4.2.2.</strong> Global Reusable Object Pool for allocation reuse, fragment control, and easy managment</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../layer/fst/io_wrapper.html"><strong aria-hidden="true">5.</strong> IO Adapter for general file descriptor - IoWrapper</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fst/io_handling.html"><strong aria-hidden="true">5.1.</strong> General IO handling</a></li><li class="chapter-item expanded "><a href="../../layer/fst/io_wrapper_design.html"><strong aria-hidden="true">5.2.</strong> IoWrapper design</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Second layer - Executor and message passing</li><li class="chapter-item expanded "><a href="../../layer/snd/executor.html"><strong aria-hidden="true">6.</strong> Heart of a runtime - Executor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/snd/commands.html"><strong aria-hidden="true">6.1.</strong> General commands of a runtime</a></li><li class="chapter-item expanded "><a href="../../layer/snd/message_handling.html"><strong aria-hidden="true">6.2.</strong> Design of Executor</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/snd/message_passing.html"><strong aria-hidden="true">7.</strong> Passing messages</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/snd/spawner.html"><strong aria-hidden="true">7.1.</strong> Spawner - a message sender</a></li><li class="chapter-item expanded "><a href="../../layer/snd/message_payload.html"><strong aria-hidden="true">7.2.</strong> Message payload</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/snd/join_handle.html"><strong aria-hidden="true">8.</strong> Join Handle for Future</a></li><li class="chapter-item expanded affix "><li class="part-title">Third layer - Scheduler and schedule problems</li><li class="chapter-item expanded "><a href="../../layer/trd/scheduler.html"><strong aria-hidden="true">9.</strong> Multithread mania - Scheduler</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/trd/scheduler_trait.html"><strong aria-hidden="true">9.1.</strong> Scheduler trait design</a></li><li class="chapter-item expanded "><a href="../../layer/trd/worker_structure.html"><strong aria-hidden="true">9.2.</strong> General Worker structure and logic</a></li><li class="chapter-item expanded "><a href="../../layer/trd/schedule_procedure.html"><strong aria-hidden="true">9.3.</strong> The procedure of task scheduling</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/trd/threading_method.html"><strong aria-hidden="true">10.</strong> Threading Method</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/trd/round_robin.html"><strong aria-hidden="true">10.1.</strong> Round Robin</a></li><li class="chapter-item expanded "><a href="../../layer/trd/work_stealing.html" class="active"><strong aria-hidden="true">10.2.</strong> Work Stealing</a></li><li class="chapter-item expanded "><a href="../../layer/trd/hybrid.html"><strong aria-hidden="true">10.3.</strong> Hybrid Queue for Prioritized Work Stealing</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/trd/token_bucket.html"><strong aria-hidden="true">11.</strong> A token bucket like algorithm for auto task yielding</a></li><li class="chapter-item expanded affix "><li class="part-title">Fourth layer - Reactor and Waker handling</li><li class="chapter-item expanded "><a href="../../layer/fth/reactor.html"><strong aria-hidden="true">12.</strong> System IO Event Harvester - Reactor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fth/io_registration.html"><strong aria-hidden="true">12.1.</strong> IO event registeration</a></li><li class="chapter-item expanded "><a href="../../layer/fth/event_handling.html"><strong aria-hidden="true">12.2.</strong> Event handling</a></li><li class="chapter-item expanded "><a href="../../layer/fth/event_maintain.html"><strong aria-hidden="true">12.3.</strong> Event maintain for late use</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/fth/waker_handling.html"><strong aria-hidden="true">13.</strong> Waker handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fth/global_map.html"><strong aria-hidden="true">13.1.</strong> Global slab for wakers</a></li><li class="chapter-item expanded "><a href="../../layer/fth/registration.html"><strong aria-hidden="true">13.2.</strong> Waker registration</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Unresolved Problems and Future Works</li><li class="chapter-item expanded "><a href="../../prob/load_balancing.html"><strong aria-hidden="true">14.</strong> Load Balancing</a></li><li class="chapter-item expanded "><a href="../../prob/generic_payload.html"><strong aria-hidden="true">15.</strong> Generic Message Payload</a></li><li class="chapter-item expanded "><a href="../../prob/reactor_abstract.html"><strong aria-hidden="true">16.</strong> Reactor abstraction for different systems</a></li><li class="chapter-item expanded affix "><li class="part-title">References</li><li class="chapter-item expanded "><a href="../../references.html"><strong aria-hidden="true">17.</strong> References</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="../../intro.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">Prerequisite Knowledges</li><li class="chapter-item expanded "><a href="../../pre/async_in_rust.html"><strong aria-hidden="true">1.</strong> Async in Rust</a></li><li class="chapter-item expanded "><a href="../../pre/overview.html"><strong aria-hidden="true">2.</strong> Overview of an executor's architechture</a></li><li class="chapter-item expanded "><a href="../../pre/single_thread_executor.html"><strong aria-hidden="true">3.</strong> A minimal single-threded Future evaluator</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../pre/single_future_handle.html"><strong aria-hidden="true">3.1.</strong> Future handling</a></li><li class="chapter-item expanded "><a href="../../pre/single_global_storage.html"><strong aria-hidden="true">3.2.</strong> Global Storages</a></li><li class="chapter-item expanded "><a href="../../pre/single_message_passing.html"><strong aria-hidden="true">3.3.</strong> Message Passing</a></li><li class="chapter-item expanded "><a href="../../pre/single_executor.html"><strong aria-hidden="true">3.4.</strong> Executor Main Loop</a></li><li class="chapter-item expanded "><a href="../../pre/single_final_code.html"><strong aria-hidden="true">3.5.</strong> Final Code</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">First layer - Future and IoWrapper</li><li class="chapter-item expanded "><a href="../../layer/fst/future_trait.html"><strong aria-hidden="true">4.</strong> Bone of async - Future trait</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fst/future_in_depth.html"><strong aria-hidden="true">4.1.</strong> Future in depth</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fst/mechanism.html"><strong aria-hidden="true">4.1.1.</strong> Future trait mechanism</a></li><li class="chapter-item expanded "><a href="../../layer/fst/fsm.html"><strong aria-hidden="true">4.1.2.</strong> Future desugar - a Finite State Machine</a></li><li class="chapter-item expanded "><a href="../../layer/fst/challenge.html"><strong aria-hidden="true">4.1.3.</strong> The challenge of managing Future objects</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/fst/handling.html"><strong aria-hidden="true">4.2.</strong> Generic Future handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fst/heap_alloc.html"><strong aria-hidden="true">4.2.1.</strong> General heap-allocated Future object</a></li><li class="chapter-item expanded "><a href="../../layer/fst/pool.html"><strong aria-hidden="true">4.2.2.</strong> Global Reusable Object Pool for allocation reuse, fragment control, and easy managment</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../layer/fst/io_wrapper.html"><strong aria-hidden="true">5.</strong> IO Adapter for general file descriptor - IoWrapper</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fst/io_handling.html"><strong aria-hidden="true">5.1.</strong> General IO handling</a></li><li class="chapter-item expanded "><a href="../../layer/fst/io_wrapper_design.html"><strong aria-hidden="true">5.2.</strong> IoWrapper design</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Second layer - Executor and message passing</li><li class="chapter-item expanded "><a href="../../layer/snd/executor.html"><strong aria-hidden="true">6.</strong> Heart of a runtime - Executor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/snd/commands.html"><strong aria-hidden="true">6.1.</strong> General commands of a runtime</a></li><li class="chapter-item expanded "><a href="../../layer/snd/message_handling.html"><strong aria-hidden="true">6.2.</strong> Design of Executor</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/snd/message_passing.html"><strong aria-hidden="true">7.</strong> Passing messages</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/snd/spawner.html"><strong aria-hidden="true">7.1.</strong> Spawner - a message sender</a></li><li class="chapter-item expanded "><a href="../../layer/snd/message_payload.html"><strong aria-hidden="true">7.2.</strong> Message payload</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/snd/join_handle.html"><strong aria-hidden="true">8.</strong> Join Handle for Future</a></li><li class="chapter-item expanded affix "><li class="part-title">Third layer - Scheduler and schedule problems</li><li class="chapter-item expanded "><a href="../../layer/trd/scheduler.html"><strong aria-hidden="true">9.</strong> Multithread mania - Scheduler</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/trd/scheduler_trait.html"><strong aria-hidden="true">9.1.</strong> Scheduler trait design</a></li><li class="chapter-item expanded "><a href="../../layer/trd/worker_structure.html"><strong aria-hidden="true">9.2.</strong> General Worker structure and logic</a></li><li class="chapter-item expanded "><a href="../../layer/trd/schedule_procedure.html"><strong aria-hidden="true">9.3.</strong> The procedure of task scheduling</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/trd/scheduling_method.html"><strong aria-hidden="true">10.</strong> Scheduling Method</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/trd/round_robin.html"><strong aria-hidden="true">10.1.</strong> Round Robin</a></li><li class="chapter-item expanded "><a href="../../layer/trd/work_stealing.html" class="active"><strong aria-hidden="true">10.2.</strong> Work Stealing</a></li><li class="chapter-item expanded "><a href="../../layer/trd/hybrid.html"><strong aria-hidden="true">10.3.</strong> Hybrid Queue for Prioritized Work Stealing</a></li></ol></li><li class="chapter-item expanded "><a href="../../layer/trd/token_bucket.html"><strong aria-hidden="true">11.</strong> A token bucket like algorithm for auto task yielding</a></li><li class="chapter-item expanded affix "><li class="part-title">Fourth layer - Reactor and Waker handling</li><li class="chapter-item expanded "><a href="../../layer/fth/reactor.html"><strong aria-hidden="true">12.</strong> System IO Event Harvester - Reactor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../layer/fth/io_registration.html"><strong aria-hidden="true">12.1.</strong> IO event registeration</a></li><li class="chapter-item expanded "><a href="../../layer/fth/loop.html"><strong aria-hidden="true">12.2.</strong> Poll loop</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Unresolved Problems and Future Works</li><li class="chapter-item expanded "><a href="../../prob/load_balancing.html"><strong aria-hidden="true">13.</strong> Load Balancing</a></li><li class="chapter-item expanded "><a href="../../prob/generic_payload.html"><strong aria-hidden="true">14.</strong> Generic Message Payload</a></li><li class="chapter-item expanded "><a href="../../prob/reactor_abstract.html"><strong aria-hidden="true">15.</strong> Reactor abstraction for different systems</a></li><li class="chapter-item expanded affix "><li class="part-title">References</li><li class="chapter-item expanded "><a href="../../references.html"><strong aria-hidden="true">16.</strong> References</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -145,6 +145,255 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="work-stealing"><a class="header" href="#work-stealing">Work Stealing</a></h1>
+<p>This scheduler implements the Work-Stealing strategy.</p>
+<h2 id="structs"><a class="header" href="#structs">Structs</a></h2>
+<pre><code class="language-rust">pub struct WorkStealingScheduler {
+    _size: usize,
+    _stealers: Vec&lt;Stealer&lt;FutureIndex&gt;&gt;,
+    wait_group: WaitGroup,
+    handles: Vec&lt;thread::JoinHandle&lt;()&gt;&gt;,
+    // channels
+    inject_sender: Sender&lt;FutureIndex&gt;,
+    notifier: Broadcast&lt;Message&gt;,
+    rx: Receiver&lt;ScheduleMessage&gt;,
+}
+
+struct TaskRunner {
+    _idx: usize,
+    worker: Ringbuf&lt;FutureIndex&gt;,
+    stealers: Arc&lt;[Stealer&lt;FutureIndex&gt;]&gt;,
+    // channels
+    inject_receiver: Receiver&lt;FutureIndex&gt;,
+    rx: Receiver&lt;Message&gt;,
+    task_tx: Sender&lt;FutureIndex&gt;,
+    task_rx: Receiver&lt;FutureIndex&gt;,
+}
+
+#[derive(Clone)]
+enum Message {
+    HaveTasks,
+    Close,
+}
+</code></pre>
+<ul>
+<li>The injector is a channel used in SPMC condition.</li>
+<li>The injector here will not perform any scheduling stategy (first comer takes first), as we uses Work-Stealing strategy.</li>
+<li>Channels used:
+<ul>
+<li><code>inject_sender</code>, <code>inject_receiver</code>: Injector.</li>
+<li><code>notifier</code>, Worker <code>rx</code>: Broadcast <code>Message</code> to workers.
+<ul>
+<li>Either shutdown or wake the workers up to get new tasks</li>
+</ul>
+</li>
+<li>Worker <code>task_tx</code>, <code>task_rx</code>: Channel for waking up tasks. <code>task_tx</code> is copied to the waker.</li>
+</ul>
+</li>
+<li>Worker <code>worker</code> ringbuf is designed to have the Work-Stealing function.
+<ul>
+<li>It's capable of <code>push</code>, <code>pop</code>, and create a stealer for other workers to steal task from it.</li>
+<li>The stealers are created on scheduler init and uses a <code>Arc</code> guarded slice for access.</li>
+</ul>
+</li>
+<li>The <code>wait_group</code> is used to synchronize the each Worker at shutdown phase.</li>
+</ul>
+<h2 id="scheduler-implementation"><a class="header" href="#scheduler-implementation">Scheduler implementation</a></h2>
+<pre><code class="language-rust">impl Scheduler for WorkStealingScheduler {
+    fn init(size: usize) -&gt; (Spawner, Self) {
+        Self::new(size)
+    }
+    fn schedule(&amp;mut self, index: FutureIndex) {
+        self.inject_sender
+            .send(index)
+            .expect(&quot;Failed to send message&quot;);
+        self.notifier
+            .broadcast(Message::HaveTasks)
+            .expect(&quot;Failed to send message&quot;);
+    }
+    fn reschedule(&amp;mut self, index: FutureIndex) {
+        self.inject_sender
+            .send(index)
+            .expect(&quot;Failed to send message&quot;);
+        self.notifier
+            .broadcast(Message::HaveTasks)
+            .expect(&quot;Failed to send message&quot;);
+    }
+    fn shutdown(self) {
+        self.notifier
+            .broadcast(Message::Close)
+            .expect(&quot;Failed to send message&quot;);
+        log::debug!(&quot;Waiting runners to shutdown...&quot;);
+        self.wait_group.wait();
+        self.handles.into_iter().for_each(|h| h.join().unwrap());
+        log::debug!(&quot;Shutdown complete.&quot;);
+    }
+    fn receiver(&amp;self) -&gt; &amp;Receiver&lt;ScheduleMessage&gt; {
+        &amp;self.rx
+    }
+}
+</code></pre>
+<ul>
+<li><code>schedule</code>, <code>reschedule</code>: First push the task to be scheduled into the injector channel, then use the notifier to broadcast <code>Message::HaveTasks</code> to workers.</li>
+<li><code>shutdown</code>: First use <code>notifier</code> to broadcast <code>Message::Close</code>. The use <code>wait_group</code> to wait all the threads run to the point before exit, an then we join all the threads.</li>
+</ul>
+<h3 id="initialization"><a class="header" href="#initialization">Initialization</a></h3>
+<pre><code class="language-rust">fn new(size: usize) -&gt; (Spawner, Self) {
+    // 1.
+    let mut _stealers: Vec&lt;Stealer&lt;FutureIndex&gt;&gt; = Vec::new();
+    let stealers_arc: Arc&lt;[Stealer&lt;FutureIndex&gt;]&gt; = Arc::from(_stealers.as_slice());
+    let (inject_sender, inject_receiver) = flume::unbounded();
+    let mut handles = Vec::with_capacity(size);
+    let (tx, rx) = flume::unbounded();
+    let mut notifier = Broadcast::new();
+    let spawner = Spawner::new(tx);
+    let wait_group = WaitGroup::new();
+    // 2.
+    for _idx in 0..size {
+        let worker = Ringbuf::new(4096);
+        _stealers.push(worker.stealer());
+        let ic = inject_receiver.clone();
+        let sc = Arc::clone(&amp;stealers_arc);
+        let wg = wait_group.clone();
+        let rc = notifier.subscribe();
+        let handle = thread::Builder::new()
+            .name(format!(&quot;work_stealing_worker_{}&quot;, _idx))
+            .spawn(move || {
+                let (task_tx, task_rx) = flume::unbounded();
+                let runner = TaskRunner {
+                    _idx,
+                    worker,
+                    stealers: sc,
+                    inject_receiver: ic,
+                    rx: rc,
+                    task_tx,
+                    task_rx,
+                };
+                runner.run();
+                log::debug!(&quot;Runner shutdown.&quot;);
+                drop(wg);
+            })
+            .expect(&quot;Failed to spawn worker&quot;);
+        handles.push(handle);
+    }
+    let scheduler = Self {
+        _size: size,
+        _stealers,
+        wait_group,
+        handles,
+        inject_sender,
+        notifier,
+        rx,
+    };
+    (spawner, scheduler)
+}
+</code></pre>
+<ol>
+<li>Create global spawner, <code>wait_group</code>, <code>notifier</code>, injector channel, stealer array, and handlers array.</li>
+<li>Create worker threads with a Work-Stealing ringbuf bounded with a size of 4096.</li>
+</ol>
+<h2 id="worker-run-loop"><a class="header" href="#worker-run-loop">Worker run loop</a></h2>
+<pre><code class="language-rust">impl TaskRunner {
+    fn run(&amp;self) {
+        'outer: loop {
+            // 1.
+            if !self.worker.is_empty() {
+                while let Some(index) = self.worker.pop() {
+                    super::process_future(index, &amp;self.task_tx);
+                }
+            } else {
+                log::debug!(&quot;Start collecting tasks...&quot;);
+                // 2.
+                let mut wakeup_count = 0;
+                log::debug!(&quot;Collecting wokeups...&quot;);
+                loop {
+                    match self.task_rx.try_recv() {
+                        Ok(index) =&gt; {
+                            wakeup_count += 1;
+                            if let Err(index) = self.worker.push(index) {
+                                reschedule(index);
+                            }
+                        }
+                        Err(TryRecvError::Empty) =&gt; break,
+                        Err(TryRecvError::Disconnected) =&gt; break 'outer,
+                    }
+                }
+                if wakeup_count &gt; 0 {
+                    continue;
+                }
+                // 3.
+                log::debug!(&quot;Try stealing tasks from other runners...&quot;);
+                if let Ok(index) = self.inject_receiver.try_recv() {
+                    if let Err(index) = self.worker.push(index) {
+                        reschedule(index);
+                    }
+                    continue;
+                }
+                // 4.
+                if let Some(index) = self.steal_others() {
+                    if let Err(index) = self.worker.push(index) {
+                        reschedule(index);
+                    }
+                    continue;
+                }
+                // Finally, wait for a single wakeup task or broadcast signal from scheduler
+                log::debug!(&quot;Runner park.&quot;);
+                // 5.
+                let exit_loop = Selector::new()
+                    .recv(&amp;self.task_rx, |result| match result {
+                        Ok(index) =&gt; {
+                            if let Err(index) = self.worker.push(index) {
+                                reschedule(index);
+                            }
+                            false
+                        }
+                        Err(_) =&gt; true,
+                    })
+                    .recv(&amp;self.rx, |result| match result {
+                        Ok(Message::HaveTasks) =&gt; false,
+                        Ok(Message::Close) | Err(_) =&gt; true,
+                    })
+                    .wait();
+                if exit_loop {
+                    break 'outer;
+                }
+            }
+        }
+    }
+
+    fn steal_others(&amp;self) -&gt; Option&lt;FutureIndex&gt; {
+        self.stealers
+            .iter()
+            .map(|s| s.steal())
+            .find(|s| s.is_success())
+            .and_then(|s| s.success())
+    }
+}
+</code></pre>
+<ol>
+<li>If <code>worker</code> is not empty, pop and process a task.</li>
+<li>Non-blocking receive all tasks that is woke up.
+<ul>
+<li>If <code>wake_count &gt; 0</code>, continue the loop.</li>
+</ul>
+</li>
+<li>Non-blocking receive a task that is queued in the injector.
+<ul>
+<li>If success, continue the loop.</li>
+</ul>
+</li>
+<li>Try to steal a task using the stalers recorded in the <code>stealers</code> array.
+<ul>
+<li>If success, continue the loop.</li>
+</ul>
+</li>
+<li>Block receive 1 woke up task or notifications that is <code>HaveTasks</code> or <code>Close</code>.
+<ul>
+<li><code>Close</code> indicates that its time to shutdown, break run loop.</li>
+<li><code>HaveTasks</code> means there tasks scheduled/rescheduled. Continue the loop and run through step 3.</li>
+</ul>
+</li>
+</ol>
+<p>The <code>steal_others</code> make use of Rust's lazy iterator behavior, that it won't steal over 1 task, which is the first one that successes.</p>
 
                     </main>
 
