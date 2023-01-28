@@ -17,8 +17,6 @@ pub mod hybrid;
 pub mod round_robin;
 pub mod work_stealing;
 
-use super::multi_thread::FutureIndex;
-
 use std::{
     cell::Cell,
     future::Future,
@@ -28,20 +26,18 @@ use std::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc,
     },
-    task::{Context, Poll, Waker},
+    task::{Context, Poll, Waker}, thread::Scope,
 };
 
 use flume::{Receiver, Sender};
 use futures_lite::future::FutureExt;
 use once_cell::sync::{Lazy, OnceCell};
-use parking_lot::{Mutex, RwLock};
-use rustc_hash::FxHashMap;
+use parking_lot::Mutex;
 use sharded_slab::Slab;
 
+use super::multi_thread::FutureIndex;
 use crate::multi_thread::FUTURE_POOL;
 
-static JOIN_HANDLE_MAP: Lazy<RwLock<FxHashMap<usize, Waker>>> =
-    Lazy::new(|| RwLock::new(FxHashMap::default()));
 static SPAWNER: OnceCell<Spawner> = OnceCell::new();
 static BUDGET_SLAB: Lazy<Slab<AtomicUsize>> = Lazy::new(Slab::new);
 const DEFAULT_BUDGET: usize = 128;
@@ -87,7 +83,7 @@ pub trait Scheduler {
     /// Initialize the [`Spawner`] and the [`Scheduler`] it self.
     ///
     /// It should initialize `size` threads as worker for concurrent future processing.
-    fn init(size: usize) -> (Spawner, Self);
+    fn init(size: usize) -> Self;
     /// Schedules incoming future tasks to workers.
     ///
     /// There's no restriction as long as it accepts a [`FutureIndex`]
@@ -100,11 +96,7 @@ pub trait Scheduler {
     ///
     /// It should notify all worker to shutdown and join the worker threads.
     fn shutdown(self);
-    /// Returns the receiver of [`ScheduleMessage`]
-    ///
-    /// This function should return the receiver half of the spwner for
-    /// [`Executor`][super::multi_thread::Executor] to receive the messages.
-    fn receiver(&self) -> &Receiver<ScheduleMessage>;
+    fn setup_workers<'s, 'e: 's>(&mut self, s: &'s Scope<'s, 'e>);
 }
 
 // TODO: check if there is a better way to broadcast message instead of this naive implementation.
@@ -296,12 +288,16 @@ impl<T> JoinHandle<T> {
         guard.take()
     }
     fn register_waker(&self, waker: Waker) {
-        JOIN_HANDLE_MAP.write().insert(self.spawn_id, waker);
-        self.registered.store(true, Ordering::Relaxed);
+        if let Some(entry) = FUTURE_POOL.get(self.spawn_id) {
+            entry.join_waker.lock().replace(waker);
+            self.registered.store(true, Ordering::Relaxed);
+        }
     }
     fn deregister_waker(&self) {
-        JOIN_HANDLE_MAP.write().remove(&self.spawn_id);
-        self.registered.store(false, Ordering::Relaxed);
+        if let Some(entry) = FUTURE_POOL.get(self.spawn_id) {
+            entry.join_waker.lock().take();
+            self.registered.store(false, Ordering::Relaxed);
+        }
     }
 }
 
@@ -332,8 +328,11 @@ impl<'a, T> Future for FutureJoin<'a, T> {
 // If the waker is registered, we wake it up
 // Otherwise, the JoinHandle hasn't request join.
 pub(super) fn wake_join_handle(index: usize) {
-    if let Some(waker) = JOIN_HANDLE_MAP.read().get(&index) {
-        waker.wake_by_ref();
+    if let Some(entry) = FUTURE_POOL.get(index) {
+        let guard = entry.join_waker.lock();
+        if let Some(waker) = guard.as_ref() {
+            waker.wake_by_ref();
+        }
     }
 }
 

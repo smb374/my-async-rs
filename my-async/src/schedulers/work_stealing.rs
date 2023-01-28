@@ -2,7 +2,7 @@
 //!
 //! This module implements a scheduler that uses the work-stealing strategy.
 //! The tasks in local queue can be stolen by other worker that is not busy.
-use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
+use super::{Broadcast, FutureIndex, Scheduler};
 use crate::schedulers::reschedule;
 
 use std::{sync::Arc, thread};
@@ -12,14 +12,13 @@ use crossbeam_utils::sync::WaitGroup;
 use flume::{Receiver, Selector, Sender, TryRecvError};
 
 pub struct WorkStealingScheduler {
-    _size: usize,
-    _stealers: Vec<Stealer<FutureIndex>>,
+    size: usize,
+    stealers: Vec<Stealer<FutureIndex>>,
     wait_group: WaitGroup,
-    handles: Vec<thread::JoinHandle<()>>,
     // channels
     inject_sender: Sender<FutureIndex>,
+    inject_receiver: Receiver<FutureIndex>,
     notifier: Broadcast<Message>,
-    rx: Receiver<ScheduleMessage>,
 }
 
 struct TaskRunner {
@@ -40,57 +39,26 @@ enum Message {
 }
 
 impl WorkStealingScheduler {
-    fn new(size: usize) -> (Spawner, Self) {
-        let mut _stealers: Vec<Stealer<FutureIndex>> = Vec::new();
-        let stealers_arc: Arc<[Stealer<FutureIndex>]> = Arc::from(_stealers.as_slice());
+    fn new(size: usize) -> Self {
+        let stealers: Vec<Stealer<FutureIndex>> = Vec::new();
         let (inject_sender, inject_receiver) = flume::unbounded();
-        let mut handles = Vec::with_capacity(size);
-        let (tx, rx) = flume::unbounded();
-        let mut notifier = Broadcast::new();
-        let spawner = Spawner::new(tx);
+        let notifier = Broadcast::new();
         let wait_group = WaitGroup::new();
         for _idx in 0..size {
-            let worker = Ringbuf::new(4096);
-            _stealers.push(worker.stealer());
-            let ic = inject_receiver.clone();
-            let sc = Arc::clone(&stealers_arc);
-            let wg = wait_group.clone();
-            let rc = notifier.subscribe();
-            let handle = thread::Builder::new()
-                .name(format!("work_stealing_worker_{}", _idx))
-                .spawn(move || {
-                    let (task_tx, task_rx) = flume::unbounded();
-                    let runner = TaskRunner {
-                        _idx,
-                        worker,
-                        stealers: sc,
-                        inject_receiver: ic,
-                        rx: rc,
-                        task_tx,
-                        task_rx,
-                    };
-                    runner.run();
-                    log::debug!("Runner shutdown.");
-                    drop(wg);
-                })
-                .expect("Failed to spawn worker");
-            handles.push(handle);
         }
-        let scheduler = Self {
-            _size: size,
-            _stealers,
+        Self {
+            size,
+            stealers,
             wait_group,
-            handles,
             inject_sender,
+            inject_receiver,
             notifier,
-            rx,
-        };
-        (spawner, scheduler)
+        }
     }
 }
 
 impl Scheduler for WorkStealingScheduler {
-    fn init(size: usize) -> (Spawner, Self) {
+    fn init(size: usize) -> Self {
         Self::new(size)
     }
     fn schedule(&mut self, index: FutureIndex) {
@@ -115,11 +83,36 @@ impl Scheduler for WorkStealingScheduler {
             .expect("Failed to send message");
         log::debug!("Waiting runners to shutdown...");
         self.wait_group.wait();
-        self.handles.into_iter().for_each(|h| h.join().unwrap());
         log::debug!("Shutdown complete.");
     }
-    fn receiver(&self) -> &Receiver<ScheduleMessage> {
-        &self.rx
+    fn setup_workers<'s, 'e: 's>(&mut self, s: &'s thread::Scope<'s, 'e>) {
+        let stealers_arc: Arc<[Stealer<FutureIndex>]> = Arc::from(self.stealers.as_slice());
+        for idx in 0..self.size {
+            let worker = Ringbuf::new(4096);
+            self.stealers.push(worker.stealer());
+            let ic = self.inject_receiver.clone();
+            let sc = Arc::clone(&stealers_arc);
+            let wg = self.wait_group.clone();
+            let rc = self.notifier.subscribe();
+            thread::Builder::new()
+                .name(format!("work_stealing_worker_{}", idx))
+                .spawn_scoped(s, move || {
+                    let (task_tx, task_rx) = flume::unbounded();
+                    let runner = TaskRunner {
+                        _idx: idx,
+                        worker,
+                        stealers: sc,
+                        inject_receiver: ic,
+                        rx: rc,
+                        task_tx,
+                        task_rx,
+                    };
+                    runner.run();
+                    log::debug!("Runner shutdown.");
+                    drop(wg);
+                })
+                .expect("Failed to spawn worker");
+        }
     }
 }
 

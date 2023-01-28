@@ -11,7 +11,7 @@
 //! This implementation makes prioritized work-stealing strategy possible without implementing
 //! a thread-safe priority queue with a complex synchronization scheme plus loads of cache miss.
 
-use super::{Broadcast, FutureIndex, ScheduleMessage, Scheduler, Spawner};
+use super::{Broadcast, FutureIndex, Scheduler};
 use crate::schedulers::reschedule;
 
 use std::{hash::BuildHasherDefault, sync::Arc, thread};
@@ -37,12 +37,12 @@ struct TaskQueue {
 ///
 /// See [module documentation](./index.html) for more information.
 pub struct HybridScheduler {
+    size: usize,
     wait_group: WaitGroup,
-    _stealers: Vec<Stealer<FutureIndex>>,
-    handles: Vec<thread::JoinHandle<()>>,
+    stealers: Vec<Stealer<FutureIndex>>,
     // channels
     inject_sender: Sender<FutureIndex>,
-    schedule_message_receiver: Receiver<ScheduleMessage>,
+    inject_receiver: Receiver<FutureIndex>,
     notifier: Broadcast<Message>,
 }
 
@@ -58,59 +58,24 @@ struct TaskRunner {
 }
 
 impl HybridScheduler {
-    pub fn new(size: usize) -> (Spawner, Self) {
-        let (schedule_message_sender, schedule_message_receiver) = flume::unbounded();
+    pub fn new(size: usize) -> Self {
         let (inject_sender, inject_receiver) = flume::unbounded();
-        let mut _stealers = Vec::with_capacity(size);
-        let mut handles = Vec::with_capacity(size);
-        let stealers_arc: Arc<[Stealer<FutureIndex>]> = Arc::from(_stealers.as_slice());
-        let mut notifier = Broadcast::new();
+        let stealers = Vec::with_capacity(size);
+        let notifier = Broadcast::new();
         let wait_group = WaitGroup::new();
-        for idx in 0..size {
-            let rb = Ringbuf::new(4096);
-            let wg = wait_group.clone();
-            let notify_receiver = notifier.subscribe();
-            _stealers.push(rb.stealer());
-            let ic = inject_receiver.clone();
-            let sc = Arc::clone(&stealers_arc);
-            let handle = thread::Builder::new()
-                .name(format!("hybrid_worker_{}", idx))
-                .spawn(move || {
-                    let (task_wakeup_sender, task_wakeup_receiver) = flume::unbounded();
-                    let mut runner = TaskRunner {
-                        idx,
-                        queue: TaskQueue {
-                            cold: rb,
-                            hot: PriorityQueue::with_capacity_and_default_hasher(65536),
-                        },
-                        stealers: sc,
-                        inject_receiver: ic,
-                        task_wakeup_sender,
-                        task_wakeup_receiver,
-                        notify_receiver,
-                    };
-                    runner.run();
-                    log::debug!("Runner shutdown.");
-                    drop(wg);
-                })
-                .expect("Failed to spawn worker");
-            handles.push(handle);
-        }
-        let spawner = Spawner::new(schedule_message_sender);
-        let scheduler = Self {
+        Self {
+            size,
             wait_group,
-            _stealers,
-            handles,
+            stealers,
             inject_sender,
-            schedule_message_receiver,
+            inject_receiver,
             notifier,
-        };
-        (spawner, scheduler)
+        }
     }
 }
 
 impl Scheduler for HybridScheduler {
-    fn init(size: usize) -> (Spawner, Self) {
+    fn init(size: usize) -> Self {
         Self::new(size)
     }
     fn schedule(&mut self, index: FutureIndex) {
@@ -131,11 +96,39 @@ impl Scheduler for HybridScheduler {
             .expect("Faild to send shutdown notify");
         log::debug!("Waiting runners to shutdown...");
         self.wait_group.wait();
-        self.handles.into_iter().for_each(|h| h.join().unwrap());
         log::debug!("Shutdown complete.");
     }
-    fn receiver(&self) -> &Receiver<ScheduleMessage> {
-        &self.schedule_message_receiver
+    fn setup_workers<'s, 'e: 's>(&mut self, s: &'s thread::Scope<'s, 'e>) {
+        let stealers_arc: Arc<[Stealer<FutureIndex>]> = Arc::from(self.stealers.as_slice());
+        for idx in 0..self.size {
+            let rb = Ringbuf::new(4096);
+            let wg = self.wait_group.clone();
+            let notify_receiver = self.notifier.subscribe();
+            self.stealers.push(rb.stealer());
+            let ic = self.inject_receiver.clone();
+            let sc = Arc::clone(&stealers_arc);
+            thread::Builder::new()
+                .name(format!("hybrid_worker_{}", idx))
+                .spawn_scoped(s, move || {
+                    let (task_wakeup_sender, task_wakeup_receiver) = flume::unbounded();
+                    let mut runner = TaskRunner {
+                        idx,
+                        queue: TaskQueue {
+                            cold: rb,
+                            hot: PriorityQueue::with_capacity_and_default_hasher(65536),
+                        },
+                        stealers: sc,
+                        inject_receiver: ic,
+                        task_wakeup_sender,
+                        task_wakeup_receiver,
+                        notify_receiver,
+                    };
+                    runner.run();
+                    log::debug!("Runner shutdown.");
+                    drop(wg);
+                })
+                .expect("Failed to spawn worker");
+        }
     }
 }
 

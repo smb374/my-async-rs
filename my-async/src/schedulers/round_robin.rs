@@ -5,9 +5,9 @@
 //!
 //! Tasks will always be resend to the original worker it was scheduled
 //! unless it's been rescheduled.
-use super::{FutureIndex, ScheduleMessage, Scheduler, Spawner};
+use super::{FutureIndex, Scheduler};
 
-use std::thread::{self, JoinHandle};
+use std::thread;
 
 // use crossbeam::channel::{self, Receiver, Select, Sender};
 use flume::{Receiver, Selector, Sender};
@@ -19,8 +19,7 @@ enum Message {
 pub struct RoundRobinScheduler {
     size: usize,
     current_index: usize,
-    threads: Vec<(WorkerInfo, JoinHandle<()>)>,
-    rx: Receiver<ScheduleMessage>,
+    threads: Vec<WorkerInfo>,
 }
 
 struct WorkerInfo {
@@ -36,33 +35,13 @@ struct Worker {
 }
 
 impl RoundRobinScheduler {
-    fn new(size: usize) -> (Spawner, Self) {
-        let (tx, rx) = flume::unbounded();
-        let spawner = Spawner::new(tx);
-        let threads: Vec<(WorkerInfo, JoinHandle<()>)> = (0..size)
-            .map(|_idx| {
-                let (tx, rx) = flume::unbounded();
-                let (task_tx, task_rx) = flume::unbounded();
-                let tx_clone = task_tx.clone();
-                let handle = thread::spawn(move || {
-                    let worker = Worker {
-                        _idx,
-                        task_tx: tx_clone,
-                        task_rx,
-                        rx,
-                    };
-                    worker.run();
-                });
-                (WorkerInfo { task_tx, tx }, handle)
-            })
-            .collect();
-        let scheduler = Self {
+    fn new(size: usize) -> Self {
+        let threads = Vec::with_capacity(size);
+        Self {
             size,
             current_index: 0,
             threads,
-            rx,
-        };
-        (spawner, scheduler)
+        }
     }
     fn round(&mut self) -> usize {
         let r = self.current_index;
@@ -72,28 +51,41 @@ impl RoundRobinScheduler {
 }
 
 impl Scheduler for RoundRobinScheduler {
-    fn init(size: usize) -> (Spawner, Self) {
+    fn init(size: usize) -> Self {
         Self::new(size)
     }
     fn schedule(&mut self, index: FutureIndex) {
         let worker_index = self.round();
-        let task_tx = &self.threads[worker_index].0.task_tx;
+        let task_tx = &self.threads[worker_index].task_tx;
         task_tx.send(index).expect("Failed to send message");
     }
     fn reschedule(&mut self, index: FutureIndex) {
         let worker_index = self.round();
-        let task_tx = &self.threads[worker_index].0.task_tx;
+        let task_tx = &self.threads[worker_index].task_tx;
         task_tx.send(index).expect("Failed to send message");
     }
     fn shutdown(self) {
-        for (info, handle) in self.threads {
+        for info in self.threads {
             let tx = info.tx;
             tx.send(Message::Close).expect("Failed to send message");
-            let _ = handle.join();
         }
     }
-    fn receiver(&self) -> &Receiver<ScheduleMessage> {
-        &self.rx
+    fn setup_workers<'s, 'e: 's>(&mut self, s: &'s thread::Scope<'s, 'e>) {
+        for idx in 0..self.size {
+            let (tx, rx) = flume::unbounded();
+            let (task_tx, task_rx) = flume::unbounded();
+            let tx_clone = task_tx.clone();
+            s.spawn(move || {
+                let worker = Worker {
+                    _idx: idx,
+                    task_tx: tx_clone,
+                    task_rx,
+                    rx,
+                };
+                worker.run();
+            });
+            self.threads[idx] = WorkerInfo { task_tx, tx };
+        }
     }
 }
 
