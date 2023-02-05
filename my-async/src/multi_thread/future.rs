@@ -1,8 +1,8 @@
-use std::{
+use core::{
     hash::Hash,
-    io,
     task::{Context, Poll, Waker},
 };
+use std::io;
 
 use flume::Sender;
 use futures_lite::future::Boxed;

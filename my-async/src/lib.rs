@@ -36,13 +36,13 @@ pub mod utils;
 
 use crate::schedulers::poll_with_budget;
 
-use std::{
+use core::{
     convert::{AsMut, AsRef},
-    io::{Read, Write},
     pin::Pin,
     sync::atomic::{AtomicUsize, Ordering},
     task::{Context, Poll},
 };
+use std::io::{Read, Write};
 
 use futures_lite::{future::poll_fn, AsyncRead, AsyncWrite, FutureExt};
 use mio::{event::Source, unix::SourceFd, Registry, Token};

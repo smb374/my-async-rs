@@ -17,17 +17,14 @@ pub mod hybrid;
 pub mod round_robin;
 pub mod work_stealing;
 
-use std::{
+use core::{
     cell::Cell,
     future::Future,
-    io,
     pin::Pin,
-    sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
-        Arc,
-    },
-    task::{Context, Poll, Waker}, thread::Scope,
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
+    task::{Context, Poll, Waker},
 };
+use std::{io, sync::Arc, thread::Scope};
 
 use flume::{Receiver, Sender};
 use futures_lite::future::FutureExt;

@@ -3,19 +3,16 @@ use crate::{
     schedulers::{self, shutdown, ScheduleMessage, Scheduler, Spawner},
 };
 
-use std::{future::Future, io, panic, process, thread, time::Duration};
+use core::{future::Future, time::Duration};
+use std::{io, panic, process, thread};
 
 use claim::assert_some;
 use flume::Receiver;
-use sharded_slab::Pool;
-
-use super::BoxedFuture;
 
 /// Executor that can run futures.
 pub struct Executor<S: Scheduler> {
     scheduler: S,
     schedule_message_receiver: Receiver<ScheduleMessage>,
-    future_pool: Pool<BoxedFuture>,
 }
 
 impl<S: Scheduler> Default for Executor<S> {
@@ -56,7 +53,6 @@ impl<S: Scheduler> Executor<S> {
         Self {
             scheduler,
             schedule_message_receiver: rx,
-            future_pool: Pool::new(),
         }
     }
     fn poll_thread() {
@@ -77,7 +73,9 @@ impl<S: Scheduler> Executor<S> {
         }
     }
     fn run(mut self) {
+        // 'env
         thread::scope(|s| {
+            // 'scope
             log::debug!("Spawn threads under scope...");
             let poll_thread_handle = thread::Builder::new()
                 .name("poll_thread".to_string())
