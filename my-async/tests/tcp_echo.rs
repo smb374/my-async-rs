@@ -1,4 +1,4 @@
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     multi_thread::{spawn, Executor},
@@ -16,7 +16,7 @@ async fn echo_server() {
 
     let msg = "foo bar baz";
     spawn(async move {
-        let mut stream = assert_ok!(TcpStream::connect(&addr));
+        let mut stream = assert_ok!(TcpStream::connect(addr));
 
         for _ in 0..ITER {
             // write

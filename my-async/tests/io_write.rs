@@ -1,4 +1,4 @@
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{
     io::{AsyncWrite, AsyncWriteExt, Cursor},
     multi_thread::Executor,

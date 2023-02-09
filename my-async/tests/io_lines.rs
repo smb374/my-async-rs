@@ -1,4 +1,4 @@
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{
     io::AsyncBufReadExt, multi_thread::Executor, schedulers::hybrid::HybridScheduler,
     stream::StreamExt,

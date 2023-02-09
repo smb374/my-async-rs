@@ -1,6 +1,6 @@
 use std::io::Result;
 
-use claim::assert_ok;
+use claims::assert_ok;
 use futures_lite::future::try_zip;
 use my_async::{
     io::{self, AsyncReadExt, AsyncWriteExt},

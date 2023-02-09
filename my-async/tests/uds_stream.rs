@@ -3,7 +3,7 @@
 
 #![cfg(unix)]
 
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{
     io::{AsyncReadExt, AsyncWriteExt},
     multi_thread::{spawn, Executor},

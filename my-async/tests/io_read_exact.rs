@@ -1,4 +1,4 @@
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{io::AsyncReadExt, multi_thread::Executor, schedulers::hybrid::HybridScheduler};
 
 async fn read_exact() {

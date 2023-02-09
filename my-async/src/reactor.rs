@@ -1,5 +1,7 @@
-use std::{io, task::Waker, time::Duration};
+use core::{task::Waker, time::Duration};
+use std::io;
 
+use claims::assert_some;
 use mio::{event::Source, Events, Interest, Poll, Registry, Token};
 use once_cell::sync::{Lazy, OnceCell};
 use parking_lot::{Mutex, MutexGuard};
@@ -8,7 +10,7 @@ use sharded_slab::Slab;
 static REGISTRY: OnceCell<Registry> = OnceCell::new();
 static WAKER_SLAB: Lazy<Slab<Mutex<Option<Waker>>>> = Lazy::new(Slab::new);
 static POLL_WAKE_TOKEN: Token = Token(usize::MAX);
-pub(super) static POLL_WAKER: OnceCell<mio::Waker> = OnceCell::new();
+static POLL_WAKER: OnceCell<mio::Waker> = OnceCell::new();
 
 pub struct Reactor {
     poll: Poll,
@@ -28,13 +30,17 @@ impl Reactor {
         }
     }
 
-    pub fn wait(&mut self, timeout: Option<Duration>) -> io::Result<bool> {
+    pub fn wait<F>(&mut self, timeout: Option<Duration>, mut notify_handler: F) -> io::Result<bool>
+    where
+        F: FnMut() -> bool,
+    {
+        let mut result: bool = false;
         self.poll.poll(&mut self.events, timeout)?;
         if !self.events.is_empty() {
             log::debug!("Start process events.");
             for e in self.events.iter() {
                 if e.token() == POLL_WAKE_TOKEN {
-                    return Ok(true);
+                    result = notify_handler();
                 }
                 let idx = e.token().0;
                 let waker_processed = process_waker(idx, |guard| {
@@ -48,7 +54,7 @@ impl Reactor {
                 }
             }
         }
-        Ok(false)
+        Ok(result)
     }
 
     pub fn setup_registry(&self) {
@@ -59,8 +65,9 @@ impl Reactor {
             .expect("Failed to clone registry");
         POLL_WAKER.get_or_init(|| match mio::Waker::new(&registry, POLL_WAKE_TOKEN) {
             Ok(waker) => waker,
-            Err(e) => panic!("Failed to setup waker for poll: {}", e),
+            Err(e) => panic!("Failed to setup waker for poll: {e}"),
         });
+        log::info!("POLL_WAKER initialized.");
         REGISTRY.get_or_init(move || registry);
     }
 
@@ -155,4 +162,8 @@ where
         registry.deregister(source)?;
     }
     Ok(())
+}
+
+pub(crate) fn notify_reactor() {
+    assert_some!(POLL_WAKER.get()).wake().unwrap();
 }

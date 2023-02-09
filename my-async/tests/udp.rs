@@ -2,7 +2,7 @@
 // 1. Remove split_* tests: Due to the limitation of Future (poll() requires Pin<&mut self>)
 // 2. Remove try_* & poll_ready tests: tokio exclusive functions
 
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{multi_thread::Executor, net::UdpSocket, schedulers::hybrid::HybridScheduler};
 
 const MSG: &[u8] = b"hello";

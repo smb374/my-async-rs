@@ -1,6 +1,6 @@
 #![cfg(unix)]
 
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{
     io::{self, AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf},
     multi_thread::Executor,
@@ -41,7 +41,7 @@ async fn send_recv_all(
 
     let mut output = [0u8; 16];
     let n = read.read(&mut output).await?;
-    Ok((&output[..n]).to_vec())
+    Ok(output[..n].to_vec())
 }
 
 #[test]

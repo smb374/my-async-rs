@@ -1,4 +1,4 @@
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::io::{self, split, AsyncRead, AsyncWriteExt, Cursor};
 use my_async::multi_thread::Executor;
 use my_async::schedulers::hybrid::HybridScheduler;

@@ -2,7 +2,7 @@ use std::io::Result;
 use std::io::{Read, Write};
 use std::{net, thread};
 
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{
     io::{self, AsyncReadExt, AsyncWriteExt},
     multi_thread::Executor,
@@ -25,7 +25,7 @@ async fn split() -> Result<()> {
         assert_eq!(&read_buf[..read_len], MSG);
     });
 
-    let stream = TcpStream::connect(&addr)?;
+    let stream = TcpStream::connect(addr)?;
     let (mut read_half, mut write_half) = io::split(stream);
 
     let mut read_buf = [0u8; 32];

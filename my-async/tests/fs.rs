@@ -1,6 +1,6 @@
 // From tokio-rs/tokio/tokio/tests/fs.rs
 
-use claim::assert_ok;
+use claims::assert_ok;
 use futures_lite::{AsyncReadExt, AsyncWriteExt};
 use my_async::{fs::File, multi_thread::Executor, schedulers::hybrid::HybridScheduler};
 

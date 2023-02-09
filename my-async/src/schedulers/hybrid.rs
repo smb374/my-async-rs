@@ -108,7 +108,7 @@ impl Scheduler for HybridScheduler {
             let ic = self.inject_receiver.clone();
             let sc = Arc::clone(&stealers_arc);
             thread::Builder::new()
-                .name(format!("hybrid_worker_{}", idx))
+                .name(format!("hybrid_worker_{idx}"))
                 .spawn_scoped(s, move || {
                     let (task_wakeup_sender, task_wakeup_receiver) = flume::unbounded();
                     let mut runner = TaskRunner {

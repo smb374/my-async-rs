@@ -1,4 +1,4 @@
-use claim::assert_ok;
+use claims::assert_ok;
 use futures_lite::future::zip;
 use my_async::{
     multi_thread::{spawn, Executor},
@@ -19,7 +19,7 @@ async fn connect_v4() {
         assert_ok!(tx.send(socket));
     });
 
-    let mine = assert_ok!(TcpStream::connect(&addr));
+    let mine = assert_ok!(TcpStream::connect(addr));
     let theirs = assert_ok!(rx.recv());
 
     assert_eq!(
@@ -47,7 +47,7 @@ async fn connect_v6() {
         assert_ok!(tx.send(socket));
     });
 
-    let mine = assert_ok!(TcpStream::connect(&addr));
+    let mine = assert_ok!(TcpStream::connect(addr));
     let theirs = assert_ok!(rx.recv());
 
     assert_eq!(
@@ -119,7 +119,7 @@ async fn connect_addr_ip_port_tuple() {
     };
 
     let client = async {
-        assert_ok!(TcpStream::connect(&addr));
+        assert_ok!(TcpStream::connect(addr));
     };
 
     zip(server, client).await;
@@ -135,7 +135,7 @@ async fn connect_addr_ip_str_port_tuple() {
     };
 
     let client = async {
-        assert_ok!(TcpStream::connect(&addr));
+        assert_ok!(TcpStream::connect(addr));
     };
 
     zip(server, client).await;
@@ -151,7 +151,7 @@ async fn connect_addr_host_str_port_tuple() {
     };
 
     let client = async {
-        assert_ok!(TcpStream::connect(&addr));
+        assert_ok!(TcpStream::connect(addr));
     };
 
     zip(server, client).await;

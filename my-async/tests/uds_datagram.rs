@@ -4,7 +4,7 @@
 
 #![cfg(unix)]
 
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{
     multi_thread::{spawn, Executor},
     net::UnixDatagram,
@@ -32,7 +32,7 @@ async fn echo() -> io::Result<()> {
 
     spawn(async move {
         if let Err(e) = echo_server(server_socket).await {
-            eprintln!("Error in echo server: {}", e);
+            eprintln!("Error in echo server: {e}");
         }
     });
 
@@ -57,7 +57,7 @@ async fn echo_from() -> io::Result<()> {
 
     spawn(async move {
         if let Err(e) = echo_server(server_socket).await {
-            eprintln!("Error in echo server: {}", e);
+            eprintln!("Error in echo server: {e}");
         }
     });
 

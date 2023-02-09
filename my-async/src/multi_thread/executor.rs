@@ -1,13 +1,13 @@
 use crate::{
-    reactor::{Reactor, POLL_WAKER},
+    reactor::Reactor,
     schedulers::{self, shutdown, ScheduleMessage, Scheduler, Spawner},
 };
 
 use core::{future::Future, time::Duration};
 use std::{io, panic, process, thread};
 
-use claim::assert_some;
-use flume::Receiver;
+use claims::{assert_ok, assert_some};
+use flume::{Receiver, TryRecvError};
 
 /// Executor that can run futures.
 pub struct Executor<S: Scheduler> {
@@ -34,7 +34,7 @@ impl<S: Scheduler> Executor<S> {
             cpus > 0,
             "Failed to detect core number of current cpu, panic!"
         );
-        let size = if cpus > 2 { cpus - 2 } else { cpus };
+        let size = if cpus > 1 { cpus - 1 } else { cpus };
         let (tx, rx) = flume::unbounded();
         let scheduler = S::init(size);
         log::debug!("Scheduler initialized");
@@ -55,67 +55,31 @@ impl<S: Scheduler> Executor<S> {
             schedule_message_receiver: rx,
         }
     }
-    fn poll_thread() {
-        let mut reactor = Reactor::default();
-        reactor.setup_registry();
-        loop {
-            // check if wakeups that is not used immediately is needed now.
-            reactor.check_extra_wakeups();
-            match reactor.wait(Some(Duration::from_millis(100))) {
-                Ok(true) => break,
-                Ok(false) => continue,
-                Err(ref e) if e.kind() == io::ErrorKind::Interrupted => continue,
-                Err(e) => {
-                    log::error!("reactor wait error: {}, exit poll thread", e);
-                    break;
-                }
-            }
-        }
-    }
-    fn run(mut self) {
+    fn run(mut self, reactor: &mut Reactor) -> io::Result<()> {
         // 'env
-        thread::scope(|s| {
+        thread::scope(|s| -> io::Result<()> {
             // 'scope
             log::debug!("Spawn threads under scope...");
-            let poll_thread_handle = thread::Builder::new()
-                .name("poll_thread".to_string())
-                .spawn_scoped(s, || Self::poll_thread())
-                .expect("Failed to spawn poll_thread.");
-            log::debug!("Spawned poll_thread");
+            // let poll_thread_handle = thread::Builder::new()
+            //     .name("poll_thread".to_string())
+            //     .spawn_scoped(s, || Self::poll_thread())
+            //     .expect("Failed to spawn poll_thread.");
+            // log::debug!("Spawned poll_thread");
             self.scheduler.setup_workers(s);
             log::info!("Runtime booted up, start execution...");
             loop {
-                match self.schedule_message_receiver.recv() {
-                    // continously schedule tasks
-                    Ok(msg) => match msg {
-                        ScheduleMessage::Schedule(future) => self.scheduler.schedule(future),
-                        ScheduleMessage::Reschedule(task) => self.scheduler.reschedule(task),
-                        ScheduleMessage::Shutdown => break,
-                    },
-                    Err(_) => {
-                        log::debug!("exit...");
-                        break;
-                    }
+                reactor.check_extra_wakeups();
+                if reactor.wait(Some(Duration::from_millis(100)), || self.message_handler())? {
+                    break;
                 }
             }
             log::info!("Execution completed, shutting down...");
             // shutdown worker threads
             self.scheduler.shutdown();
-            match POLL_WAKER.get() {
-                Some(waker) => {
-                    if let Err(e) = waker.wake() {
-                        log::error!("Failed to wake poll_thread: {}", e);
-                    } else {
-                        poll_thread_handle
-                            .join()
-                            .expect("Failed to join poll thread");
-                        log::debug!("poll thread shutdown completed.");
-                    }
-                }
-                None => log::error!("POLL_WAKER not set when trying to join poll thread!"),
-            }
             log::info!("Runtime shutdown complete.");
-        });
+            Ok(())
+        })?;
+        Ok(())
     }
     /// Blocks on a single future.
     ///
@@ -130,15 +94,44 @@ impl<S: Scheduler> Executor<S> {
         F: Future + Send + 'static,
         F::Output: Send + 'static,
     {
+        let mut reactor = Reactor::default();
+        reactor.setup_registry();
         let handle = schedulers::spawn_with_handle(future, true);
         log::info!("Start blocking...");
-        self.run();
+        assert_ok!(self.run(&mut reactor));
         log::debug!("Waiting result...");
         // The blocked on future finished executing, the result should be `Some(val)`
         let result = assert_some!(
             handle.try_join(),
             "The blocked future should produce a return value before the execution ends."
         );
+        result
+    }
+    fn message_handler(&mut self) -> bool {
+        let mut result = false;
+        loop {
+            match self.schedule_message_receiver.try_recv() {
+                // continously schedule tasks
+                Ok(msg) => match msg {
+                    ScheduleMessage::Schedule(future) => self.scheduler.schedule(future),
+                    ScheduleMessage::Reschedule(task) => self.scheduler.reschedule(task),
+                    ScheduleMessage::Shutdown => {
+                        result = true;
+                        break;
+                    }
+                },
+                Err(e) => match e {
+                    TryRecvError::Empty => {
+                        break;
+                    }
+                    TryRecvError::Disconnected => {
+                        log::debug!("exit...");
+                        result = true;
+                        break;
+                    }
+                },
+            }
+        }
         result
     }
 }

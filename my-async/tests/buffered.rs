@@ -1,6 +1,6 @@
 // From tokio-rs/tokio/tokio/tests/buffered.rs
 
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{multi_thread::Executor, net::TcpListener, schedulers::hybrid::HybridScheduler};
 
 use std::{io::prelude::*, net::TcpStream, thread};
@@ -14,10 +14,10 @@ async fn echo_server() {
     let msg = "foo bar baz";
 
     let t = thread::spawn(move || {
-        let mut s = assert_ok!(TcpStream::connect(&addr));
+        let mut s = assert_ok!(TcpStream::connect(addr));
 
         let t2 = thread::spawn(move || {
-            let mut s = assert_ok!(TcpStream::connect(&addr));
+            let mut s = assert_ok!(TcpStream::connect(addr));
             let mut b = vec![0; msg.len() * N];
             assert_ok!(s.read_exact(&mut b));
             b

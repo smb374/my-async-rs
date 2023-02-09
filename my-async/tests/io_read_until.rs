@@ -1,4 +1,4 @@
-use claim::assert_ok;
+use claims::assert_ok;
 use my_async::{
     io::{AsyncBufReadExt, BufReader, Cursor},
     multi_thread::Executor,

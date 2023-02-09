@@ -200,7 +200,7 @@ impl Executor {
                         self.queue.push_front(index);
                     }
                     Err(TryRecvError::Empty) => {
-                        if let Err(e) = reactor.wait(Some(Duration::from_millis(50))) {
+                        if let Err(e) = reactor.wait(Some(Duration::from_millis(50)), || false) {
                             log::error!("reactor wait error: {}, exit", e);
                             break;
                         }

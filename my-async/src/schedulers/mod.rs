@@ -17,6 +17,10 @@ pub mod hybrid;
 pub mod round_robin;
 pub mod work_stealing;
 
+use crate::reactor::notify_reactor;
+
+use super::multi_thread::{FutureIndex, FUTURE_POOL};
+
 use core::{
     cell::Cell,
     future::Future,
@@ -24,16 +28,13 @@ use core::{
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
     task::{Context, Poll, Waker},
 };
-use std::{io, sync::Arc, thread::Scope};
+use std::{sync::Arc, thread::Scope};
 
 use flume::{Receiver, Sender};
 use futures_lite::future::FutureExt;
 use once_cell::sync::{Lazy, OnceCell};
 use parking_lot::Mutex;
 use sharded_slab::Slab;
-
-use super::multi_thread::FutureIndex;
-use crate::multi_thread::FUTURE_POOL;
 
 static SPAWNER: OnceCell<Spawner> = OnceCell::new();
 static BUDGET_SLAB: Lazy<Slab<AtomicUsize>> = Lazy::new(Slab::new);
@@ -134,31 +135,11 @@ impl Spawner {
     pub fn new(tx: Sender<ScheduleMessage>) -> Self {
         Self { tx }
     }
-    /// Spawns a future task without [`JoinHandle`].
-    pub fn spawn<F>(&self, future: F)
-    where
-        F: Future<Output = io::Result<()>> + Send + 'static,
-    {
-        let key = FUTURE_POOL
-            .create_with(|seat| {
-                seat.future.get_mut().replace(future.boxed());
-            })
-            .unwrap();
-        let budget_index = BUDGET_SLAB
-            .insert(AtomicUsize::new(DEFAULT_BUDGET))
-            .unwrap();
-        self.tx
-            .send(ScheduleMessage::Schedule(FutureIndex {
-                key,
-                budget_index,
-                sleep_count: 0,
-            }))
-            .expect("Failed to send message");
-    }
     fn reschedule(&self, index: FutureIndex) {
         self.tx
             .send(ScheduleMessage::Reschedule(index))
             .expect("Failed to send message");
+        notify_reactor();
     }
     /// Spawns a task with [`JoinHandle`]
     ///
@@ -168,44 +149,19 @@ impl Spawner {
         F: Future + Send + 'static,
         F::Output: Send + 'static,
     {
-        let result_arc: Arc<Mutex<Option<F::Output>>> = Arc::new(Mutex::new(None));
-        let clone = result_arc.clone();
-        let spawn_fut = async move {
-            let output = future.await;
-            let mut guard = clone.lock();
-            guard.replace(output);
-            if is_block {
-                log::info!("Shutting down...");
-                shutdown();
-            }
-            Ok(())
-        };
-        let key = FUTURE_POOL
-            .create_with(|seat| {
-                seat.future.get_mut().replace(spawn_fut.boxed());
-            })
-            .unwrap();
-        let budget_index = BUDGET_SLAB
-            .insert(AtomicUsize::new(DEFAULT_BUDGET))
-            .unwrap();
+        let (index, handle) = alloc_future(future, is_block);
         self.tx
-            .send(ScheduleMessage::Schedule(FutureIndex {
-                key,
-                budget_index,
-                sleep_count: 0,
-            }))
+            .send(ScheduleMessage::Schedule(index))
             .expect("Failed to send message");
-        JoinHandle {
-            spawn_id: key,
-            registered: AtomicBool::new(false),
-            inner: result_arc,
-        }
+        notify_reactor();
+        handle
     }
     /// Send shutdown signal to scheduler.
     pub fn shutdown(&self) {
         self.tx
             .send(ScheduleMessage::Shutdown)
             .expect("Failed to send message");
+        notify_reactor();
     }
 }
 
@@ -403,4 +359,41 @@ pub(crate) fn process_future(mut index: FutureIndex, tx: &Sender<FutureIndex>) {
     } else {
         log::error!("Future with index = {} is not in pool.", index.key);
     }
+}
+pub fn alloc_future<F>(future: F, is_block: bool) -> (FutureIndex, JoinHandle<F::Output>)
+where
+    F: Future + Send + 'static,
+    F::Output: Send + 'static,
+{
+    let result_arc: Arc<Mutex<Option<F::Output>>> = Arc::new(Mutex::new(None));
+    let clone = result_arc.clone();
+    let spawn_fut = async move {
+        let output = future.await;
+        let mut guard = clone.lock();
+        guard.replace(output);
+        if is_block {
+            log::info!("Shutting down...");
+            shutdown();
+        }
+        Ok(())
+    };
+    let key = FUTURE_POOL
+        .create_with(|seat| {
+            seat.future.get_mut().replace(spawn_fut.boxed());
+        })
+        .unwrap();
+    let budget_index = BUDGET_SLAB
+        .insert(AtomicUsize::new(DEFAULT_BUDGET))
+        .unwrap();
+    let handle = JoinHandle {
+        spawn_id: key,
+        registered: AtomicBool::new(false),
+        inner: result_arc,
+    };
+    let index = FutureIndex {
+        key,
+        budget_index,
+        sleep_count: 0,
+    };
+    (index, handle)
 }

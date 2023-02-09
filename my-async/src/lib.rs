@@ -42,11 +42,13 @@ use core::{
     sync::atomic::{AtomicUsize, Ordering},
     task::{Context, Poll},
 };
-use std::io::{Read, Write};
+use std::{
+    io::{Read, Write},
+    os::fd::{AsFd, AsRawFd, BorrowedFd, RawFd},
+};
 
 use futures_lite::{future::poll_fn, AsyncRead, AsyncWrite, FutureExt};
 use mio::{event::Source, unix::SourceFd, Registry, Token};
-use rustix::fd::{AsFd, AsRawFd, BorrowedFd, RawFd};
 
 pub use mio::Interest;
 pub use modules::{fs, io, net, stream};
@@ -133,6 +135,7 @@ impl<F: FutureExt + ?Sized> BudgetFuture for F {}
 /// ```
 ///
 /// [a]: https://docs.rs/rustix/0.35.13/rustix/fd/trait.AsFd.html
+#[derive(Debug)]
 pub struct IoWrapper<T: AsFd> {
     inner: T,
     token: AtomicUsize,

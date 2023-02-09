@@ -44,8 +44,7 @@ impl WorkStealingScheduler {
         let (inject_sender, inject_receiver) = flume::unbounded();
         let notifier = Broadcast::new();
         let wait_group = WaitGroup::new();
-        for _idx in 0..size {
-        }
+        for _idx in 0..size {}
         Self {
             size,
             stealers,
@@ -95,7 +94,7 @@ impl Scheduler for WorkStealingScheduler {
             let wg = self.wait_group.clone();
             let rc = self.notifier.subscribe();
             thread::Builder::new()
-                .name(format!("work_stealing_worker_{}", idx))
+                .name(format!("work_stealing_worker_{idx}"))
                 .spawn_scoped(s, move || {
                     let (task_tx, task_rx) = flume::unbounded();
                     let runner = TaskRunner {
