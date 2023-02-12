@@ -360,7 +360,8 @@ pub(crate) fn process_future(mut index: FutureIndex, tx: &Sender<FutureIndex>) {
         log::error!("Future with index = {} is not in pool.", index.key);
     }
 }
-pub fn alloc_future<F>(future: F, is_block: bool) -> (FutureIndex, JoinHandle<F::Output>)
+
+pub(crate) fn alloc_future<F>(future: F, is_block: bool) -> (FutureIndex, JoinHandle<F::Output>)
 where
     F: Future + Send + 'static,
     F::Output: Send + 'static,

@@ -14,6 +14,20 @@ use waker_fn::waker_fn;
 // global future allocation pool.
 pub static FUTURE_POOL: Lazy<Pool<BoxedFuture>> = Lazy::new(Pool::new);
 
+/// Index for accessing future task.
+///
+/// By design, all future tasks will be store in a global [`Pool`][sharded_slab::Pool]
+/// to reuse any allocation of previous future tasks.
+///
+/// The pool will return a unique index to access the future task in pool.
+///
+/// Since the future access is index-based, other interthread communication method will
+/// be much trivial and easier to use/implement.
+///
+/// It also contains other counters for priority use in [`HybridScheduler`][1] and [`BudgetFuture`][2].
+///
+/// [1]: crate::schedulers::hybrid::HybridScheduler
+/// [2]: crate::BudgetFuture
 #[derive(Clone, Copy, Eq)]
 pub struct FutureIndex {
     pub key: usize,

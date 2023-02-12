@@ -24,10 +24,12 @@ impl<S: Scheduler> Default for Executor<S> {
 impl<S: Scheduler> Executor<S> {
     /// Create an executor instance.
     ///
-    /// The function will setup the global spawner for [`spawn()`],
+    /// The function will setup the global spawner for [`spawn()`][a],
     /// and an IO polling thread for event notification.
     ///
-    /// You should call this before [`spawn()`] or it won't have any effect.
+    /// You should call this before [`spawn()`][a] or it won't have any effect.
+    ///
+    /// [a]: crate::schedulers::spawn()
     pub fn new() -> Self {
         let cpus = num_cpus::get();
         assert!(

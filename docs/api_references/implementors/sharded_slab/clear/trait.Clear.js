@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"my_async":[["impl <a class=\"trait\" href=\"https://docs.rs/sharded-slab/0.1.4/sharded_slab/clear/trait.Clear.html\" title=\"trait sharded_slab::clear::Clear\">Clear</a> for <a class=\"struct\" href=\"my_async/multi_thread/struct.BoxedFuture.html\" title=\"struct my_async::multi_thread::BoxedFuture\">BoxedFuture</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
