@@ -17,7 +17,7 @@ where `Schedule` is to handle spawn, and `Shutdown` is to handle shutdown.
 
 The `Reschedule` message is an internal message that is used to requeue a task, usually used when
 a worker's queue is full that the worker can put excessive tasks back to global queue for others to taks.
-For more details, see [The procedure of task scheduling](layer/trd/schedule_procedure.md).
+For more details, see [The procedure of task scheduling](../trd/schedule_procedure.md).
 
 With the message defined, we can code the message handle loop of `Executor`:
 ```rust

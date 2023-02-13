@@ -20,7 +20,7 @@ we have the message handling loop in the main thread.
 
 The `Executor` also provides a function: `block_on`. The async function that's spawned by the `block_on` function
 is just like the `main` function in a normal program: the runtime won't exit before this function ends without
-furthur errors or interrupts occur during runtime.
+further errors or interrupts occur during runtime.
 
 The complete pseudocode for the `Executor`:
 ```

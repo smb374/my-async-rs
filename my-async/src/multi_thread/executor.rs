@@ -62,17 +62,20 @@ impl<S: Scheduler> Executor<S> {
         thread::scope(|s| -> io::Result<()> {
             // 'scope
             log::debug!("Spawn threads under scope...");
-            // let poll_thread_handle = thread::Builder::new()
-            //     .name("poll_thread".to_string())
-            //     .spawn_scoped(s, || Self::poll_thread())
-            //     .expect("Failed to spawn poll_thread.");
-            // log::debug!("Spawned poll_thread");
             self.scheduler.setup_workers(s);
             log::info!("Runtime booted up, start execution...");
             loop {
                 reactor.check_extra_wakeups();
-                if reactor.wait(Some(Duration::from_millis(100)), || self.message_handler())? {
-                    break;
+                match reactor.wait(Some(Duration::from_millis(100)), || self.message_handler()) {
+                    Ok(false) => {}
+                    Ok(true) => break,
+                    Err(e) => match e.kind() {
+                        io::ErrorKind::Interrupted | io::ErrorKind::WouldBlock => {}
+                        _ => {
+                            log::error!("Reactor wait error: {}, shutting down...", e);
+                            break;
+                        }
+                    },
                 }
             }
             log::info!("Execution completed, shutting down...");

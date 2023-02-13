@@ -13,7 +13,18 @@ over the design and implementation as my graduate project.
 - A convenient interface to wrap over `AsFd` types.
 - A `Scheduler` trait that makes applying new scheduling strategy easy.
 - A relatively short code that is easy to read.
-- Having a decent performance compare to `tokio`.
 - Clear documentation that can express its design and implementation.
 
-Without a doubt, let's get started.
+The repo of the code is located at here: [https://github.com/smb374/my-async-rs](https://github.com/smb374/my-async-rs).
+
+## Note
+This is a project that still needs some polishes as the code is implemented
+all by myself. If you spot any problems, feel free to open an issue
+at the repo. I will look at it and try to fix it if there are spare times.
+
+## Special thanks
+I want to thank my advisor during this project.
+He helped me a lot on various concepts and spotting potential implementation flaws
+during the development of this project.
+Without him, the project may take longer to complete as I'm the only one
+that works on the code of this project.

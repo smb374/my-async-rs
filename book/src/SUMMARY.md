@@ -32,6 +32,7 @@
     - [Spawner - a message sender](layer/snd/spawner.md)
     - [Message payload](layer/snd/message_payload.md)
 - [Join Handle for Future](layer/snd/join_handle.md)
+- [UPDATE: Redesigned Executor logic](layer/snd/new_design.md)
 
 # Third layer - Scheduler and schedule problems
 - [Multithread mania - Scheduler](layer/trd/scheduler.md)

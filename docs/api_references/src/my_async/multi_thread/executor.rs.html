@@ -137,6 +137,9 @@
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
 </pre><pre class="rust"><code><span class="kw">use crate</span>::{
     reactor::Reactor,
     schedulers::{<span class="self">self</span>, shutdown, ScheduleMessage, Scheduler, Spawner},
@@ -201,17 +204,20 @@
         </span>thread::scope(|s| -&gt; io::Result&lt;()&gt; {
             <span class="comment">// &#39;scope
             </span><span class="macro">log::debug!</span>(<span class="string">&quot;Spawn threads under scope...&quot;</span>);
-            <span class="comment">// let poll_thread_handle = thread::Builder::new()
-            //     .name(&quot;poll_thread&quot;.to_string())
-            //     .spawn_scoped(s, || Self::poll_thread())
-            //     .expect(&quot;Failed to spawn poll_thread.&quot;);
-            // log::debug!(&quot;Spawned poll_thread&quot;);
-            </span><span class="self">self</span>.scheduler.setup_workers(s);
+            <span class="self">self</span>.scheduler.setup_workers(s);
             <span class="macro">log::info!</span>(<span class="string">&quot;Runtime booted up, start execution...&quot;</span>);
             <span class="kw">loop </span>{
                 reactor.check_extra_wakeups();
-                <span class="kw">if </span>reactor.wait(<span class="prelude-val">Some</span>(Duration::from_millis(<span class="number">100</span>)), || <span class="self">self</span>.message_handler())<span class="question-mark">? </span>{
-                    <span class="kw">break</span>;
+                <span class="kw">match </span>reactor.wait(<span class="prelude-val">Some</span>(Duration::from_millis(<span class="number">100</span>)), || <span class="self">self</span>.message_handler()) {
+                    <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>) =&gt; {}
+                    <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>) =&gt; <span class="kw">break</span>,
+                    <span class="prelude-val">Err</span>(e) =&gt; <span class="kw">match </span>e.kind() {
+                        io::ErrorKind::Interrupted | io::ErrorKind::WouldBlock =&gt; {}
+                        <span class="kw">_ </span>=&gt; {
+                            <span class="macro">log::error!</span>(<span class="string">&quot;Reactor wait error: {}, shutting down...&quot;</span>, e);
+                            <span class="kw">break</span>;
+                        }
+                    },
                 }
             }
             <span class="macro">log::info!</span>(<span class="string">&quot;Execution completed, shutting down...&quot;</span>);
