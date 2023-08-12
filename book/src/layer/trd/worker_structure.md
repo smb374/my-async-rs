@@ -29,7 +29,7 @@ fn process():
 ```
 The code did the following stuff:
 1. If local queue contains some tasks, execute them.
-2. Try to receive any scheduled or woke ip tasks. If there any, push them and continue the loop.
+2. Try to receive any scheduled or woke up tasks. If there any, push them and continue the loop.
 3. Block receive any task that is scheduled or woke up. If there is one, push it and continue the loop.
 4. If received a shutdown signal, break the process loop.
 

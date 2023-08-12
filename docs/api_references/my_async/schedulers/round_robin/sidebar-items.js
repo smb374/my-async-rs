@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["RoundRobinScheduler",""]]};
+window.SIDEBAR_ITEMS = {"struct":["RoundRobinScheduler"]};

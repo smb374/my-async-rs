@@ -11,7 +11,7 @@ enum Message {
     Close,
 }
 ```
-while the receiver half is held by tthe executor.
+while the receiver half is held by the executor.
 The are two messages: `Run` and `Close`:
 - `Run` is used to put the spawned future into the process queue.
 - `Close` is used to signal the executor to shutdown.

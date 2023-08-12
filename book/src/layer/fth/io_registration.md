@@ -1,20 +1,23 @@
-# IO event registeration
+# IO event registration
 
 ## `Reactor` struct definition
+
 Since our goal is to build an IO runtime, naturally we'll need to register IO
-events we want to watch so that we can use a event based approach.
+events we want to watch so that we can use an event based approach.
 
 To achieve this, I use a library called `mio`, which is a library for non-blocking
-system IO that wraps epoll, IOCP, kqueue, etc.
+system IO that wraps `epoll,` `IOCP,` `kqueue`, etc.
 
 The library provides:
+
 - `Poll` for polling system IO events.
-    - Note that this is different from the `Poll` returned by `Future::poll()`
-- `Events` specificaslly for `Poll::wait()` to store returned events
+  - Note that this is different from the `Poll` returned by `Future::poll()`
+- `Events` specifically for `Poll::wait()` to store returned events
 - `Registry` that accept using reference to register events.
 - `Token` that wraps a `usize` as event's token.
 
 We can then create a `Reactor` struct around `mio`'s structs:
+
 ```rust
 static REGISTRY: OnceCell<Registry> = OnceCell::new();
 static POLL_WAKE_TOKEN: Token = Token(usize::MAX);
@@ -28,6 +31,7 @@ pub struct Reactor {
 ```
 
 ### Note
+
 `REGISTRY` is a global variable for global event register, since register only requires reference,
 we can simply guard it with a one-time initialization atomic cell.
 
@@ -38,7 +42,9 @@ This is required as `mio` uses edge-triggered mode for the underlying system IO 
 this you'll miss events under high loading scenarios.
 
 ## Event handling
-First of all, the code:
+
+Firstly, the code:
+
 ```rust
 static WAKER_SLAB: Lazy<Slab<Mutex<Option<Waker>>>> = Lazy::new(Slab::new);
 
@@ -140,11 +146,12 @@ where
     Ok(())
 }
 ```
-- `WAKER_SLAB` provides a global waker slab that will return a index to access the waker after insertion.
-    - The returned index will be used as the event token that is registered with `REGISTERY`.
-    - Since the same index may link to different wakers at different times, the entry is wrapped with `Mutex` to be able to replace contained `Waker`.
-- `process_waker` will check whether a `Waker` is present when a event occurrs. If `WAKER_SLAB` doesnt' contained it or it's `None` at current state,mark return `false` to indicate that this is an extra wakeup that need to be handled after.
+
+- `WAKER_SLAB` provides a global waker slab that will return an index to access the waker after insertion.
+  - The returned index will be used as the event token that is registered with `REGISTERY`.
+  - Since the same index may link to different wakers at different times, the entry is wrapped with `Mutex` to be able to replace contained `Waker`.
+- `process_waker` will check whether a `Waker` is present when an event occurs. If `WAKER_SLAB` doesn't contain it, or it's `None` at current state, mark return `false` to indicate that this is an extra wake-up that need to be handled after.
 - `add_waker` will check whether a `Waker` exists in `WAKER_SLAB` with the token provide. If exists, swap the old one out and wake the old one, and return `None`. Otherwise, insert the waker and return a valid token for the caller to update.
-    - By default `IoWrapper` will use `usize::MAX` as token. This will insert the waker and update its token to a valid one, then it can use `register()` to register the event it need with the updated token.
+  - By default, `IoWrapper` will use `usize::MAX` as token. This will insert the waker and update its token to a valid one, then it can use `register()` to register the event it needs with the updated token.
 - `check_extra_wakeups` will linearly check whether a `Waker` is currently present in `WAKER_SLAB` with scanned index in `extra_wakeups`.
-    - This function will be called with `wait()` in a set to check if any of the events in `extra_wakeups` is needed after each `wait()`.
+  - This function will be called with `wait()` in a set to check if any of the events in `extra_wakeups` is needed after each `wait()`.

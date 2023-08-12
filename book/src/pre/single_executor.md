@@ -93,7 +93,7 @@ will need to be handle:
 
 These are the last stage in the main loop. Here the runtime will wait for any schedule messages
 send by the global spawner, whether to run a new future or shutdown the runtime.
-If there are no messages from the global spwaner, we start to wait for reactor to wake up some futures.
+If there are no messages from the global spawner, we start to wait for reactor to wake up some futures.
 
 Note that we need to check messages from global spawner at the same time, so we can't use indefinite
 waiting on reactor. A time period need to be chosen to block the loop for a decent small amount of time

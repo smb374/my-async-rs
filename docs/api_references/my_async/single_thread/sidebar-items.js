@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["shutdown","Notify the executor to shutdown."],["spawn","Spawns a future to executor’s queue."]],"struct":[["Executor","Executor that can run futures."]]};
+window.SIDEBAR_ITEMS = {"fn":["shutdown","spawn"],"struct":["Executor"]};

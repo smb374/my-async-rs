@@ -84,7 +84,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">Prerequisite Knowledges</li><li class="chapter-item expanded "><a href="pre/async_in_rust.html"><strong aria-hidden="true">1.</strong> Async in Rust</a></li><li class="chapter-item expanded "><a href="pre/overview.html"><strong aria-hidden="true">2.</strong> Overview of an executor's architechture</a></li><li class="chapter-item expanded "><a href="pre/single_thread_executor.html"><strong aria-hidden="true">3.</strong> A minimal single-threded Future evaluator</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="pre/single_future_handle.html"><strong aria-hidden="true">3.1.</strong> Future handling</a></li><li class="chapter-item expanded "><a href="pre/single_global_storage.html"><strong aria-hidden="true">3.2.</strong> Global Storages</a></li><li class="chapter-item expanded "><a href="pre/single_message_passing.html"><strong aria-hidden="true">3.3.</strong> Message Passing</a></li><li class="chapter-item expanded "><a href="pre/single_executor.html"><strong aria-hidden="true">3.4.</strong> Executor Main Loop</a></li><li class="chapter-item expanded "><a href="pre/single_final_code.html"><strong aria-hidden="true">3.5.</strong> Final Code</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">First layer - Future and IoWrapper</li><li class="chapter-item expanded "><a href="layer/fst/future_trait.html"><strong aria-hidden="true">4.</strong> Bone of async - Future trait</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/future_in_depth.html"><strong aria-hidden="true">4.1.</strong> Future in depth</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/mechanism.html"><strong aria-hidden="true">4.1.1.</strong> Future trait mechanism</a></li><li class="chapter-item expanded "><a href="layer/fst/fsm.html"><strong aria-hidden="true">4.1.2.</strong> Future desugar - a Finite State Machine</a></li><li class="chapter-item expanded "><a href="layer/fst/challenge.html"><strong aria-hidden="true">4.1.3.</strong> The challenge of managing Future objects</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/handling.html"><strong aria-hidden="true">4.2.</strong> Generic Future handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/heap_alloc.html"><strong aria-hidden="true">4.2.1.</strong> General heap-allocated Future object</a></li><li class="chapter-item expanded "><a href="layer/fst/pool.html"><strong aria-hidden="true">4.2.2.</strong> Global Reusable Object Pool for allocation reuse, fragment control, and easy managment</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper.html"><strong aria-hidden="true">5.</strong> IO Adapter for general file descriptor - IoWrapper</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/io_handling.html"><strong aria-hidden="true">5.1.</strong> General IO handling</a></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper_design.html"><strong aria-hidden="true">5.2.</strong> IoWrapper design</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Second layer - Executor and message passing</li><li class="chapter-item expanded "><a href="layer/snd/executor.html"><strong aria-hidden="true">6.</strong> Heart of a runtime - Executor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/commands.html"><strong aria-hidden="true">6.1.</strong> General commands of a runtime</a></li><li class="chapter-item expanded "><a href="layer/snd/message_handling.html"><strong aria-hidden="true">6.2.</strong> Design of Executor</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/message_passing.html"><strong aria-hidden="true">7.</strong> Passing messages</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/spawner.html"><strong aria-hidden="true">7.1.</strong> Spawner - a message sender</a></li><li class="chapter-item expanded "><a href="layer/snd/message_payload.html"><strong aria-hidden="true">7.2.</strong> Message payload</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/join_handle.html"><strong aria-hidden="true">8.</strong> Join Handle for Future</a></li><li class="chapter-item expanded "><a href="layer/snd/new_design.html"><strong aria-hidden="true">9.</strong> UPDATE: Redesigned Executor logic</a></li><li class="chapter-item expanded affix "><li class="part-title">Third layer - Scheduler and schedule problems</li><li class="chapter-item expanded "><a href="layer/trd/scheduler.html"><strong aria-hidden="true">10.</strong> Multithread mania - Scheduler</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/scheduler_trait.html"><strong aria-hidden="true">10.1.</strong> Scheduler trait design</a></li><li class="chapter-item expanded "><a href="layer/trd/worker_structure.html"><strong aria-hidden="true">10.2.</strong> General Worker structure and logic</a></li><li class="chapter-item expanded "><a href="layer/trd/schedule_procedure.html"><strong aria-hidden="true">10.3.</strong> The procedure of task scheduling</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/scheduling_method.html"><strong aria-hidden="true">11.</strong> Scheduling Method</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/round_robin.html"><strong aria-hidden="true">11.1.</strong> Round Robin</a></li><li class="chapter-item expanded "><a href="layer/trd/work_stealing.html"><strong aria-hidden="true">11.2.</strong> Work Stealing</a></li><li class="chapter-item expanded "><a href="layer/trd/hybrid.html"><strong aria-hidden="true">11.3.</strong> Hybrid Queue for Prioritized Work Stealing</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/token_bucket.html"><strong aria-hidden="true">12.</strong> A token bucket like algorithm for auto task yielding</a></li><li class="chapter-item expanded affix "><li class="part-title">Fourth layer - Reactor and Waker handling</li><li class="chapter-item expanded "><a href="layer/fth/reactor.html"><strong aria-hidden="true">13.</strong> System IO Event Harvester - Reactor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/io_registration.html"><strong aria-hidden="true">13.1.</strong> IO event registeration</a></li><li class="chapter-item expanded "><a href="layer/fth/loop.html"><strong aria-hidden="true">13.2.</strong> Poll loop</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Unresolved Problems and Future Works</li><li class="chapter-item expanded "><a href="prob/load_balancing.html"><strong aria-hidden="true">14.</strong> Load Balancing</a></li><li class="chapter-item expanded "><a href="prob/generic_payload.html"><strong aria-hidden="true">15.</strong> Generic Message Payload</a></li><li class="chapter-item expanded "><a href="prob/reactor_abstract.html"><strong aria-hidden="true">16.</strong> Reactor abstraction for different systems</a></li><li class="chapter-item expanded affix "><li class="part-title">References</li><li class="chapter-item expanded "><a href="references.html"><strong aria-hidden="true">17.</strong> References</a></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="intro.html">Introduction</a></li><li class="chapter-item expanded affix "><li class="part-title">Prerequisite Knowledge</li><li class="chapter-item expanded "><a href="pre/async_in_rust.html"><strong aria-hidden="true">1.</strong> Asynchronous in Rust</a></li><li class="chapter-item expanded "><a href="pre/overview.html"><strong aria-hidden="true">2.</strong> Overview of an executor's architecture</a></li><li class="chapter-item expanded "><a href="pre/single_thread_executor.html"><strong aria-hidden="true">3.</strong> A minimal single-threaded Future evaluator</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="pre/single_future_handle.html"><strong aria-hidden="true">3.1.</strong> Future handling</a></li><li class="chapter-item expanded "><a href="pre/single_global_storage.html"><strong aria-hidden="true">3.2.</strong> Global Storage</a></li><li class="chapter-item expanded "><a href="pre/single_message_passing.html"><strong aria-hidden="true">3.3.</strong> Message Passing</a></li><li class="chapter-item expanded "><a href="pre/single_executor.html"><strong aria-hidden="true">3.4.</strong> Executor Main Loop</a></li><li class="chapter-item expanded "><a href="pre/single_final_code.html"><strong aria-hidden="true">3.5.</strong> Final Code</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">First layer - Future and IoWrapper</li><li class="chapter-item expanded "><a href="layer/fst/future_trait.html"><strong aria-hidden="true">4.</strong> Future trait</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/future_in_depth.html"><strong aria-hidden="true">4.1.</strong> Future in depth</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/mechanism.html"><strong aria-hidden="true">4.1.1.</strong> Future trait mechanism</a></li><li class="chapter-item expanded "><a href="layer/fst/fsm.html"><strong aria-hidden="true">4.1.2.</strong> Future internal - a Finite State Machine</a></li><li class="chapter-item expanded "><a href="layer/fst/challenge.html"><strong aria-hidden="true">4.1.3.</strong> The challenge of managing Future objects</a></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/handling.html"><strong aria-hidden="true">4.2.</strong> Generic Future handling</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/heap_alloc.html"><strong aria-hidden="true">4.2.1.</strong> General heap-allocated Future object</a></li><li class="chapter-item expanded "><a href="layer/fst/pool.html"><strong aria-hidden="true">4.2.2.</strong> Global Reusable Object Pool for allocation reuse, fragment control, and easy management</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper.html"><strong aria-hidden="true">5.</strong> IO Adapter for general file descriptor - IoWrapper</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fst/io_handling.html"><strong aria-hidden="true">5.1.</strong> General IO handling</a></li><li class="chapter-item expanded "><a href="layer/fst/io_wrapper_design.html"><strong aria-hidden="true">5.2.</strong> IoWrapper design</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Second layer - Executor and message passing</li><li class="chapter-item expanded "><a href="layer/snd/executor.html"><strong aria-hidden="true">6.</strong> Executor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/commands.html"><strong aria-hidden="true">6.1.</strong> General commands of a runtime</a></li><li class="chapter-item expanded "><a href="layer/snd/message_handling.html"><strong aria-hidden="true">6.2.</strong> Design of Executor</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/message_passing.html"><strong aria-hidden="true">7.</strong> Passing messages</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/snd/spawner.html"><strong aria-hidden="true">7.1.</strong> Spawner - a message sender</a></li><li class="chapter-item expanded "><a href="layer/snd/message_payload.html"><strong aria-hidden="true">7.2.</strong> Message payload</a></li></ol></li><li class="chapter-item expanded "><a href="layer/snd/join_handle.html"><strong aria-hidden="true">8.</strong> Join Handle for Future</a></li><li class="chapter-item expanded affix "><li class="part-title">Third layer - Scheduler and schedule problems</li><li class="chapter-item expanded "><a href="layer/trd/scheduler.html"><strong aria-hidden="true">9.</strong> Scheduler</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/scheduler_trait.html"><strong aria-hidden="true">9.1.</strong> Trait design</a></li><li class="chapter-item expanded "><a href="layer/trd/worker_structure.html"><strong aria-hidden="true">9.2.</strong> General Worker structure and logic</a></li><li class="chapter-item expanded "><a href="layer/trd/schedule_procedure.html"><strong aria-hidden="true">9.3.</strong> The procedure of task scheduling</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/scheduling_method.html"><strong aria-hidden="true">10.</strong> Scheduling Method</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/trd/round_robin.html"><strong aria-hidden="true">10.1.</strong> Round Robin</a></li><li class="chapter-item expanded "><a href="layer/trd/work_stealing.html"><strong aria-hidden="true">10.2.</strong> Work Stealing</a></li><li class="chapter-item expanded "><a href="layer/trd/hybrid.html"><strong aria-hidden="true">10.3.</strong> Hybrid Queue for Prioritized Work Stealing</a></li></ol></li><li class="chapter-item expanded "><a href="layer/trd/token_bucket.html"><strong aria-hidden="true">11.</strong> A token bucket like algorithm for auto task yielding</a></li><li class="chapter-item expanded affix "><li class="part-title">Fourth layer - Reactor and Waker handling</li><li class="chapter-item expanded "><a href="layer/fth/reactor.html"><strong aria-hidden="true">12.</strong> System IO Event Harvester - Reactor</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="layer/fth/io_registration.html"><strong aria-hidden="true">12.1.</strong> IO event registration</a></li><li class="chapter-item expanded "><a href="layer/fth/loop.html"><strong aria-hidden="true">12.2.</strong> Poll loop</a></li></ol></li><li class="chapter-item expanded "><li class="part-title">Unresolved Problems and Future Works</li><li class="chapter-item expanded "><a href="prob/load_balancing.html"><strong aria-hidden="true">13.</strong> Load Balancing</a></li><li class="chapter-item expanded "><a href="prob/reactor_abstract.html"><strong aria-hidden="true">14.</strong> Reactor abstraction for different systems</a></li><li class="chapter-item expanded affix "><li class="part-title">References</li><li class="chapter-item expanded "><a href="references.html"><strong aria-hidden="true">15.</strong> References</a></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -146,33 +146,38 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
-<p>This book is about the design and the implementation of <code>my-async</code>, a Rust async IO runtime.
-Why creating a new runtime instead of using <code>tokio</code>? The problem of <code>tokio</code> is that its codebase is
-huge and hard to trace down, a least for me.</p>
-<p>When I was trying to understand <code>tokio</code>'s approach to async,
-there are more than 35000+ lines of code, it's just too much for a CS student like me.
-So I decided to work on a new runtime with a clear documentation
-over the design and implementation as my graduate project.</p>
+<p>This book is about the design and the implementation of <code>my-async</code>, a Rust asynchronous IO runtime.
+Why create a new runtime instead of using <code>tokio</code>? The problem with <code>tokio</code> is that its codebase is
+vast and hard to track down, a least for me.</p>
+<p>When I was trying to understand <code>tokio</code>'s approach to asynchronous runtime,
+there were more than 35000 lines of code; it's just too much for a CS student like me.
+So I decided to work on a new runtime with clear documentation
+regarding the design and implementation as my graduate project.</p>
 <p><code>my-async</code> has the following goals:</p>
 <ul>
 <li>A convenient interface to wrap over <code>AsFd</code> types.</li>
-<li>A <code>Scheduler</code> trait that makes applying new scheduling strategy easy.</li>
+<li>A <code>Scheduler</code> trait that makes applying a new scheduling strategy easy.</li>
 <li>A relatively short code that is easy to read.</li>
 <li>Clear documentation that can express its design and implementation.</li>
 </ul>
-<p>The repo of the code is located at here: <a href="https://github.com/smb374/my-async-rs">https://github.com/smb374/my-async-rs</a>.</p>
+<p>The code repo is here: <a href="https://github.com/smb374/my-async-rs">https://github.com/smb374/my-async-rs</a>.</p>
 <h2 id="note"><a class="header" href="#note">Note</a></h2>
-<p>This is a project that still needs some polishes as the code is implemented
-all by myself. If you spot any problems, feel free to open an issue
-at the repo. I will look at it and try to fix it if there are spare times.</p>
+<p>This project still needs some polishes as the code is implemented
+by one person. If you spot any problems, open an issue
+at the repo. I will look at it and try to fix it if there is spare time.</p>
+<p>There may be many places in this book that may seem awkward or
+based on my misunderstanding to certain concepts, please don't hesitate to point them out.</p>
+<p>Also, as a non-native English user, there are multiple grammar &amp; spelling errors when writing this.
+I will fix them as much as possible when I spot some,
+but expect these errors when reading the book.</p>
 <h2 id="special-thanks"><a class="header" href="#special-thanks">Special thanks</a></h2>
-<p>I want to thank my advisor during this project.
-He helped me a lot on various concepts and spotting potential implementation flaws
+<p>I want to thank my supervisor for this project.
+He helped me a lot with various concepts and spotted potential implementation flaws
 during the development of this project.
 Without him, the project may take longer to complete as I'm the only one
 that works on the code of this project.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="async-in-rust"><a class="header" href="#async-in-rust">Async in Rust</a></h1>
-<p>Async in Rust is simple and complex at the same time. If you're the user, you can simply do
+<p>Async in Rust is simple and complex at the same time. If you're the user, you can do
 the following stuff as an async 101:</p>
 <pre><code class="language-rust">#[tokio::main]
 async fn main() -&gt; io::Result&lt;()&gt; {
@@ -183,72 +188,71 @@ async fn main() -&gt; io::Result&lt;()&gt; {
 }
 </code></pre>
 <p>Just that simple.</p>
-<p>On the other hand, if you want to dig inside, thing can get quite tricky.</p>
-<p>Async in Rust is kind of different from other languages: it doesn't have a standard runtime.
-The decision is made by the core language team to:</p>
+<p>On the other hand, if you want to dig inside, things can get quite tricky.</p>
+<p>Async in Rust differs from other languages: it doesn't have a standard runtime.
+The core language team decides to:</p>
 <ol>
-<li>Maintain fexibility over implementations that is suitable to different scenarios</li>
+<li>Maintain flexibility over implementations that is suitable to different scenarios</li>
 <li>Keep the size of the standard library small.</li>
 </ol>
 <p>The result of the decision is the <code>Future</code> trait. Anything that implements <code>Future</code> can
 use the <code>.await</code> keyword to execute it asynchronously. The compiler can also implement
 <code>Future</code> for normal function by adding <code>async</code> before the <code>fn</code> keyword.</p>
-<p>The approach however, cause a problem: by the design of the <code>Future</code> trait, it is lazy.
-<code>Future</code> won't make any progress to the underlying code until someone use <code>poll()</code> method
+<p>The approach, however, causes a problem: by the design of the <code>Future</code> trait, it is lazy.
+<code>Future</code> won't progress to the underlying code until someone uses the <code>poll()</code> method
 to poll it. In other words, <code>Future</code> needs to be polled by some mechanism to work.
 There are multiple ways to poll a <code>Future</code> object, most commonly by an executor.</p>
-<p>The executor needs to be capable to dispatch, manage, and execute <code>Future</code>. The implementation
-of an executor can look very different, depending on the context, resources, and platform.
-Generally an executor can be divided to a few parts and will later be discussed in the next part.</p>
-<p>There are numbers of executor implementations in exist, such as <code>tokio</code>, <code>async-std</code>, <code>smol</code>, etc.
-The problem is that they are not compactible, since executor need to store numerous of states to help
-executing the <code>Future</code> objects. The problem is still unsolved until now and hopefully can be solved one day.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="overview-of-an-executors-architechture"><a class="header" href="#overview-of-an-executors-architechture">Overview of an executor's architechture</a></h1>
-<p>The diagram of the executor's architechture:
+<p>The executor must be capable of dispatching, managing, and executing <code>Future</code>. The implementation of an executor can look very different, depending on the context, resources, and platform.
+Generally, an executor can be divided into a few parts, that these parts will later discuss in the following sections.</p>
+<p>Various executor implementations exist, such as <code>tokio</code>, <code>async-std</code>, <code>smol</code>, etc.
+The problem is that they are incompatible since the executor must store numerous states to help
+execute the <code>Future</code> objects. The problem is still unsolved now and hopefully can be solved one day.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="overview-of-an-executors-architecture"><a class="header" href="#overview-of-an-executors-architecture">Overview of an executor's architecture</a></h1>
+<p>The diagram of the executor's architecture:
 <img src="pre/../assets/Executor_Layer_Bright.png" alt="Executor Layer" /></p>
-<p>By the above diagram, we can divide the executor into 4 layers:</p>
+<p>By the above diagram, we can divide the executor into four layers:</p>
 <h2 id="first-layer---future-and-iowrapper"><a class="header" href="#first-layer---future-and-iowrapper">First Layer - Future and IoWrapper</a></h2>
-<p>The job of this layer is provide user interaction with the executor in a convenient way.
-A global spawner is provided to send command to the executor to spawn an async function or to shutdown the executor.
+<p>The job of this layer is to provide user interaction with the executor in a convenient way.
+A global spawner is provided to send commands to the executor to spawn an async function or to shut down the executor.
 The spawned function will return a join handle to join and retrieve the return value of that function.</p>
 <p><code>IoWrapper</code> is provided for convenient <code>AsFd</code> type wrapping. It also provides <code>ref_io</code> and <code>mut_io</code> for those
-IO actions that is not predefined to run as async.</p>
+IO actions that are not predefined to run as async.</p>
 <h2 id="second-layer---executor"><a class="header" href="#second-layer---executor">Second layer - Executor</a></h2>
-<p>This is the surface of the executor. The main job of this layer is to handle message from the spawner and command
-the underlying scheduler and reactor by corresponding message.</p>
-<p>The executor itself will also set up the global spawner, scheduler with all the worker threads, and the reactor thread
-on init for the runtime to work. After the executor is initialized, the user is required to <code>block_on</code> a single main
+<p>This layer is the surface of the executor. The main job of this layer is to handle the messages from the spawner and command
+the underlying scheduler and reactor by the corresponding message.</p>
+<p>The executor will also set up the global spawner, scheduler with all the worker threads, and the reactor thread
+on init for the runtime to work. After the executor is initialized, the user must <code>block_on</code> a single main
 async function to fire up the runtime.</p>
 <h2 id="third-layer---scheduler"><a class="header" href="#third-layer---scheduler">Third layer - Scheduler</a></h2>
-<p>This layer will adapt the defined scheduling strategy to schedule async tasks to the workers.
-The provided <code>Scheduler</code> trait is an abstract layer that defines a scheduler's basic behavior for executor to use.
-This is crutial for new scheduling strategy to be able to plug into this runtime easily.</p>
+<p>This layer will adapt the defined scheduling strategy to schedule async tasks for the workers.
+The provided <code>Scheduler</code> trait is an abstract layer that defines a scheduler's basic behavior for the executor.
+This is crucial for the new scheduling strategy to plug into this runtime easily.</p>
 <p>Currently, <code>RoundRobinScheduler</code>, <code>WorkStealingScheduler</code>, and <code>HybridScheduler</code> is implemented by default.</p>
 <h2 id="fourth-layer---reactor-and-waker-handling"><a class="header" href="#fourth-layer---reactor-and-waker-handling">Fourth layer - Reactor and Waker Handling</a></h2>
-<p>This layer will communicate with the system and harvest all IO events repoted. Once the IO events are harvested,
+<p>This layer will communicate with the system and harvest all IO events reported. Once the IO events are gathered,
 the reactor will:</p>
 <ol>
-<li>If there are wakers registed related to a event, wake it up.</li>
-<li>If not, store it to a table for later usage.</li>
+<li>If wakers are registered related to an event, wake it up.</li>
+<li>If not, store it in a table for later usage.</li>
 </ol>
 <p>Since the underlying call is handled by <code>mio</code> that is edge-triggered, we need to check the stored events
 with currently registered wakers to make sure every event is consumed.</p>
-<p>The datails of the layer will be discussed later in the following chapters, but first, I will give an implementation
+<p>The details of the layers will be discussed later in the following chapters, but first, I will give an implementation
 of a single-threaded executor to help you understand the main idea of an executor, then we'll move on to the multi-threaded version.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="a-minimal-single-threded-future-evaluator"><a class="header" href="#a-minimal-single-threded-future-evaluator">A minimal single-threded Future evaluator</a></h1>
-<p>This section will give an simple single-threaded executor implementation
+<div style="break-before: page; page-break-before: always;"></div><h1 id="a-minimal-single-threaded-future-evaluator"><a class="header" href="#a-minimal-single-threaded-future-evaluator">A minimal single-threaded Future evaluator</a></h1>
+<p>This section will give a simple single-threaded executor implementation
 for you to understand the whole picture of the following chapters, as</p>
 <ol>
-<li>It doesnt't require a scheduler and any synchronisation.</li>
-<li>The reacter is a relatively small factor to express the idea, we'll talk about it later.</li>
+<li>It doesn't require a scheduler or any synchronization.</li>
+<li>The reactor is a relatively minor factor in expressing the idea. We'll talk about it later.</li>
 </ol>
 <p>If you want to see the reactor's part first, see <a href="pre/../layer/fth/reactor.html">System IO Event Harvester - Reactor</a>
 and the following subsections.</p>
-<p>Now, let's get started from <code>Future</code> handling.</p>
+<p>Now, let's get started with <code>Future</code> handling.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="future-handling"><a class="header" href="#future-handling">Future handling</a></h1>
 <p>Since the compiler will generate any <code>async fn</code> functions as <code>Future</code> objects,
 the generic type will be a hurdle to program, allocating these <code>Future</code> objects
-as boxed trait objects is more sensable and easier to program.</p>
+as boxed trait objects is more sensible and easier to program.</p>
 <p>First we define a <code>BoxedLocal&lt;T&gt;</code> type alias and <code>BoxedFuture</code> type:</p>
 <pre><code class="language-rust  noplaypen">type BoxedLocal&lt;T&gt; = Pin&lt;Box&lt;dyn Future&lt;Output = T&gt; + 'static&gt;&gt;;
 
@@ -256,9 +260,9 @@ struct BoxedFuture {
     future: RefCell&lt;Option&lt;BoxedLocal&lt;io::Result&lt;()&gt;&gt;&gt;&gt;,
 }
 </code></pre>
-<p>Here we use <code>RefCell</code> for internal mutability and we assumed that all
-enclosed should return <code>std::io::Result&lt;()&gt;</code> as <code>Future</code> requires to mutate it self
-by its trait definition and most of the tasks are IO bounded to be used under async environments.</p>
+<p>Here we use <code>RefCell</code> for internal mutability, and we assumed that all
+enclosed should return <code>std::io::Result&lt;()&gt;</code> as <code>Future</code> requires mutating itself
+by its trait definition and most of the tasks are IO bounded to be used under asynchronous environments.</p>
 <p>To handle the underlying <code>async fn</code>, we define the <code>run</code> function as the following:</p>
 <pre><code class="language-rust">impl BoxedFuture {
     fn run(&amp;self, index: &amp;FutureIndex, tx: Sender&lt;FutureIndex&gt;) -&gt; bool {
@@ -300,23 +304,23 @@ by its trait definition and most of the tasks are IO bounded to be used under as
 <li>Poll the future and match the result.</li>
 </ol>
 <p>Next, we'll talk about the global storage.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="global-storages"><a class="header" href="#global-storages">Global Storages</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="global-storage"><a class="header" href="#global-storage">Global Storage</a></h1>
 <p>By the design from me, every future should store in a global allocation pool for
 allocation reuse and easy management. The details will be discussed in the
-<a href="pre/../layer/fst/pool.html">Global Reusable Object Pool for fragment controll and Future managment</a>
+<a href="pre/../layer/fst/pool.html">Global Reusable Object Pool for fragment control and Future management</a>
 part.</p>
 <p>We first define <code>FUTURE_POOL</code> and <code>SPAWNER</code> as thread local objects as Rust assumes
-you are under multi-threaded environment without specific instruction. This will
-cause some bounds for global variables to guarentee memory safety.</p>
+you are under multithreaded environment without specific instruction. This will
+cause some bounds for global variables to guarantee memory safety.</p>
 <pre><code class="language-rust">thread_local! {
     static SPAWNER: RefCell&lt;Option&lt;Spawner&gt;&gt; = RefCell::new(None);
     static FUTURE_POOL: Pool&lt;BoxedFuture&gt; = Pool::new();
 }
 </code></pre>
 <p>Since <code>Pool</code> is already lock-free, we don't need to use <code>RefCell</code> to encapsulate it.
-The <code>SPAWNER</code> is used as an message sender and will be discuss in the next section.</p>
+The <code>SPAWNER</code> is used as a message sender and will be discussed in the next section.</p>
 <p>We also need to define a <code>FutureIndex</code> that contains the key returned by the <code>Pool</code> and other
-payloads(Though there are no other payloads in this case):</p>
+payloads (Though there are no other payloads in this case):</p>
 <pre><code class="language-rust">#[derive(Clone, Copy, Eq)]
 struct FutureIndex {
     key: usize,
@@ -354,7 +358,7 @@ enum Message {
     Close,
 }
 </code></pre>
-<p>while the receiver half is held by tthe executor.
+<p>while the receiver half is held by the executor.
 The are two messages: <code>Run</code> and <code>Close</code>:</p>
 <ul>
 <li><code>Run</code> is used to put the spawned future into the process queue.</li>
@@ -502,7 +506,7 @@ will need to be handle:</p>
 </code></pre>
 <p>These are the last stage in the main loop. Here the runtime will wait for any schedule messages
 send by the global spawner, whether to run a new future or shutdown the runtime.
-If there are no messages from the global spwaner, we start to wait for reactor to wake up some futures.</p>
+If there are no messages from the global spawner, we start to wait for reactor to wake up some futures.</p>
 <p>Note that we need to check messages from global spawner at the same time, so we can't use indefinite
 waiting on reactor. A time period need to be chosen to block the loop for a decent small amount of time
 without spuriously wake up the main thread too frequently.</p>
@@ -757,7 +761,7 @@ pub fn shutdown() {
     })
 }
 </code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="bone-of-async---future-trait"><a class="header" href="#bone-of-async---future-trait">Bone of async - Future trait</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="future-trait"><a class="header" href="#future-trait">Future trait</a></h1>
 <p><code>Future</code> trait is the core of asynchronous IO in Rust.
 Without it, the <code>async</code>/<code>await</code> keyword won't work, and
 designer of a runtime will have to implement a callback
@@ -798,14 +802,14 @@ by the trait. The <code>poll</code> method contains a few unusual structs in it,
 <li><code>Pin</code></li>
 <li><code>Context</code></li>
 </ol>
-<p>We will look into these two struct in the following sections.</p>
+<p>We will look into these two structs in the following sections.</p>
 <h2 id="1-the-pinp-smart-pointer"><a class="header" href="#1-the-pinp-smart-pointer">1. The <code>Pin&lt;P&gt;</code> smart pointer</a></h2>
 <p>The <code>Pin&lt;P&gt;</code> smart pointer is a wrapper around the <code>P</code> pointer that ensures the pointee
-will not move out of it's current address, i.e. the address that <code>P</code> points to. This effect is
+will not move out of its current address, i.e. the address that <code>P</code> points to. This effect is
 canceled if the pointee type implements the <code>Unpin</code> auto trait.</p>
 <p>For example, the <code>std::mem::swap</code> can swap the pointee of two pointers, which essentially &quot;moves&quot;
 the pointee out of its original place. If we wrap the two pointers with <code>Pin</code>, the use of <code>swap</code>
-is forbidden, the code will failed to compile.</p>
+is forbidden, the code will fail to compile.</p>
 <p>The reason of the use of <code>Pin</code> is mostly for the self referral structures.
 Consider the following structure:</p>
 <pre><code class="language-rust">struct SelfRef {
@@ -817,33 +821,33 @@ Consider the following structure:</p>
 while the pointer <code>p</code> is still pointing the location of <code>buf</code> before the move occurs. We can clearly see that
 the following access <code>p</code> will cause undefined behavior since the pointee may be a different type or <code>p</code> becomes
 a dangling pointer. With the use of <code>Pin</code>, we can avoid this kind of stuff and prevent undefined behavior.
-These kind of type will also implements <code>!Unpin</code> to make <code>Pin</code> has its effect on the type.</p>
+These kinds of type will also implement <code>!Unpin</code> to make <code>Pin</code> has its effect on the type.</p>
 <p>The reason that <code>poll</code> requires this bound is related to the next section. For now, we will discuss <code>Unpin</code> and <code>Context</code> first.</p>
 <h3 id="the-unpin-auto-trait"><a class="header" href="#the-unpin-auto-trait">The <code>Unpin</code> auto trait</a></h3>
 <p>The type with <code>Unpin</code> auto trait implemented will cancel the effect of <code>Pin</code>, e.g. <code>Pin&lt;Box&lt;T&gt;&gt;</code> is as same as <code>Box&lt;T&gt;</code> when <code>T: Unpin</code>.
 The reason is that these types doesn't depend on its location to work properly. The only exception is those types who implements <code>!Unpin</code>.</p>
-<p>There are only 4 kinds of types that implements <code>!Unpin</code>:</p>
+<p>There are only 4 kinds of types that implement <code>!Unpin</code>:</p>
 <ol>
 <li><code>Future</code> generated by the compiler with the <code>async fn</code> syntax.</li>
 <li><code>PhantomPinned</code> marker type.</li>
-<li>Structs that contains <code>!Unpin</code> type in its field.</li>
+<li>Structs that contain <code>!Unpin</code> type in its field.</li>
 <li><code>unsafe impl !Unpin for [what ever type here]</code></li>
 </ol>
 <p>The reason of why the compiler generated <code>Future</code> will be discussed in the next section. Now let's focus on <code>Context</code> first.</p>
 <h2 id="2-contexta"><a class="header" href="#2-contexta">2. <code>Context&lt;'a&gt;</code></a></h2>
-<p>This type defines the context of a async task. It's currently used to provide the access to a reference of a <code>Waker</code> that can wake
+<p>This type defines the context of an async task. It's currently used to provide the access to a reference of a <code>Waker</code> that can wake
 up the current task.</p>
-<p>A <code>Waker</code> is essentially a wrapper to a vtable (<code>RawWakerVTable</code>) and some extra payloads (<code>data</code> pointer). The vtable contains:</p>
+<p>A <code>Waker</code> is essentially a wrapper to a VTable (<code>RawWakerVTable</code>) and some extra payloads (<code>data</code> pointer). The VTable contains:</p>
 <ol>
 <li><code>clone</code>: Function to run when the waker is cloned.</li>
 <li><code>wake</code>: Function to run when <code>Waker::wake</code> is called. It will consume the <code>data</code> pointer.</li>
 <li><code>wake_by_ref</code>: Function to run when <code>Waker::wake_by_ref</code> is called. It won't consume the <code>data</code> pointer.</li>
 <li><code>drop</code>: Function to run when the <code>Waker</code> is dropped.</li>
 </ol>
-<p>Typically, the creation of a <code>Waker</code> is done by some other libraries (e.g. <code>waker_fn</code> for my implementation).
-The <code>Waker</code>s' management will be discussed in <a href="layer/fst/../fth/waker_handling.html">Waker handling</a></p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="future-desugar---a-finite-state-machine"><a class="header" href="#future-desugar---a-finite-state-machine">Future desugar - a Finite State Machine</a></h1>
-<p>In Rust, we can create an async function as simple as the following code:</p>
+<p>Typically, the creation of a <code>Waker</code> is done by some other libraries (e.g. <code>waker_fn</code> for my implementation).</p>
+<!-- The `Waker`s' management will be discussed in [Waker handling](../fth/waker_handling.md) -->
+<div style="break-before: page; page-break-before: always;"></div><h1 id="future-internal---a-finite-state-machine"><a class="header" href="#future-internal---a-finite-state-machine">Future internal - a Finite State Machine</a></h1>
+<p>In Rust, we can create an asynchronous function as simple as the following code:</p>
 <pre><code class="language-rust">async fn async_func() {
     init_step();
     f().await;
@@ -853,7 +857,7 @@ The <code>Waker</code>s' management will be discussed in <a href="layer/fst/../f
 }
 </code></pre>
 <p>From a user's perspective, we can quickly conclude that the function will run
-<code>f()</code>, <code>g()</code>, <code>h()</code> in order asynchrnously. But how this snippet is related
+<code>f()</code>, <code>g()</code>, <code>h()</code> in order asynchronously. But how this snippet is related
 to the <code>Future</code> trait? It turns out that the compiler will translate the code snippet
 into the following:</p>
 <pre><code class="language-rust">struct AsyncFunc {
@@ -903,12 +907,12 @@ impl Future for AsyncFunc {
     }
 }
 </code></pre>
-<p>This code can be viewed as an finite state machine, and can be visualized as the following diagram:
+<p>This code can be viewed as a finite state machine, and can be visualized as the following diagram:
 <img src="https://i2.lensdump.com/i/RkBbkv.png" alt="" /></p>
 <p>Since the code is compiled to a finite state machine, the state can store the arguments for the future to run,
 the return value of previous future execution, etc. Because of this, the use of <code>Pin</code> and <code>!Unpin</code> is necessary.</p>
 <h2 id="why-use-pin-and-why-the-generated-code-implements-unpin"><a class="header" href="#why-use-pin-and-why-the-generated-code-implements-unpin">Why use <code>Pin</code> and why the generated code implements <code>!Unpin</code>?</a></h2>
-<p>Consider the following async block:</p>
+<p>Consider the following <code>async</code> block:</p>
 <pre><code class="language-rust">async {
     let mut x = [0u8; 4096];
     let fut = read_to_buf(&amp;mut x);
@@ -927,7 +931,7 @@ struct AsyncBlock1 {
 }
 </code></pre>
 <p>We can see that the generated <code>AsyncBlock1</code> contains a future <code>ReadToBuf&lt;'_&gt;</code> that uses <code>&amp;mut x</code> for reading.
-If this async block is moved, so will <code>x</code>, and since <code>x</code> is moved, the pointer in <code>ReadToBuf&lt;'_&gt;</code> can point
+If this <code>async</code> block is moved, so will <code>x</code>, and since <code>x</code> is moved, the pointer in <code>ReadToBuf&lt;'_&gt;</code> can point
 to an invalid location or dangle, causing undefined behavior. To prevent this, the generated <code>Future</code> object
 will always be <code>!Unpin</code> to enable the effect that <code>Pin</code> brings, and thus the <code>poll</code> function takes
 <code>self: Pin&lt;&amp;mut Self&gt;</code> rather than <code>&amp;mut self</code>.</p>
@@ -941,15 +945,15 @@ will always be <code>!Unpin</code> to enable the effect that <code>Pin</code> br
 </ol>
 <p>Managing the generated <code>Future</code> objects is quite a hurdle, as it's impossible to type
 any <code>Future</code> statically so that all the generated <code>Future</code> objects runs on stack,
-and it's quite inefficient to actively poll every <code>Future</code> object you get with a
+and it's quite inefficient to actively poll every <code>Future</code> object you get with an
 empty <code>Waker</code> (basically busy waiting).</p>
 <p>In the next section, I will discuss how to manage these generated bastards using heap.
 While it's not zero-cost, managing the generated <code>Futures</code> as heap-allocated trait objects
-is much simpler tahn fighting with the borrowchecker and the moving problems caused by <code>!Unpin</code>.</p>
+is much simpler than fighting with the borrow checker and the moving problems caused by <code>!Unpin</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="generic-future-handling"><a class="header" href="#generic-future-handling">Generic Future handling</a></h1>
 <p>In this part, we will:</p>
 <ul>
-<li>Dicuss how to handle generic <code>Future</code> objects.</li>
+<li>Discuss how to handle generic <code>Future</code> objects.</li>
 <li>Talk about my approach to solve this problem.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="general-heap-allocated-future-object"><a class="header" href="#general-heap-allocated-future-object">General heap-allocated Future object</a></h1>
@@ -957,9 +961,9 @@ is much simpler tahn fighting with the borrowchecker and the moving problems cau
 <ol>
 <li>By <code>&lt;T: Trait + 'lifetime&gt;</code>: Specifies a type parameter with trait bound and lifetime bound.</li>
 <li>By <code>impl Trait</code>: Use an anonymous type parameter bound by trait.</li>
-<li>By <code>dyn Trait</code>: Use an trait object to dynamic dispatch type.</li>
+<li>By <code>dyn Trait</code>: Use a trait object to dynamic dispatch type.</li>
 </ol>
-<p>Method 1 needs to know the exactly type in compile time, and method 2 can be only used at function signature,
+<p>Method 1 needs to know the exact type in compile time, and method 2 can be only used at function signature,
 our only option is by method 3, trait objects.</p>
 <p>Since a trait object is an opaque type that the size is only known at runtime,
 we need to use a pointer to access it.
@@ -974,7 +978,7 @@ You might think that doesn't <code>Future</code>'s <code>poll</code> function re
 As it turns out, we can make use of <code>AsMut</code> trait, that using <code>.as_mut()</code> will result in:</p>
 <pre><code>&amp;mut Pin&lt;P&lt;T&gt;&gt; -&gt; Pin&lt;&amp;mut T&gt;
 </code></pre>
-<p>We only need the internal mutability stuff out side:</p>
+<p>We only need the internal mutability stuff outside:</p>
 <pre><code class="language-rust">RefCell&lt;Pin&lt;Box&lt;dyn Future + 'a&gt;&gt;&gt; // Single thread.
 Mutex&lt;Pin&lt;Box&lt;dyn Future + 'a&gt;&gt;&gt; // Multi thread.
 </code></pre>
@@ -986,17 +990,16 @@ Arc&lt;Mutex&lt;Pin&lt;Box&lt;dyn Future + 'a&gt;&gt;&gt;&gt; // Multi thread.
 <pre><code class="language-rust">Pin&lt;Rc&lt;RefCell&lt;dyn Future + 'a&gt;&gt;&gt; // Single thread.
 Pin&lt;Arc&lt;Mutex&lt;dyn Future + 'a&gt;&gt;&gt; // Multi thread.
 </code></pre>
-<p>with newer stable version of Rust as <code>Rc</code> and <code>Arc</code> also put stuff on heap (Note that <code>Pin</code> can only contain a pointer type).</p>
 <p>At this point, you are good to go, although there may be a problem.
-You see, you need to allocate every time a <code>Future</code> is spawned in your runtime. For an server type program
+You see, you need to allocate every time a <code>Future</code> is spawned in your runtime. For a server type program
 that spawns multiple handler that may be inefficient:</p>
 <ol>
-<li><code>Future</code> objects are allocated and destoryed multiple times, which can cause fragmentation depending on the global allocator.</li>
+<li><code>Future</code> objects are allocated and destroyed multiple times, which can cause fragmentation depending on the global allocator.</li>
 <li>The allocated space can actually be reused to reduce heap size and have a better performance as no allocation occurred when we reuse it.</li>
 </ol>
 <p>That's why I change to use a global object pool provided by <code>sharded_slab</code>.
 The next section I will talk about how to use a global object pool to handle <code>Future</code> objects.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="global-reusable-object-pool-for-allocation-reuse-fragment-control-and-easy-managment"><a class="header" href="#global-reusable-object-pool-for-allocation-reuse-fragment-control-and-easy-managment">Global Reusable Object Pool for allocation reuse, fragment control, and easy managment</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="global-reusable-object-pool-for-allocation-reuse-fragment-control-and-easy-management"><a class="header" href="#global-reusable-object-pool-for-allocation-reuse-fragment-control-and-easy-management">Global Reusable Object Pool for allocation reuse, fragment control, and easy management</a></h1>
 <p><code>sharded_slab</code> provides <code>Pool</code> for object pool that can:</p>
 <ol>
 <li>Allocate inside the pool.</li>
@@ -1004,15 +1007,15 @@ The next section I will talk about how to use a global object pool to handle <co
 <li>Reuse the retained allocation when allocation occurs.</li>
 </ol>
 <p>The pool requires <code>T: Clear + Default</code>, that the <code>Clear</code> trait is used to clear value and retain allocation.
-We can use this to design the type we want to store. In this case, the follwoing type is choosed:</p>
+We can use this to design the type we want to store. In this case, the following type is chosen:</p>
 <pre><code class="language-rust">// type Boxed&lt;T&gt; = Pin&lt;Box&lt;dyn Future&lt;Output = T&gt; + Send + 'static&gt;&gt;;
 pub(crate) struct BoxedFuture {
     pub(crate) future: Mutex&lt;Option&lt;Boxed&lt;io::Result&lt;()&gt;&gt;&gt;&gt;,
 }
 </code></pre>
 <p>By default, <code>Option&lt;T&gt;</code> implements <code>Clear</code> by default, which uses <code>Option::take()</code> to do the clear job.
-<code>Option::take()</code> itself is implmented by <code>std::mem::replace(self, None)</code>, which the <code>std::mem::replace</code>
-won't dealloc the left hand side. This property makes it capable to do the allocation retain job, so we can
+<code>Option::take()</code> itself is implemented by <code>std::mem::replace(self, None)</code>, which the <code>std::mem::replace</code>
+won't dealloc the left-hand side. This property makes it capable to do the allocation retain job, so we can
 put the <code>Boxed</code> type under it. The <code>Mutex</code> wraps around it is to provide internal mutability for <code>Future</code>'s <code>poll</code> requirement.</p>
 <p>We can implement <code>Clear</code> for <code>BoxedFuture</code> with <code>Option::clear()</code>:</p>
 <pre><code class="language-rust">impl Default for BoxedFuture {
@@ -1033,7 +1036,7 @@ impl Clear for BoxedFuture {
 <pre><code class="language-rust">// global future allocation pool.
 pub(crate) static FUTURE_POOL: Lazy&lt;Pool&lt;BoxedFuture&gt;&gt; = Lazy::new(Pool::new);
 </code></pre>
-<p>The key will be wrpped inside <code>FutureIndex</code> that contains other payloads:</p>
+<p>The key will be wrapped inside <code>FutureIndex</code> that contains other payloads:</p>
 <pre><code class="language-rust">#[derive(Clone, Copy, Eq)]
 pub struct FutureIndex {
     pub key: usize,
@@ -1124,7 +1127,7 @@ if finished {
 </ol>
 <h2 id="note-1"><a class="header" href="#note-1">Note</a></h2>
 <p>The <code>Future</code> object is now single accessed by a single thread, why use <code>Mutex</code> instead of <code>RefCell</code> as they both implement <code>Send</code>?
-This is because that the pool itself needs <code>Sync</code> for the global pool encapsulate in <code>Lazy</code> to wrok properly in multi-threaded environment.
+This is because that the pool itself needs <code>Sync</code> for the global pool encapsulate in <code>Lazy</code> to work properly in multithreaded environment.
 We need to use <code>Mutex</code> to make the type store inside the pool <code>Sync</code>.</p>
 <p>The <code>Mutex</code> will have small impact since it's already single accessed, its function will be like a <code>RefCell</code> that the thread-blocking function is canceled by our design.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="io-adapter-for-general-file-descriptor---iowrapper"><a class="header" href="#io-adapter-for-general-file-descriptor---iowrapper">IO Adapter for general file descriptor - IoWrapper</a></h1>
@@ -1140,7 +1143,7 @@ We need to use <code>Mutex</code> to make the type store inside the pool <code>S
 you'll want to make the file descriptors you're working on.</p>
 <p>Setting a file descriptor is easy by using <code>fcntl</code> to set the <code>O_NONBLOCK</code>.</p>
 <p>Next we'll talk about the error handling part.</p>
-<p>A non-blocking IO handling can be described by the following pseudo code:</p>
+<p>A non-blocking IO handling can be described by the following pseudocode:</p>
 <pre><code>run_nbio(io):
     n &lt;- io()
     if n == -1 then
@@ -1196,44 +1199,45 @@ where
 <p>Next, we'll talk about <code>IoWrapper</code>'s design.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="iowrapper-design"><a class="header" href="#iowrapper-design">IoWrapper design</a></h1>
 <p><code>IoWrapper</code> is a wrapper for IO sources like <code>File</code>, <code>TcpStream</code>, etc. to become an IO event provider
-for the runtime. The wrapper provides varius defaults and methods for users to define a new IO source quickly.</p>
+for the runtime. The wrapper provides various defaults and methods for users to define a new IO source quickly.</p>
 <p>The <code>IoWrapper</code> is defined as:</p>
 <pre><code class="language-rust">pub struct IoWrapper&lt;T: AsFd&gt; {
     inner: T,
     token: AtomicUsize,
 }
 </code></pre>
-<p>where <code>inner</code> is the type being wrapped, and <code>token</code> is the token that can identify the struct.</p>
-<p>The wrapped type is bounded by <code>AsFd</code> since the runtime only accecpts registering IO events related
-to system IO, the wrapper thus requires the types to be wrapped should be <code>AsFd</code> that can extracxt
-the underlying file descripter.</p>
+<p>Where <code>inner</code> is the type being wrapped, and <code>token</code> is the identifier.</p>
+<p>The wrapped type is bounded by <code>AsFd</code> since the runtime only accepts registering IO events related
+to system IO, the wrapper thus requires the types to be wrapped should be <code>AsFd</code> that can extract
+the underlying file descriptor.</p>
 <p><code>IoWrapper</code> provides:</p>
 <ul>
 <li>A convenient wrapper over <code>AsFd</code> types that set to non-blocking mode automatically.</li>
 <li><code>ref_io</code> and <code>mut_io</code> for IO that doesn't require/require mutating self.
 <ul>
-<li><code>ref_io</code> and <code>mut_io</code> are also async function by themselves, you don't need to implement <code>Future</code> yourself.</li>
-<li>You can use these function to perform IO operations that aren't defined by the runtime or other async traits.</li>
+<li><code>ref_io</code> and <code>mut_io</code> are also asynchronous function by themselves, you don't need to implement <code>Future</code> yourself.</li>
+<li>You can use these function to perform IO operations that aren't defined by the runtime or other asynchronous traits.</li>
 <li>For usage, see <a href="https://smb374.github.io/my-async-rs/api_references/my_async/struct.IoWrapper.html">API documentation</a></li>
 </ul>
 </li>
 <li>Auto implementation of <code>AsyncRead</code> and <code>AsyncWrite</code> for types implementing <code>std::io::Read</code> and <code>std::io::Write</code>.</li>
 <li>Get reference/mutable reference of the inner type by <code>IoWrapper::inner()</code>/<code>IoWrapper::inner_mut()</code>.</li>
 </ul>
-<p>In addition to these features, since an <code>IoWrapper</code> wraps over any <code>AsFd</code> type with a token, we can register it with the token
-to the reactor of the runtime. The reactor will then look after its events, and thus can wake up tasks related to it corresponding
-to <code>Interest::READABLE</code> or <code>Interest::WRITABLE</code>. In this way, <code>IoWrapper</code> can play the role of IO events provider
-to wake async tasks. The rest of the details will be discussed in the subsections of <a href="layer/fst/layer/fth/reactor.html">System IO Event Harvester - Reactor</a>.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="heart-of-a-runtime---executor"><a class="header" href="#heart-of-a-runtime---executor">Heart of a runtime - Executor</a></h1>
+<p>In addition to these features, since a <code>IoWrapper</code> wraps over any <code>AsFd</code> type with a token, we can register it with the
+token to the reactor of the runtime. The reactor will then look after its events, and thus can wake up tasks related to
+it corresponding to <code>Interest::READABLE</code> or <code>Interest::WRITABLE</code>. In this way, <code>IoWrapper</code> can play the role of IO
+events provider to wake asynchronous tasks. The rest of the details will be discussed in the
+subsections of <a href="layer/fst/../fth/reactor.html">System IO Event Harvester - Reactor</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="executor"><a class="header" href="#executor">Executor</a></h1>
 <p>In the previous section, we've described:</p>
 <ol>
-<li>How to prperly handle compiler generated <code>Future</code> objects</li>
+<li>How to properly handle compiler generated <code>Future</code> objects</li>
 <li><code>IoWrapper</code> that is capable of being an IO source that provides IO events for waking tasks.</li>
 </ol>
-<p>But defineing these won't fire up the execution procedure, we still need an executor to process these
+<p>But defining these won't fire up the execution procedure, we still need an executor to process these
 tasks. In this section, we'll discuss:</p>
 <ol>
-<li><code>Executor</code> for executing <code>Future</code>s.
+<li><code>Executor</code> for executing <code>Future</code>.
 <ul>
 <li>General commands of a runtime.</li>
 <li><code>Executor</code>'s design.</li>
@@ -1248,11 +1252,11 @@ tasks. In this section, we'll discuss:</p>
 <li><code>JoinHandle</code> for spawned future.</li>
 </ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="general-commands-of-a-runtime"><a class="header" href="#general-commands-of-a-runtime">General commands of a runtime</a></h1>
-<p>Imagine you're user that holds a pool of <code>Future</code> objects that is ready to execute, and the <code>Executor</code>
+<p>Imagine you're a user that holds a pool of <code>Future</code> objects that is ready to execute, and the <code>Executor</code>
 as a server that is capable to execute your <code>Future</code> objects with their results return to you.</p>
 <p>Naturally, you'll want to send a request that asks the server to execute your task. You can, of course, choose
 to wait until the server finishes the task and retrieves its result, or you can choose to tell the server: Give
-me a handle and I'll check its status later. Let's call the latter one <code>spawn</code>.</p>
+me a handle, and I'll check its status later. Let's call the latter one <code>spawn</code>.</p>
 <p>We can show the differences with the following snippet:</p>
 <pre><code class="language-rust">// Wait until `f()` finishes and retrieve its result.
 async fn af1() {
@@ -1266,10 +1270,10 @@ async fn af2() {
     let result = handle.join().await;
 }
 </code></pre>
-<p>As you can see, we need to define a <code>spawn</code> function to handle these kind of requests.
+<p>As you can see, we need to define a <code>spawn</code> function to handle these kinds of requests.
 Note that in the first case, no extra <code>Future</code> object is created as it will become a state of the <code>Future</code>
 object generated by <code>af1()</code>'s code, so we don't need a command to handle it.</p>
-<p>Now, let's say that you're done with the works, and you want to shutdown the server. Naturally,
+<p>Now, let's say that you're done with the works, and you want to shut down the server. Naturally,
 you'll call the <code>shutdown</code> command to close the server before exit.</p>
 <p>By the above situation, we can see that we need two essential commands: <code>spawn()</code> and <code>shutdown()</code> to control
 the <code>Executor</code> we need to use. Of course there can be more commands, but for <code>my-async</code>, these commands are enough.
@@ -1284,12 +1288,12 @@ Now, let's talk about how we can design the <code>Executor</code> we need with t
             Shutdown -&gt; break
 </code></pre>
 <p>The execution system is done by the <code>Scheduler</code>, and we also need to call <code>Reactor</code> to look up for
-IO events to wake tasks. By these facts and the above pseudo code, the <code>Executor</code> can be viewed
+IO events to wake tasks. By these facts and the above pseudocode, the <code>Executor</code> can be viewed
 as an abstraction layer that handles messages and relay the actual actions to <code>Scheduler</code> and <code>Reactor</code>.</p>
 <p>In the code, the <code>Executor</code> will do almost the same thing with one more message to handle. The <code>Executor</code>
 will also spawn a thread for <code>Reactor</code> to run, as the IO events will need to be checked separately if
 we have the message handling loop in the main thread.</p>
-<p>The <code>Executor</code> also provides a function: <code>block_on</code>. The async function that's spawned by the <code>block_on</code> function
+<p>The <code>Executor</code> also provides a function: <code>block_on</code>. The asynchronous function that's spawned by the <code>block_on</code> function
 is just like the <code>main</code> function in a normal program: the runtime won't exit before this function ends without
 further errors or interrupts occur during runtime.</p>
 <p>The complete pseudocode for the <code>Executor</code>:</p>
@@ -1324,7 +1328,7 @@ block_on(f):
 <li>spawn</li>
 <li>shutdown</li>
 </ol>
-<p>The corresponding messages is defined:</p>
+<p>The corresponding messages are defined:</p>
 <pre><code class="language-rust">// in src/schedulers/mod.rs:
 pub enum ScheduleMessage {
     Schedule(FutureIndex),
@@ -1332,9 +1336,9 @@ pub enum ScheduleMessage {
     Shutdown,
 }
 </code></pre>
-<p>where <code>Schedule</code> is to handle spawn, and <code>Shutdown</code> is to handle shutdown.</p>
-<p>The <code>Reschedule</code> message is an internal message that is used to requeue a task, usually used when
-a worker's queue is full that the worker can put excessive tasks back to global queue for others to taks.
+<p>Where <code>Schedule</code> is to handle spawn, and <code>Shutdown</code> is to handle shutdown.</p>
+<p>The <code>Reschedule</code> message is an internal message that is used to re-queue a task, usually used when
+a worker's queue is full that the worker can put excessive tasks back to global queue for others to take.
 For more details, see <a href="layer/snd/../trd/schedule_procedure.html">The procedure of task scheduling</a>.</p>
 <p>With the message defined, we can code the message handle loop of <code>Executor</code>:</p>
 <pre><code class="language-rust">// Executor::run() code
@@ -1358,7 +1362,7 @@ fn run(mut self) {
 </code></pre>
 <p>The <code>Executor</code> will receive messages until:</p>
 <ol>
-<li>Sender half of the channel is diconnected.</li>
+<li>Sender half of the channel is disconnected.</li>
 <li>Got <code>ScheduleMessage::Shutdown</code>.</li>
 </ol>
 <p>In the subsections, we'll look at:</p>
@@ -1369,8 +1373,8 @@ fn run(mut self) {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="spawner---message-sender"><a class="header" href="#spawner---message-sender">Spawner - message sender</a></h1>
 <p>The sender half is defined as <code>Spawner</code>, which contains the sender half of the message passing channel.
 When the <code>Executor</code> initialize, it will also initialize a global <code>Spawner</code> for user to use <code>spawn()</code> and <code>shutdown()</code>.</p>
-<p>When calling <code>spawn()</code> or <code>Executor::block_on()</code>, the <code>Spawner</code> will do the following stufff before
-<code>ScheduleMessage::Schedule</code> is send:</p>
+<p>When calling <code>spawn()</code> or <code>Executor::block_on()</code>, the <code>Spawner</code> will do the following stuff before
+<code>ScheduleMessage::Schedule</code> is sent:</p>
 <ol>
 <li>Create a shared memory for the future handle to use</li>
 <li>Add extra code after the future need to spawned that
@@ -1443,19 +1447,38 @@ The two payloads are related to scheduling, that:</p>
 <li><code>sleep_count</code>: The sleep count is used in <code>HybridScheduler</code>, that it is used to prioritize the tasks. See <a href="layer/snd/../trd/hybrid.html">Hybrid Queue for Prioritized Work Stealing</a></li>
 <li><code>budget_index</code>: Index for retrieving budgets, that is used for auto task yielding. See <a href="layer/snd/../trd/token_bucket.html">A token bucket like algorithm for auto task yielding</a></li>
 </ol>
-<p>Although the payloads is hard coded, when you design your own executor, you can store informations that is used for
+<p>Although the payloads are hard coded, when you design your own executor, you can store information that is used for
 runtime metrics.</p>
-<p>For generic payloads, you can use a trait object to achieve, such as:</p>
-<pre><code class="language-rust">trait GenericPayload {
-    // methods and associated types in here
+<p>For generic payloads, you should make use of <code>Any</code> trait with <code>TypeId</code> to check whether the payload is the valid type.</p>
+<p>Here is an example code:</p>
+<pre><code class="language-rust">struct FutureIndex {
+    key: usize,
+    // essential fields across schedulers
+    // ...
+
+    // generic payload that needs down casting.
+    payload: Arc&lt;Mutex&lt;Option&lt;Box&lt;dyn Any + Send&gt;&gt;&gt;&gt;,
 }
 
-struct FutureIndex&lt;'a&gt; {
-    key: usize,
-    payload: Arc&lt;Mutex&lt;dyn GenericPayload + 'a&gt;&gt;, // for payload mutation
+// Impl this for some other struct and set Target to your payload type.
+trait ExtractPayload {
+    type Target: 'static;
+    fn extract(index: &amp;FutureIndex) -&gt; Option&lt;Box&lt;Self::Target&gt;&gt; {
+        let p = index.payload.lock().unwrap().take();
+        match p {
+            Some(payload) =&gt; {
+                if payload.as_ref().type_id() == TypeId::of::&lt;Self::Target&gt;() {
+                    Some(payload.downcast().unwrap())
+                } else {
+                    None
+                }
+            }
+            None =&gt; None,
+        }
+    }
 }
 </code></pre>
-<p>Next, we'll move onb to <code>JoinHandle</code>'s design.</p>
+<p>Next, we'll move on to <code>JoinHandle</code>'s design.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="join-handle-for-future"><a class="header" href="#join-handle-for-future">Join Handle for Future</a></h1>
 <p>As shown before, we use a shared memory to store the result of the spawned future, then we put the
 shared memory into <code>JoinHandle</code> and return to the user.</p>
@@ -1466,9 +1489,9 @@ shared memory into <code>JoinHandle</code> and return to the user.</p>
     inner: Arc&lt;Mutex&lt;Option&lt;T&gt;&gt;&gt;,
 }
 </code></pre>
-<p>where</p>
+<p>Where</p>
 <ul>
-<li><code>spawn_id</code> is the id of the spawned future.</li>
+<li><code>spawn_id</code> is the ID of the spawned future.</li>
 <li><code>registered</code> is a flag to check if the waker of it is registered.</li>
 <li><code>inner</code> is the shared memory.</li>
 </ul>
@@ -1539,7 +1562,7 @@ pub(super) fn wake_join_handle(index: usize) {
 </code></pre>
 <p>Since we use a shared memory that is <code>Arc&lt;Mutex&lt;Option&lt;T&gt;&gt;&gt;</code>, the <code>try_join()</code> can be implemented easily
 by lock <code>inner</code> and take it. The <code>Option&lt;T&gt;</code>'s value can indicate the success or not.</p>
-<p><code>join()</code> is a async function that will wait until the future of the handle finishes execution, that is,
+<p><code>join()</code> is a asynchronous function that will wait until the future of the handle finishes execution, that is,
 if <code>inner</code> is <code>None</code>, we register the waker of the context where you call <code>join()</code> to a map.
 The entry will use the spawned future's key (<code>spawn_id</code>) as its key so that the future can use the waker to wake
 the context where <code>join()</code> is being called.</p>
@@ -1557,154 +1580,10 @@ async fn child() -&gt; T {
 <p><code>handle</code> will use the waker from context <code>cx</code> that is used to poll <code>parent</code>, while the waker registration uses
 <code>child</code>'s index as its key so that <code>child</code> can wake <code>parent</code> to poll <code>handle.join()</code>.</p>
 <p>Since we need to use the key of the spawned future as its key to the waker map, we can only use
-a regular hashmap with a <code>RwLock</code> so that we can specify its key. This is the simplest way I've
-tried so far, otherwise we need to make more complicated code so that we don't need to use a hashmap.</p>
-<p>Anyways, that's all for the <code>Executor</code>, we'll now move one to the <code>Scheduler</code>.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="update-redesigned-executor-logic"><a class="header" href="#update-redesigned-executor-logic">UPDATE: Redesigned Executor logic</a></h1>
-<p>In the past few weeks before this page came out I have been reworking the logic
-of the <code>Executor</code> that currently:</p>
-<ol>
-<li>Make the message handler become an event handler of the <code>Reactor</code> that is triggered when a notification
-to the <code>Reactor</code> was made. <code>Reactor::wait</code> has a new argument that accepts this handler.</li>
-<li>Use scoped thread before further experiment that is related to lifetime is started as
-<code>std::thread:scope</code> will create lifetime bounds that will come in handy. The <code>Scheduler</code>
-trait also have a new <code>setup_workers()</code> because of this.</li>
-</ol>
-<p>As a result, we can have one more worker that can execute the tasks.</p>
-<h2 id="code"><a class="header" href="#code">Code</a></h2>
-<h3 id="reactor-change"><a class="header" href="#reactor-change">Reactor Change</a></h3>
-<p>The <code>Reactor</code> will handle the event associated with <code>POLL_WAKE_TOKEN</code>,
-which is the token of the notifier, with the <code>notify_handler</code> passed as an argument:</p>
-<pre><code class="language-rust">impl Reactor {
-    // ...
-    pub fn wait&lt;F&gt;(&amp;mut self, timeout: Option&lt;Duration&gt;, mut notify_handler: F) -&gt; io::Result&lt;bool&gt;
-    where
-        F: FnMut() -&gt; bool,
-    {
-        let mut result: bool = false;
-        self.poll.poll(&amp;mut self.events, timeout)?;
-        if !self.events.is_empty() {
-            log::debug!(&quot;Start process events.&quot;);
-            for e in self.events.iter() {
-                // We will now accept a handler in this function
-                // that will be triggered with POLL_WAKE_TOKEN
-                // which is related to a notifier.
-                if e.token() == POLL_WAKE_TOKEN {
-                    result = notify_handler();
-                }
-                let idx = e.token().0;
-                let waker_processed = process_waker(idx, |guard| {
-                    if let Some(w) = guard.take() {
-                        w.wake_by_ref();
-                    }
-                });
-
-                if !waker_processed {
-                    self.extra_wakeups.push(idx);
-                }
-            }
-        }
-        Ok(result)
-    }
-    // ...
-}
-</code></pre>
-<p>The returned boolean result will determine whether to shutdown the runtime.</p>
-<h3 id="spawner-change"><a class="header" href="#spawner-change">Spawner Change</a></h3>
-<p>For this design to work, we need to make all the spawning function defined by <code>Spawner</code>
-trigger the notifier after the message is sent:</p>
-<pre><code class="language-rust">// This function will be called at the end of each of the spawn function that Spawner defines.
-pub(crate) fn notify_reactor() {
-    // assert_some! is used since it's impossible since
-    // the POLL_WAKER is already initialized before
-    // this function is called.
-    // Also it's much more clear than using .unwrap()
-    assert_some!(POLL_WAKER.get()).wake().unwrap();
-}
-</code></pre>
-<h3 id="executor-change"><a class="header" href="#executor-change">Executor Change</a></h3>
-<p>The structure changes a lot here.</p>
-<ol>
-<li>The workers are initialized when <code>Executor::run()</code> is called, not when
-the <code>Executor</code> is initialized.</li>
-<li>The message handling code become an independent function and use non-blocking
-receive to prevent blocking on channel empty:</li>
-</ol>
-<pre><code class="language-rust">fn message_handler(&amp;mut self) -&gt; bool {
-    let mut result = false;
-    loop {
-        match self.schedule_message_receiver.try_recv() {
-            // continously schedule tasks
-            Ok(msg) =&gt; match msg {
-                ScheduleMessage::Schedule(future) =&gt; self.scheduler.schedule(future),
-                ScheduleMessage::Reschedule(task) =&gt; self.scheduler.reschedule(task),
-                ScheduleMessage::Shutdown =&gt; {
-                    result = true;
-                    break;
-                }
-            },
-            Err(e) =&gt; match e {
-                TryRecvError::Empty =&gt; {
-                    break;
-                }
-                TryRecvError::Disconnected =&gt; {
-                    log::debug!(&quot;exit...&quot;);
-                    result = true;
-                    break;
-                }
-            },
-        }
-    }
-    result
-}
-</code></pre>
-<ol start="3">
-<li>The <code>run()</code> function is greatly simplified since we don't need to handle thread joining
-thanks to scoped thread and merged IO polling:</li>
-</ol>
-<pre><code class="language-rust">fn run(mut self, reactor: &amp;mut Reactor) -&gt; io::Result&lt;()&gt; {
-    // 'env lifetime
-    thread::scope(|s| -&gt; io::Result&lt;()&gt; {
-        // 'scope lifetime
-        log::debug!(&quot;Spawn threads under scope...&quot;);
-        // Setup workers in scope and before reactor loop.
-        // All the threads will be joined at the end of this scope.
-        self.scheduler.setup_workers(s);
-        log::info!(&quot;Runtime booted up, start execution...&quot;);
-        loop {
-            // Check events that weren't handled by anyone before.
-            reactor.check_extra_wakeups();
-            // Wait with a timeout of 100 ms.
-            // You can use None here as any command from Spawner
-            // will wake the Reactor.
-            //
-            // The wait will return io::Result&lt;bool&gt;,
-            // the boolean will determine whether to shutdown the runtime.
-            // Other IO errors will also trigger shutdown of the runtime,
-            // except Interrupted and WouldBlock as we simply retry.
-            match reactor.wait(Some(Duration::from_millis(100)), || self.message_handler()) {
-                Ok(false) =&gt; {}
-                Ok(true) =&gt; break,
-                Err(e) =&gt; match e.kind() {
-                    // Simply retry when these two happened.
-                    io::ErrorKind::Interrupted | io::ErrorKind::WouldBlock =&gt; {}
-                    _ =&gt; {
-                        log::error!(&quot;Reactor wait error: {}, shutting down...&quot;, e);
-                        break;
-                    }
-                },
-            }
-        }
-        log::info!(&quot;Execution completed, shutting down...&quot;);
-        // shutdown worker threads
-        self.scheduler.shutdown();
-        log::info!(&quot;Runtime shutdown complete.&quot;);
-        Ok(())
-    })?;
-    Ok(())
-}
-</code></pre>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="multithread-mania---scheduler"><a class="header" href="#multithread-mania---scheduler">Multithread mania - Scheduler</a></h1>
+a regular hash map with a <code>RwLock</code> so that we can specify its key. This is the simplest way I've
+tried so far, otherwise we need to make more complicated code so that we don't need to use a hash map.</p>
+<p>Anyway, that's all for the <code>Executor</code>, we'll now move one to the <code>Scheduler</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="multi-thread-mania---scheduler"><a class="header" href="#multi-thread-mania---scheduler">Multi-thread mania - Scheduler</a></h1>
 <p>In the previous sections, we've look into <code>Executor</code>'s design
 with some key component remain unexplained.
 One of them is the <code>Scheduler</code> trait.</p>
@@ -1731,7 +1610,7 @@ In this part, we will discuss them in depth, including:</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="scheduler-trait-design"><a class="header" href="#scheduler-trait-design">Scheduler trait design</a></h1>
 <p>To begin with, we'll list the key functions for a scheduler:</p>
 <ol>
-<li>Be able to interprest commands that is sent by <code>Executor</code>.</li>
+<li>Be able to interpret commands that is sent by <code>Executor</code>.</li>
 <li>Spawn and handle worker threads.</li>
 <li>Schedule tasks depending on the scheduling strategy.</li>
 </ol>
@@ -1740,23 +1619,23 @@ functions to fulfill the requirements in 1 and 2:</p>
 <ul>
 <li><code>init()</code>: The <code>init()</code> function should take an argument <code>size</code> that specifies the number of threads.
 <ul>
-<li>It will spawn the worker threads and setup a channel for message passing.</li>
+<li>It will spawn the worker threads and set up a channel for message passing.</li>
 <li>All internal channels and structures should be initialized in this function.</li>
 <li>It will return an instance of itself and the <code>Spawner</code>, as mentioned before.</li>
 </ul>
 </li>
 <li><code>schedule()</code>, <code>reschedule()</code>, <code>shutdown()</code>: The functions corresponding to <code>ScheduleMessage</code>.
 <ul>
-<li>Note that <code>shutdown()</code> should consume itself, so it will take <code>self</code> instaed of <code>&amp;self</code> or <code>&amp;mut self</code>.</li>
+<li>Note that <code>shutdown()</code> should consume itself, so it will take <code>self</code> instead of <code>&amp;self</code> or <code>&amp;mut self</code>.</li>
 </ul>
 </li>
 <li><code>receiver()</code>: Return the receiver half of the message passing.
 <ul>
-<li>The sneder half is held by <code>Spawner</code> that is returned by <code>init()</code>.</li>
+<li>The sender half is held by <code>Spawner</code> that is returned by <code>init()</code>.</li>
 </ul>
 </li>
 </ul>
-<h2 id="code-1"><a class="header" href="#code-1">Code</a></h2>
+<h2 id="code"><a class="header" href="#code">Code</a></h2>
 <p>With the requirement, we can define our trait like the following code:</p>
 <pre><code class="language-rust">pub trait Scheduler {
     fn init(size: usize) -&gt; (Spawner, Self);
@@ -1797,13 +1676,13 @@ it's hard to use a trait and rule them all, but the general idea is shared: Rece
 <p>The code did the following stuff:</p>
 <ol>
 <li>If local queue contains some tasks, execute them.</li>
-<li>Try to receive any scheduled or woke ip tasks. If there any, push them and continue the loop.</li>
+<li>Try to receive any scheduled or woke up tasks. If there any, push them and continue the loop.</li>
 <li>Block receive any task that is scheduled or woke up. If there is one, push it and continue the loop.</li>
 <li>If received a shutdown signal, break the process loop.</li>
 </ol>
 <p>The schedulers that I implemented myself follows this structure, with many specific stuff due to the scheduling method.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="the-procedure-of-task-scheduling"><a class="header" href="#the-procedure-of-task-scheduling">The procedure of task scheduling</a></h1>
-<p>The procedure can be showned as a diagram:
+<p>The procedure can be shown as a diagram:
 <img src="layer/trd/../../assets/Schedule_Procedure_Bright.png" alt="Schedule Procedure" /></p>
 <ol>
 <li>The command sources will send command to the receiver.</li>
@@ -1850,7 +1729,7 @@ struct Worker {
 }
 </code></pre>
 <ul>
-<li>The injector of this scheduler is replaced by an array of senders as we uses Round-Robin.</li>
+<li>The injector of this scheduler is replaced by an array of senders as we use Round-Robin.</li>
 <li>Channels used:
 <ul>
 <li><code>task_tx</code>, <code>task_rx</code>: Channel for tasks. <code>task_tx</code> is copied to the waker and the threads array.
@@ -1890,7 +1769,7 @@ struct Worker {
     }
 }
 </code></pre>
-<p>The <code>schedule</code> and <code>reschedule</code> simply get a index by <code>round</code>, and use the channel corresponding to the index to schedule th task.
+<p>The <code>schedule</code> and <code>reschedule</code> simply get an index by <code>round</code>, and use the channel corresponding to the index to schedule the task.
 <code>shutdown</code> will simply use <code>tx</code> of every worker to send shutdown message.</p>
 <h3 id="initialization"><a class="header" href="#initialization">Initialization</a></h3>
 <pre><code class="language-rust">fn new(size: usize) -&gt; (Spawner, Self) {
@@ -1982,7 +1861,7 @@ enum Message {
 </code></pre>
 <ul>
 <li>The injector is a channel used in SPMC condition.</li>
-<li>The injector here will not perform any scheduling stategy (first comer takes first), as we uses Work-Stealing strategy.</li>
+<li>The injector here will not perform any scheduling strategy (first comer takes first), as we use Work-Stealing strategy.</li>
 <li>Channels used:
 <ul>
 <li><code>inject_sender</code>, <code>inject_receiver</code>: Injector.</li>
@@ -1994,13 +1873,13 @@ enum Message {
 <li>Worker <code>task_tx</code>, <code>task_rx</code>: Channel for waking up tasks. <code>task_tx</code> is copied to the waker.</li>
 </ul>
 </li>
-<li>Worker <code>worker</code> ringbuf is designed to have the Work-Stealing function.
+<li>Worker <code>worker</code> ring buffer is designed to have the Work-Stealing function.
 <ul>
 <li>It's capable of <code>push</code>, <code>pop</code>, and create a stealer for other workers to steal task from it.</li>
 <li>The stealers are created on scheduler init and uses a <code>Arc</code> guarded slice for access.</li>
 </ul>
 </li>
-<li>The <code>wait_group</code> is used to synchronize the each Worker at shutdown phase.</li>
+<li>The <code>wait_group</code> is used to synchronize each Worker at shutdown phase.</li>
 </ul>
 <h2 id="scheduler-implementation-1"><a class="header" href="#scheduler-implementation-1">Scheduler implementation</a></h2>
 <pre><code class="language-rust">impl Scheduler for WorkStealingScheduler {
@@ -2039,7 +1918,7 @@ enum Message {
 </code></pre>
 <ul>
 <li><code>schedule</code>, <code>reschedule</code>: First push the task to be scheduled into the injector channel, then use the notifier to broadcast <code>Message::HaveTasks</code> to workers.</li>
-<li><code>shutdown</code>: First use <code>notifier</code> to broadcast <code>Message::Close</code>. The use <code>wait_group</code> to wait all the threads run to the point before exit, an then we join all the threads.</li>
+<li><code>shutdown</code>: First use <code>notifier</code> to broadcast <code>Message::Close</code>. The use <code>wait_group</code> to wait all the threads run to the point before exit, and then we join all the threads.</li>
 </ul>
 <h3 id="initialization-1"><a class="header" href="#initialization-1">Initialization</a></h3>
 <pre><code class="language-rust">fn new(size: usize) -&gt; (Spawner, Self) {
@@ -2176,7 +2055,7 @@ enum Message {
 </code></pre>
 <ol>
 <li>If <code>worker</code> is not empty, pop and process a task.</li>
-<li>Non-blocking receive all tasks that is woke up.
+<li>Non-blocking receive all tasks that is waked up.
 <ul>
 <li>If <code>wake_count &gt; 0</code>, continue the loop.</li>
 </ul>
@@ -2186,14 +2065,14 @@ enum Message {
 <li>If success, continue the loop.</li>
 </ul>
 </li>
-<li>Try to steal a task using the stalers recorded in the <code>stealers</code> array.
+<li>Try to steal a task using the stealers recorded in the <code>stealers</code> array.
 <ul>
 <li>If success, continue the loop.</li>
 </ul>
 </li>
 <li>Block receive 1 woke up task or notifications that is <code>HaveTasks</code> or <code>Close</code>.
 <ul>
-<li><code>Close</code> indicates that its time to shutdown, break run loop.</li>
+<li><code>Close</code> indicates that it's time to shut down, break run loop.</li>
 <li><code>HaveTasks</code> means there tasks scheduled/rescheduled. Continue the loop and run through step 3.</li>
 </ul>
 </li>
@@ -2202,30 +2081,30 @@ enum Message {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="hybrid-queue-for-prioritized-work-stealing"><a class="header" href="#hybrid-queue-for-prioritized-work-stealing">Hybrid Queue for Prioritized Work Stealing</a></h1>
 <p>This section described a Hybrid queue used with the Work-Stealing strategy.</p>
 <h2 id="why"><a class="header" href="#why">Why?</a></h2>
-<p>Since the async runtime requires the task to be yielded if the I/O action
+<p>Since the asynchronous runtime requires the task to be yielded if the I/O action
 returns <code>EWOULDBLOCK</code>/<code>EAGAIN</code>, a task may be interrupt multiple times before
 it actually progressed. This will happen if there are multiple tasks accessing
 the same resource at the same time, some tasks may unfortunately be yielded
 by the design way much more times than others.</p>
 <p>To encounter this problem, an obvious solution is to use a priority queue and
-set those with more yield count a higher prioritties to balance the possible
+set those with more yield count a higher priority to balance the possible
 yield count.</p>
 <p>But for me, a concurrent priority queue with a high performance is sadly
 too hard for me to invent. With no other solutions available, I came out
 an idea to use a composed data structure, just like using two stacks to
 implement a queue.</p>
 <p>The priority of a task is included in <code>FutureIndex</code>, called <code>sleep_count</code>.
-<code>sleep_count</code> will be increased eachtime a related <code>Waker</code> is woke by the <code>Reactor</code>,
+<code>sleep_count</code> will be increased each time a related <code>Waker</code> is waked by the <code>Reactor</code>,
 that is, the task had yielded for once. When tasks are loaded into the <code>hot</code> queue,
-it will use this count as each task's priotrity.</p>
+it will use this count as each task's priority.</p>
 <h2 id="structure"><a class="header" href="#structure">Structure</a></h2>
-<p>The structure and the functions can be described by the follwoing diagram:
+<p>The structure and the functions can be described by the following diagram:
 <img src="layer/trd/../../assets/Hybrid_Scheduler_Bright.png" alt="Hybrid Scheduler Queue" /></p>
 <p>The details can be found in the texts of the diagram.</p>
 <h2 id="modifications-from-workstealingscheduler"><a class="header" href="#modifications-from-workstealingscheduler">Modifications from <code>WorkStealingScheduler</code></a></h2>
 <p>This scheduler works pretty much the same as the <code>WorkStealingScheduler</code>, with some modifications.</p>
 <h3 id="1-worker-queue"><a class="header" href="#1-worker-queue">1. <code>worker</code> queue</a></h3>
-<p>The <code>worker</code> queue's type is replace by <code>TaskQueue</code> we defined:</p>
+<p>The <code>worker</code> queue's type is replaced by <code>TaskQueue</code> we defined:</p>
 <pre><code class="language-rust">struct TaskQueue {
     cold: Ringbuf&lt;FutureIndex&gt;,
     hot: PriorityQueue&lt;FutureIndex, usize, BuildHasherDefault&lt;FxHasher&gt;&gt;,
@@ -2339,7 +2218,7 @@ impl&lt;F: FutureExt + ?Sized&gt; BudgetFuture for F {}
 </code></pre>
 <p>The trait simply overloads the <code>poll</code> function with <code>poll_with_budget</code>, and its auto-implemented for
 all types implementing <code>FutureExt</code>, which is auto-implemented for types implementing <code>Future</code>.</p>
-<p>By this, if the user want to enable this feature, the user can simply include this to use this feature.</p>
+<p>By this, if the user wants to enable this feature, the user can simply include this to use this feature.</p>
 <p>Next, we'll look at the <code>poll_with_budget</code> function</p>
 <h2 id="poll_with_budget-function"><a class="header" href="#poll_with_budget-function"><code>poll_with_budget</code> function</a></h2>
 <p>The <code>poll_with_budget</code> function is defined with several helper functions, a slab, and some thread local storage global variables:</p>
@@ -2426,12 +2305,12 @@ pub(crate) fn process_future(mut index: FutureIndex, tx: &amp;Sender&lt;FutureIn
 <p>Let's crack this down...</p>
 <h3 id="function-body"><a class="header" href="#function-body">Function body</a></h3>
 <p>First, the <code>USE_BUDGET</code> thread local variable will be replaced to <code>true</code> to indicate that we're using budget.
-Then we use the budget value stored in <code>BUDGET_CACHE</code>, which is visible through out the thread and set by <code>budget_update</code>,
-to poll the future. If a task spend all of its budgets, it will return <code>Pending</code> immediately with its budget restored to the default value.
+Then we use the budget value stored in <code>BUDGET_CACHE</code>, which is visible throughout the thread and set by <code>budget_update</code>,
+to poll the future. If a task spends all of its budgets, it will return <code>Pending</code> immediately with its budget restored to the default value.
 We also wake the future up immediately such that it will re-enter the processing queue at the same time we return <code>Pending</code>.</p>
 <h3 id="budget_update"><a class="header" href="#budget_update"><code>budget_update</code></a></h3>
-<p>This function will be called everytime a task is being processed by <code>process_future</code> if we're using budget.
-The reason is that we'll cache a task's budget into thread local storage to lower the amout of atmic operation.
+<p>This function will be called every time a task is being processed by <code>process_future</code> if we're using budget.
+The reason is that we'll cache a task's budget into thread local storage to lower the amount of atomic operation.
 Whenever we switch to a new task, it will need to replace the cache with the current one in slab, and store the old one
 back with atomic operation to update the information in slab.</p>
 <p>The first time we call this function, the function will store a <code>AtomicUsize</code> inside the <code>BUDGET_SLAB</code>,
@@ -2441,12 +2320,12 @@ and return its index so the <code>budget_index</code> field will be a valid inde
 <li><code>USE_BUDGET</code>: TLS variable, indicate whether we're using budget.</li>
 <li><code>CURRENT_INDEX</code>: TLS variable, cache of the budget's index for current task. Used to index the atomic variable for storing the updated cache value back to slab.</li>
 <li><code>BUDGET_CACHE</code>: TLS variable, cache of the budget's value for current task. Any budget operations will first write this variable, then write back to the slab when <code>budget_update</code>.</li>
-<li><code>BUDGET_SLAB</code>: Global variable, slab storage of all budget. It will give an index for first-time budget usage, which is used to index the budget in the slab.</li>
+<li><code>BUDGET_SLAB</code>: Global variable, slab storage of all budgets. It will give an index for first-time budget usage, which is used to index the budget in the slab.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="system-io-event-harvester---reactor"><a class="header" href="#system-io-event-harvester---reactor">System IO Event Harvester - Reactor</a></h1>
-<p>After all of the stuff we talk about, we'll now talk about the <code>Reactor</code>, the main source for event.
-Since you only need a event source to craft a reactor, it is possible that you can design a
-non-IO async runtime in Rust. However, <code>my-async</code>'s main focus is building a IO runtime,
+<p>After all the stuff we talk about, we'll now talk about the <code>Reactor</code>, the main source for event.
+Since you only need an event source to craft a reactor, it is possible that you can design a
+non-IO asynchronous runtime in Rust. However, <code>my-async</code>'s main focus is building a IO runtime,
 our reactor will stick to IO events.</p>
 <p>In this section, we'll talk about:</p>
 <ul>
@@ -2454,12 +2333,12 @@ our reactor will stick to IO events.</p>
 <li><code>Waker</code> management</li>
 </ul>
 <p>Let's get started...</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="io-event-registeration"><a class="header" href="#io-event-registeration">IO event registeration</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="io-event-registration"><a class="header" href="#io-event-registration">IO event registration</a></h1>
 <h2 id="reactor-struct-definition"><a class="header" href="#reactor-struct-definition"><code>Reactor</code> struct definition</a></h2>
 <p>Since our goal is to build an IO runtime, naturally we'll need to register IO
-events we want to watch so that we can use a event based approach.</p>
+events we want to watch so that we can use an event based approach.</p>
 <p>To achieve this, I use a library called <code>mio</code>, which is a library for non-blocking
-system IO that wraps epoll, IOCP, kqueue, etc.</p>
+system IO that wraps <code>epoll,</code> <code>IOCP,</code> <code>kqueue</code>, etc.</p>
 <p>The library provides:</p>
 <ul>
 <li><code>Poll</code> for polling system IO events.
@@ -2467,7 +2346,7 @@ system IO that wraps epoll, IOCP, kqueue, etc.</p>
 <li>Note that this is different from the <code>Poll</code> returned by <code>Future::poll()</code></li>
 </ul>
 </li>
-<li><code>Events</code> specificaslly for <code>Poll::wait()</code> to store returned events</li>
+<li><code>Events</code> specifically for <code>Poll::wait()</code> to store returned events</li>
 <li><code>Registry</code> that accept using reference to register events.</li>
 <li><code>Token</code> that wraps a <code>usize</code> as event's token.</li>
 </ul>
@@ -2490,7 +2369,7 @@ we can simply guard it with a one-time initialization atomic cell.</p>
 This is required as <code>mio</code> uses edge-triggered mode for the underlying system IO mechanism, without
 this you'll miss events under high loading scenarios.</p>
 <h2 id="event-handling"><a class="header" href="#event-handling">Event handling</a></h2>
-<p>First of all, the code:</p>
+<p>Firstly, the code:</p>
 <pre><code class="language-rust">static WAKER_SLAB: Lazy&lt;Slab&lt;Mutex&lt;Option&lt;Waker&gt;&gt;&gt;&gt; = Lazy::new(Slab::new);
 
 impl Reactor {
@@ -2592,16 +2471,16 @@ where
 }
 </code></pre>
 <ul>
-<li><code>WAKER_SLAB</code> provides a global waker slab that will return a index to access the waker after insertion.
+<li><code>WAKER_SLAB</code> provides a global waker slab that will return an index to access the waker after insertion.
 <ul>
 <li>The returned index will be used as the event token that is registered with <code>REGISTERY</code>.</li>
 <li>Since the same index may link to different wakers at different times, the entry is wrapped with <code>Mutex</code> to be able to replace contained <code>Waker</code>.</li>
 </ul>
 </li>
-<li><code>process_waker</code> will check whether a <code>Waker</code> is present when a event occurrs. If <code>WAKER_SLAB</code> doesnt' contained it or it's <code>None</code> at current state,mark return <code>false</code> to indicate that this is an extra wakeup that need to be handled after.</li>
+<li><code>process_waker</code> will check whether a <code>Waker</code> is present when an event occurs. If <code>WAKER_SLAB</code> doesn't contain it, or it's <code>None</code> at current state, mark return <code>false</code> to indicate that this is an extra wake-up that need to be handled after.</li>
 <li><code>add_waker</code> will check whether a <code>Waker</code> exists in <code>WAKER_SLAB</code> with the token provide. If exists, swap the old one out and wake the old one, and return <code>None</code>. Otherwise, insert the waker and return a valid token for the caller to update.
 <ul>
-<li>By default <code>IoWrapper</code> will use <code>usize::MAX</code> as token. This will insert the waker and update its token to a valid one, then it can use <code>register()</code> to register the event it need with the updated token.</li>
+<li>By default, <code>IoWrapper</code> will use <code>usize::MAX</code> as token. This will insert the waker and update its token to a valid one, then it can use <code>register()</code> to register the event it needs with the updated token.</li>
 </ul>
 </li>
 <li><code>check_extra_wakeups</code> will linearly check whether a <code>Waker</code> is currently present in <code>WAKER_SLAB</code> with scanned index in <code>extra_wakeups</code>.
@@ -2613,11 +2492,11 @@ where
 <div style="break-before: page; page-break-before: always;"></div><h1 id="poll-loop"><a class="header" href="#poll-loop">Poll loop</a></h1>
 <p>After all the stuff defined, there's one more problem remain: Where to call <code>Reactor::wait()</code>?</p>
 <ol>
-<li>Use a isolated thread specifically for the <code>Reactor</code> to do its stuff</li>
+<li>Use an isolated thread specifically for the <code>Reactor</code> to do its stuff</li>
 <li>Use a <code>Mutex</code> and make it a global to let workers call it.</li>
 </ol>
 <p>I choose the first one since <code>Poll::wait()</code> requires <code>&amp;mut</code> unique reference to call, and <code>check_extra_wakeups</code>
-will become a long critical section if there is loads of events that arrives before someone actually need it.
+will become a long critical section if there are loads of events that arrive before someone actually need it.
 The reason that not using main thread to do this is because that the main thread will have <code>Executor</code>'s message
 handling loop running.</p>
 <p>In <code>Executor</code> initialization, we set up a <code>poll_thread</code>:</p>
@@ -2645,11 +2524,11 @@ fn poll_thread() {
     }
 }
 </code></pre>
-<p>We use a waiting time of 100ms to prevent the all-blocking scenario: Every thread is waiting on something and
+<p>We use a waiting time of 100 ms to prevent the all-blocking scenario: Every thread is waiting on something and
 not able to process new events.
-This happens when I uses <code>reactor::wait(None)</code> for the <code>Reactor</code> to block until a readiness event comes in.
-Because of this, I changed it to 100ms waiting duration to make it not so active but keep running.
-I'me still researching on how to deal with this, but for the current state, I works like a charm.</p>
+This happens when it uses <code>reactor::wait(None)</code> for the <code>Reactor</code> to block until a readiness event comes in.
+Because of this, I changed it to 100 ms waiting duration to make it not so active but keep running.
+I'm still researching on how to deal with this, but for the current state, it works like a charm.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="load-balancing"><a class="header" href="#load-balancing">Load Balancing</a></h1>
 <p>Load balancing is always a problem when it comes to multiple workers.
 An efficient algorithm should:</p>
@@ -2659,37 +2538,16 @@ as there are no long tails in terms of worker execution time.</li>
 <li>Having a relatively small overhead that the algorithm won't
 take a large portion when analyzing the final elapsed time.</li>
 </ol>
-<p>Currently the <code>RoundRobinScheduler</code> uses Round-Robin, and <code>WorkStealingScheduler</code> and <code>HybridScheduler</code>
-will let the worker who comes first to get the task from the global task queue as they uses
+<p>Currently, the <code>RoundRobinScheduler</code> uses Round-Robin, and <code>WorkStealingScheduler</code> and <code>HybridScheduler</code>
+will let the worker who comes first to get the task from the global task queue as they use
 work-stealing.</p>
 <p>Further experiment needs to be conducted to find possibly better solution when it comes
 to distributing tasks from the global task queue. If one is found, the runtime may generate
 a better performance.</p>
-<p>One possible direction is to estimate the execution time an spawned task by some
+<p>One possible direction is to estimate the execution time a spawned task by some
 metrics and a heuristic function that can hopefully guesses the right worker to fill in.
 This can take quite amount of time to assess and implement, and possibly have a worse performance
 compare to current solutions.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="generic-message-payload"><a class="header" href="#generic-message-payload">Generic Message Payload</a></h1>
-<p>Currently the <code>FutureIndex</code> that is used on scheduling is hard-coded
-with a fixed set of fields, which can make trouble when a user tries
-to implement a scheduler that needs other payloads.</p>
-<p>A fast hack is that the <code>FutureIndex</code> can be altered with an extra field
-that is <code>Option&lt;Box&lt;dyn Any + Send&gt;&gt;</code>. As you can see, it is ugly.</p>
-<p>There are a few options that can be used as an solution:</p>
-<ol>
-<li>Serialize the extra payloads needed as a string. This is easy
-as we won't alter the main structure of the runtime. However, this
-will introduce extra dependencies and complexity as you need to deserialize multiple times
-each time when the scheduler need to access it. The increased amount of time is depending
-on the efficiency of the serialization framework and the format of the string.</li>
-<li>Add an associate type to the <code>Scheduler</code> trait that can specify the payload type and create
-a storage (slab or heap object pool) that contains that type. By this, the <code>FutureIndex</code> will
-have a new field that contains the key to access the storage and the <code>Scheduler</code> trait will
-add one more function that initiates the storage and return it. Further survey is needed
-to determine the implementation detail of this and check if it's doable. There's always
-a risk that at the end of the day, it is slower than the first solution with a fast serialization
-framework and a format that can be serialized at lightning speed.</li>
-</ol>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="reactor-abstraction-for-different-systems"><a class="header" href="#reactor-abstraction-for-different-systems">Reactor abstraction for different systems</a></h1>
 <p>Currently the <code>Reactor</code> is implemented with the <code>mio</code> library,
 which supports system IO on major systems. We can extend the <code>Reactor</code>
@@ -2722,7 +2580,7 @@ reactors.</p>
 </li>
 <li>Blog post: <a href="https://levelup.gitconnected.com/explained-how-does-async-work-in-rust-c406f411b2e2">https://levelup.gitconnected.com/explained-how-does-async-work-in-rust-c406f411b2e2</a>
 <ul>
-<li>This blog post has some nice explanation and graphs that gives me the general idea of an async runtime
+<li>This blog post has some nice explanation and graphs that give me the general idea of an asynchronous runtime
 and helps me quickly construct my initial runtime structure.</li>
 </ul>
 </li>
@@ -2733,7 +2591,7 @@ and helps me quickly construct my initial runtime structure.</li>
 <li>
 <p>The Node Experiment - Exploring Async Basics with Rust: <a href="https://cfsamson.github.io/book-exploring-async-basics/">https://cfsamson.github.io/book-exploring-async-basics/</a></p>
 <ul>
-<li>A piece of work that I found recently when finishing this document. It gives a great introduction to many
+<li>A piece of work that I found recently when finishing this document. It gives a great introduction to
 knowledge that you might need to know (like the OS part that this document didn't cover).</li>
 </ul>
 </li>
@@ -2748,9 +2606,9 @@ Prepare a translator if you can't read Chinese.</li>
 </li>
 <li>
 <p>Code of <code>tokio</code>, <code>async-std</code>, and <code>smol</code>: You probably can have an easier time when reading the code
-of these bigger projects compared to mine. The ultimate goal of <code>my-async</code> and this document
-is to help you to understand how an async IO runtime can be implemented and build a picture
-when reading these code.</p>
+of these bigger projects. The ultimate goal of <code>my-async</code> and this document
+is to help you to understand how an asynchronous IO runtime can be implemented and build a picture
+when reading the code.</p>
 </li>
 </ul>
 

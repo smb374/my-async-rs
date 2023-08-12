@@ -1,6 +1,8 @@
 # UPDATE: Redesigned Executor logic
+
 In the past few weeks before this page came out I have been reworking the logic
 of the `Executor` that currently:
+
 1. Make the message handler become an event handler of the `Reactor` that is triggered when a notification
    to the `Reactor` was made. `Reactor::wait` has a new argument that accepts this handler.
 2. Use scoped thread before further experiment that is related to lifetime is started as
@@ -8,10 +10,14 @@ of the `Executor` that currently:
    trait also have a new `setup_workers()` because of this.
 
 As a result, we can have one more worker that can execute the tasks.
+
 ## Code
+
 ### Reactor Change
+
 The `Reactor` will handle the event associated with `POLL_WAKE_TOKEN`,
 which is the token of the notifier, with the `notify_handler` passed as an argument:
+
 ```rust
 impl Reactor {
     // ...
@@ -47,11 +53,14 @@ impl Reactor {
     // ...
 }
 ```
-The returned boolean result will determine whether to shutdown the runtime.
+
+The returned boolean result will determine whether to shut down the runtime.
 
 ### Spawner Change
+
 For this design to work, we need to make all the spawning function defined by `Spawner`
 trigger the notifier after the message is sent:
+
 ```rust
 // This function will be called at the end of each of the spawn function that Spawner defines.
 pub(crate) fn notify_reactor() {
@@ -64,11 +73,14 @@ pub(crate) fn notify_reactor() {
 ```
 
 ### Executor Change
+
 The structure changes a lot here.
+
 1. The workers are initialized when `Executor::run()` is called, not when
-the `Executor` is initialized.
+   the `Executor` is initialized.
 2. The message handling code become an independent function and use non-blocking
-receive to prevent blocking on channel empty:
+   receive to prevent blocking on channel empty:
+
 ```rust
 fn message_handler(&mut self) -> bool {
     let mut result = false;
@@ -98,8 +110,10 @@ fn message_handler(&mut self) -> bool {
     result
 }
 ```
+
 3. The `run()` function is greatly simplified since we don't need to handle thread joining
-thanks to scoped thread and merged IO polling:
+   thanks to scoped thread and merged IO polling:
+
 ```rust
 fn run(mut self, reactor: &mut Reactor) -> io::Result<()> {
     // 'env lifetime

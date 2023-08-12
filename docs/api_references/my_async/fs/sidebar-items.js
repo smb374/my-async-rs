@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"type":[["File","[`File`][std::fs::File] wrapper type."]]};
+window.SIDEBAR_ITEMS = {"type":["File"]};

@@ -4,6 +4,7 @@ As shown before, we use a shared memory to store the result of the spawned futur
 shared memory into `JoinHandle` and return to the user.
 
 The `JoinHandle` is defined as:
+
 ```rust
 pub struct JoinHandle<T> {
     spawn_id: usize,
@@ -11,12 +12,15 @@ pub struct JoinHandle<T> {
     inner: Arc<Mutex<Option<T>>>,
 }
 ```
-where
-- `spawn_id` is the id of the spawned future.
+
+Where
+
+- `spawn_id` is the ID of the spawned future.
 - `registered` is a flag to check if the waker of it is registered.
 - `inner` is the shared memory.
 
 We can take a look at `join()` and `try_join()` with other structs and functions to see how it works:
+
 ```rust
 static JOIN_HANDLE_MAP: Lazy<RwLock<FxHashMap<usize, Waker>>> =
     Lazy::new(|| RwLock::new(FxHashMap::default()));
@@ -86,12 +90,13 @@ pub(super) fn wake_join_handle(index: usize) {
 Since we use a shared memory that is `Arc<Mutex<Option<T>>>`, the `try_join()` can be implemented easily
 by lock `inner` and take it. The `Option<T>`'s value can indicate the success or not.
 
-`join()` is a async function that will wait until the future of the handle finishes execution, that is,
+`join()` is a asynchronous function that will wait until the future of the handle finishes execution, that is,
 if `inner` is `None`, we register the waker of the context where you call `join()` to a map.
 The entry will use the spawned future's key (`spawn_id`) as its key so that the future can use the waker to wake
 the context where `join()` is being called.
 
 Take the following code as an example:
+
 ```rust
 async fn parent() {
     let handle = spawn(child());
@@ -103,11 +108,12 @@ async fn child() -> T {
     result
 }
 ```
+
 `handle` will use the waker from context `cx` that is used to poll `parent`, while the waker registration uses
 `child`'s index as its key so that `child` can wake `parent` to poll `handle.join()`.
 
 Since we need to use the key of the spawned future as its key to the waker map, we can only use
-a regular hashmap with a `RwLock` so that we can specify its key. This is the simplest way I've
-tried so far, otherwise we need to make more complicated code so that we don't need to use a hashmap.
+a regular hash map with a `RwLock` so that we can specify its key. This is the simplest way I've
+tried so far, otherwise we need to make more complicated code so that we don't need to use a hash map.
 
-Anyways, that's all for the `Executor`, we'll now move one to the `Scheduler`.
+Anyway, that's all for the `Executor`, we'll now move one to the `Scheduler`.

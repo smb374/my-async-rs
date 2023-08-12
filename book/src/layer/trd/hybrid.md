@@ -3,14 +3,15 @@
 This section described a Hybrid queue used with the Work-Stealing strategy.
 
 ## Why?
-Since the async runtime requires the task to be yielded if the I/O action
+
+Since the asynchronous runtime requires the task to be yielded if the I/O action
 returns `EWOULDBLOCK`/`EAGAIN`, a task may be interrupt multiple times before
 it actually progressed. This will happen if there are multiple tasks accessing
 the same resource at the same time, some tasks may unfortunately be yielded
 by the design way much more times than others.
 
 To encounter this problem, an obvious solution is to use a priority queue and
-set those with more yield count a higher prioritties to balance the possible
+set those with more yield count a higher priority to balance the possible
 yield count.
 
 But for me, a concurrent priority queue with a high performance is sadly
@@ -19,21 +20,25 @@ an idea to use a composed data structure, just like using two stacks to
 implement a queue.
 
 The priority of a task is included in `FutureIndex`, called `sleep_count`.
-`sleep_count` will be increased eachtime a related `Waker` is woke by the `Reactor`,
+`sleep_count` will be increased each time a related `Waker` is waked by the `Reactor`,
 that is, the task had yielded for once. When tasks are loaded into the `hot` queue,
-it will use this count as each task's priotrity.
+it will use this count as each task's priority.
 
 ## Structure
-The structure and the functions can be described by the follwoing diagram:
+
+The structure and the functions can be described by the following diagram:
 ![Hybrid Scheduler Queue](../../assets/Hybrid_Scheduler_Bright.png)
 
 The details can be found in the texts of the diagram.
 
 ## Modifications from `WorkStealingScheduler`
+
 This scheduler works pretty much the same as the `WorkStealingScheduler`, with some modifications.
 
 ### 1. `worker` queue
-The `worker` queue's type is replace by `TaskQueue` we defined:
+
+The `worker` queue's type is replaced by `TaskQueue` we defined:
+
 ```rust
 struct TaskQueue {
     cold: Ringbuf<FutureIndex>,
@@ -42,7 +47,9 @@ struct TaskQueue {
 ```
 
 ### 2. Run loop
+
 Because the `worker` is now using `TaskQueue` as its queue, we need to modify the run loop to the following:
+
 ```rust
 impl TaskRunner {
     fn run(&mut self) {
@@ -129,5 +136,6 @@ impl TaskRunner {
     }
 }
 ```
+
 As you can see, we replace all `worker` actions with `queue.cold`,
 and add a part to load task from `cold` to `hot` at the beginning in the `else` part.

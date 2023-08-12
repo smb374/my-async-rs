@@ -1,14 +1,17 @@
 # Poll loop
+
 After all the stuff defined, there's one more problem remain: Where to call `Reactor::wait()`?
-1. Use a isolated thread specifically for the `Reactor` to do its stuff
+
+1. Use an isolated thread specifically for the `Reactor` to do its stuff
 2. Use a `Mutex` and make it a global to let workers call it.
 
 I choose the first one since `Poll::wait()` requires `&mut` unique reference to call, and `check_extra_wakeups`
-will become a long critical section if there is loads of events that arrives before someone actually need it.
+will become a long critical section if there are loads of events that arrive before someone actually need it.
 The reason that not using main thread to do this is because that the main thread will have `Executor`'s message
 handling loop running.
 
 In `Executor` initialization, we set up a `poll_thread`:
+
 ```rust
 // Executor::new()...
 let poll_thread_handle = thread::Builder::new()
@@ -34,8 +37,9 @@ fn poll_thread() {
     }
 }
 ```
-We use a waiting time of 100ms to prevent the all-blocking scenario: Every thread is waiting on something and
+
+We use a waiting time of 100 ms to prevent the all-blocking scenario: Every thread is waiting on something and
 not able to process new events.
-This happens when I uses `reactor::wait(None)` for the `Reactor` to block until a readiness event comes in.
-Because of this, I changed it to 100ms waiting duration to make it not so active but keep running.
-I'me still researching on how to deal with this, but for the current state, I works like a charm.
+This happens when it uses `reactor::wait(None)` for the `Reactor` to block until a readiness event comes in.
+Because of this, I changed it to 100 ms waiting duration to make it not so active but keep running.
+I'm still researching on how to deal with this, but for the current state, it works like a charm.

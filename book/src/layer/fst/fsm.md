@@ -1,6 +1,7 @@
-# Future desugar - a Finite State Machine
+# Future internal - a Finite State Machine
 
-In Rust, we can create an async function as simple as the following code:
+In Rust, we can create an asynchronous function as simple as the following code:
+
 ```rust
 async fn async_func() {
     init_step();
@@ -12,7 +13,7 @@ async fn async_func() {
 ```
 
 From a user's perspective, we can quickly conclude that the function will run
-`f()`, `g()`, `h()` in order asynchrnously. But how this snippet is related
+`f()`, `g()`, `h()` in order asynchronously. But how this snippet is related
 to the `Future` trait? It turns out that the compiler will translate the code snippet
 into the following:
 
@@ -65,14 +66,16 @@ impl Future for AsyncFunc {
 }
 ```
 
-This code can be viewed as an finite state machine, and can be visualized as the following diagram:
+This code can be viewed as a finite state machine, and can be visualized as the following diagram:
 ![](https://i2.lensdump.com/i/RkBbkv.png)
 
 Since the code is compiled to a finite state machine, the state can store the arguments for the future to run,
 the return value of previous future execution, etc. Because of this, the use of `Pin` and `!Unpin` is necessary.
 
 ## Why use `Pin` and why the generated code implements `!Unpin`?
-Consider the following async block:
+
+Consider the following `async` block:
+
 ```rust
 async {
     let mut x = [0u8; 4096];
@@ -83,6 +86,7 @@ async {
 ```
 
 The compiler will generate the following structure:
+
 ```rust
 struct ReadToBuf<'a> {
     buf: &'a mut [u8],
@@ -95,7 +99,7 @@ struct AsyncBlock1 {
 ```
 
 We can see that the generated `AsyncBlock1` contains a future `ReadToBuf<'_>` that uses `&mut x` for reading.
-If this async block is moved, so will `x`, and since `x` is moved, the pointer in `ReadToBuf<'_>` can point
+If this `async` block is moved, so will `x`, and since `x` is moved, the pointer in `ReadToBuf<'_>` can point
 to an invalid location or dangle, causing undefined behavior. To prevent this, the generated `Future` object
 will always be `!Unpin` to enable the effect that `Pin` brings, and thus the `poll` function takes
 `self: Pin<&mut Self>` rather than `&mut self`.

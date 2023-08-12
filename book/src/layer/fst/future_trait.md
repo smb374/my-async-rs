@@ -1,4 +1,4 @@
-# Bone of async - Future trait
+# Future trait
 
 `Future` trait is the core of asynchronous IO in Rust.
 Without it, the `async`/`await` keyword won't work, and

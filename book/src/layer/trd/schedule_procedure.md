@@ -1,5 +1,5 @@
 # The procedure of task scheduling
-The procedure can be showned as a diagram:
+The procedure can be shown as a diagram:
 ![Schedule Procedure](../../assets/Schedule_Procedure_Bright.png)
 
 1. The command sources will send command to the receiver.

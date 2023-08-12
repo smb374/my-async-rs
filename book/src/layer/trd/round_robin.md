@@ -3,6 +3,7 @@
 This scheduler uses a Round-Robin style scheduling strategy.
 
 ## Structs
+
 ```rust
 enum Message {
     Close,
@@ -27,14 +28,16 @@ struct Worker {
     rx: Receiver<Message>,
 }
 ```
-- The injector of this scheduler is replaced by an array of senders as we uses Round-Robin.
+
+- The injector of this scheduler is replaced by an array of senders as we use Round-Robin.
 - Channels used:
-    - `task_tx`, `task_rx`: Channel for tasks. `task_tx` is copied to the waker and the threads array.
-        - Because of this, woke up tasks and new tasks shared the same channel and the channel can be used as the task queue.
-    - Worker `tx`, `rx`: Shutdown notifier.
-    - Scheduler `rx`: Commands receiver.
+  - `task_tx`, `task_rx`: Channel for tasks. `task_tx` is copied to the waker and the threads array.
+    - Because of this, woke up tasks and new tasks shared the same channel and the channel can be used as the task queue.
+  - Worker `tx`, `rx`: Shutdown notifier.
+  - Scheduler `rx`: Commands receiver.
 
 ## Scheduler implementation
+
 ```rust
 impl Scheduler for RoundRobinScheduler {
     fn init(size: usize) -> (Spawner, Self) {
@@ -62,10 +65,12 @@ impl Scheduler for RoundRobinScheduler {
     }
 }
 ```
-The `schedule` and `reschedule` simply get a index by `round`, and use the channel corresponding to the index to schedule th task.
+
+The `schedule` and `reschedule` simply get an index by `round`, and use the channel corresponding to the index to schedule the task.
 `shutdown` will simply use `tx` of every worker to send shutdown message.
 
 ### Initialization
+
 ```rust
 fn new(size: usize) -> (Spawner, Self) {
     let (tx, rx) = flume::unbounded();
@@ -96,9 +101,11 @@ fn new(size: usize) -> (Spawner, Self) {
     (spawner, scheduler)
 }
 ```
+
 Simply create the global spawner and the worker threads with channels introduced previously.
 
 ## Worker run loop
+
 ```rust
 impl Worker {
     fn run(&self) {
@@ -123,5 +130,6 @@ impl Worker {
     }
 }
 ```
+
 Simply wait both `task_rx` and `rx`. If `task_rx` has tasks, receive it and run it.
 If receive shutdown notification from `rx`, break the loop.

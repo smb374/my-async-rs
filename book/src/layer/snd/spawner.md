@@ -1,19 +1,22 @@
 # Spawner - message sender
+
 The sender half is defined as `Spawner`, which contains the sender half of the message passing channel.
 When the `Executor` initialize, it will also initialize a global `Spawner` for user to use `spawn()` and `shutdown()`.
 
-When calling `spawn()` or `Executor::block_on()`, the `Spawner` will do the following stufff before
-`ScheduleMessage::Schedule` is send:
+When calling `spawn()` or `Executor::block_on()`, the `Spawner` will do the following stuff before
+`ScheduleMessage::Schedule` is sent:
+
 1. Create a shared memory for the future handle to use
 2. Add extra code after the future need to spawned that
-    - Put the execution result to the shared memory.
-    - Check if it is called by `block_on`, if yes, shutdown the runtime.
+   - Put the execution result to the shared memory.
+   - Check if it is called by `block_on`, if yes, shutdown the runtime.
 3. Allocate the `Future` in global `Future` object pool and get its key.
 4. Construct the `FuturIndex` with the key and other payloads.
 5. Send `ScheduleMessage::Schedule` with the `FutureIndex`.
 6. Return the handle to the spawned future.
 
 The code:
+
 ```rust
 // Spawner::spawn_with_handle()
 pub fn spawn_with_handle<F>(&self, future: F, is_block: bool) -> JoinHandle<F::Output>

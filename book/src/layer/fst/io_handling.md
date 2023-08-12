@@ -7,7 +7,8 @@ Setting a file descriptor is easy by using `fcntl` to set the `O_NONBLOCK`.
 
 Next we'll talk about the error handling part.
 
-A non-blocking IO handling can be described by the following pseudo code:
+A non-blocking IO handling can be described by the following pseudocode:
+
 ```
 run_nbio(io):
     n <- io()
@@ -30,10 +31,12 @@ run_nbio(io):
 ```
 
 Basically the code will only handle two kinds of error itself: `EWOULDBLOCK` and `EINTERRUPT`:
+
 1. `EWOULDBLOCK` means that `io()` will block the thread, return `PENDING` to make the user try again later.
 2. `EINTERRUPT` means that an interrupt occurs when running `io()`, retry immediately.
 
 We can then bring this to Rust:
+
 ```rust
 // in IoWrapper::poll_ref()
 fn poll_ref<U, F>(

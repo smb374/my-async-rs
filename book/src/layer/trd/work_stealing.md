@@ -1,7 +1,9 @@
 # Work Stealing
+
 This scheduler implements the Work-Stealing strategy.
 
 ## Structs
+
 ```rust
 pub struct WorkStealingScheduler {
     _size: usize,
@@ -31,19 +33,21 @@ enum Message {
     Close,
 }
 ```
+
 - The injector is a channel used in SPMC condition.
-- The injector here will not perform any scheduling stategy (first comer takes first), as we uses Work-Stealing strategy.
+- The injector here will not perform any scheduling strategy (first comer takes first), as we use Work-Stealing strategy.
 - Channels used:
-    - `inject_sender`, `inject_receiver`: Injector.
-    - `notifier`, Worker `rx`: Broadcast `Message` to workers.
-        - Either shutdown or wake the workers up to get new tasks
-    - Worker `task_tx`, `task_rx`: Channel for waking up tasks. `task_tx` is copied to the waker.
-- Worker `worker` ringbuf is designed to have the Work-Stealing function.
-    - It's capable of `push`, `pop`, and create a stealer for other workers to steal task from it.
-    - The stealers are created on scheduler init and uses a `Arc` guarded slice for access.
-- The `wait_group` is used to synchronize the each Worker at shutdown phase.
+  - `inject_sender`, `inject_receiver`: Injector.
+  - `notifier`, Worker `rx`: Broadcast `Message` to workers.
+    - Either shutdown or wake the workers up to get new tasks
+  - Worker `task_tx`, `task_rx`: Channel for waking up tasks. `task_tx` is copied to the waker.
+- Worker `worker` ring buffer is designed to have the Work-Stealing function.
+  - It's capable of `push`, `pop`, and create a stealer for other workers to steal task from it.
+  - The stealers are created on scheduler init and uses a `Arc` guarded slice for access.
+- The `wait_group` is used to synchronize each Worker at shutdown phase.
 
 ## Scheduler implementation
+
 ```rust
 impl Scheduler for WorkStealingScheduler {
     fn init(size: usize) -> (Spawner, Self) {
@@ -79,10 +83,12 @@ impl Scheduler for WorkStealingScheduler {
     }
 }
 ```
+
 - `schedule`, `reschedule`: First push the task to be scheduled into the injector channel, then use the notifier to broadcast `Message::HaveTasks` to workers.
-- `shutdown`: First use `notifier` to broadcast `Message::Close`. The use `wait_group` to wait all the threads run to the point before exit, an then we join all the threads.
+- `shutdown`: First use `notifier` to broadcast `Message::Close`. The use `wait_group` to wait all the threads run to the point before exit, and then we join all the threads.
 
 ### Initialization
+
 ```rust
 fn new(size: usize) -> (Spawner, Self) {
     // 1.
@@ -134,10 +140,12 @@ fn new(size: usize) -> (Spawner, Self) {
     (spawner, scheduler)
 }
 ```
+
 1. Create global spawner, `wait_group`, `notifier`, injector channel, stealer array, and handlers array.
 2. Create worker threads with a Work-Stealing ringbuf bounded with a size of 4096.
 
 ## Worker run loop
+
 ```rust
 impl TaskRunner {
     fn run(&self) {
@@ -216,15 +224,16 @@ impl TaskRunner {
     }
 }
 ```
+
 1. If `worker` is not empty, pop and process a task.
-2. Non-blocking receive all tasks that is woke up.
-    - If `wake_count > 0`, continue the loop.
+2. Non-blocking receive all tasks that is waked up.
+   - If `wake_count > 0`, continue the loop.
 3. Non-blocking receive a task that is queued in the injector.
-    - If success, continue the loop.
-4. Try to steal a task using the stalers recorded in the `stealers` array.
-    - If success, continue the loop.
+   - If success, continue the loop.
+4. Try to steal a task using the stealers recorded in the `stealers` array.
+   - If success, continue the loop.
 5. Block receive 1 woke up task or notifications that is `HaveTasks` or `Close`.
-    - `Close` indicates that its time to shutdown, break run loop.
-    - `HaveTasks` means there tasks scheduled/rescheduled. Continue the loop and run through step 3.
+   - `Close` indicates that it's time to shut down, break run loop.
+   - `HaveTasks` means there tasks scheduled/rescheduled. Continue the loop and run through step 3.
 
 The `steal_others` make use of Rust's lazy iterator behavior, that it won't steal over 1 task, which is the first one that successes.

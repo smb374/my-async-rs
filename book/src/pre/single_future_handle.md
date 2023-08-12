@@ -2,9 +2,10 @@
 
 Since the compiler will generate any `async fn` functions as `Future` objects,
 the generic type will be a hurdle to program, allocating these `Future` objects
-as boxed trait objects is more sensable and easier to program.
+as boxed trait objects is more sensible and easier to program.
 
 First we define a `BoxedLocal<T>` type alias and `BoxedFuture` type:
+
 ```rust ,noplaypen
 type BoxedLocal<T> = Pin<Box<dyn Future<Output = T> + 'static>>;
 
@@ -13,11 +14,12 @@ struct BoxedFuture {
 }
 ```
 
-Here we use `RefCell` for internal mutability and we assumed that all
-enclosed should return `std::io::Result<()>` as `Future` requires to mutate it self
-by its trait definition and most of the tasks are IO bounded to be used under async environments.
+Here we use `RefCell` for internal mutability, and we assumed that all
+enclosed should return `std::io::Result<()>` as `Future` requires mutating itself
+by its trait definition and most of the tasks are IO bounded to be used under asynchronous environments.
 
 To handle the underlying `async fn`, we define the `run` function as the following:
+
 ```rust
 impl BoxedFuture {
     fn run(&self, index: &FutureIndex, tx: Sender<FutureIndex>) -> bool {
@@ -53,6 +55,7 @@ impl BoxedFuture {
 ```
 
 The process goes by:
+
 1. Check if it's done already for handling spurious call.
 2. Create a waker that sends the index of itself back to process queue.
 3. Create a `Context` for future polling using the waker we've just created.
