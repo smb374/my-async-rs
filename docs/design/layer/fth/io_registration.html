@@ -184,13 +184,17 @@ this you'll miss events under high loading scenarios.</p>
 <pre><code class="language-rust">static WAKER_SLAB: Lazy&lt;Slab&lt;Mutex&lt;Option&lt;Waker&gt;&gt;&gt;&gt; = Lazy::new(Slab::new);
 
 impl Reactor {
-    pub fn wait(&amp;mut self, timeout: Option&lt;Duration&gt;) -&gt; io::Result&lt;bool&gt; {
+    pub fn wait&lt;F&gt;(&amp;mut self, timeout: Option&lt;Duration&gt;, mut notify_handler: F) -&gt; io::Result&lt;bool&gt;
+    where
+        F: FnMut() -&gt; bool,
+    {
+        let mut result: bool = false;
         self.poll.poll(&amp;mut self.events, timeout)?;
         if !self.events.is_empty() {
             log::debug!(&quot;Start process events.&quot;);
             for e in self.events.iter() {
                 if e.token() == POLL_WAKE_TOKEN {
-                    return Ok(true);
+                    result = notify_handler();
                 }
                 let idx = e.token().0;
                 let waker_processed = process_waker(idx, |guard| {
@@ -204,7 +208,7 @@ impl Reactor {
                 }
             }
         }
-        Ok(false)
+        Ok(result)
     }
     pub fn check_extra_wakeups(&amp;mut self) -&gt; bool {
         let mut event_checked = false;
@@ -288,6 +292,8 @@ where
 <li>Since the same index may link to different wakers at different times, the entry is wrapped with <code>Mutex</code> to be able to replace contained <code>Waker</code>.</li>
 </ul>
 </li>
+<li><code>wait</code> will trigger <code>poll</code> to harvest events for processing. If the token matches the <code>POLL_WAKE_TOKEN</code>,
+it will use the passed <code>notify_handler</code> to perform message handling.</li>
 <li><code>process_waker</code> will check whether a <code>Waker</code> is present when an event occurs. If <code>WAKER_SLAB</code> doesn't contain it, or it's <code>None</code> at current state, mark return <code>false</code> to indicate that this is an extra wake-up that need to be handled after.</li>
 <li><code>add_waker</code> will check whether a <code>Waker</code> exists in <code>WAKER_SLAB</code> with the token provide. If exists, swap the old one out and wake the old one, and return <code>None</code>. Otherwise, insert the waker and return a valid token for the caller to update.
 <ul>

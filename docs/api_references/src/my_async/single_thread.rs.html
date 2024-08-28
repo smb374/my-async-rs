@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `my-async/src/single_thread.rs`."><title>single_thread.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-f3501f0f5ae15dfb.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="my_async" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.0 (8ede3aae2 2023-07-12)" data-search-js="search-4926e5fc22a5646a.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../static.files/source-script-11255107d0a65077.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-f0540c1d82cde29b.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../my_async/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `my-async/src/single_thread.rs`."><title>single_thread.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-081576b923113409.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="my_async" data-themes="" data-resource-suffix="" data-rustdoc-version="1.79.0 (129f3b996 2024-06-10)" data-channel="1.79.0" data-search-js="search-bf21c90c8c1d92b1.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-e32f0c247825364d.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-09095024cf37855e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../my_async/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Type ‘S’ or ‘/’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings">Settings</a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -313,7 +313,7 @@
 //!
 //! This executor is capable of executing futures without priority.
 //! To spawn a future on it, use [`spawn()`] to add a future to its queue, and use
-//! [`Executor::block_on()`] to block on a single main future until it&#39;s finished.
+//! [`Executor::block_on()`] to block on a single main future until it's finished.
 //!
 //! You need to at least block on one future in order to run this executor.
 //!
@@ -368,12 +368,12 @@
 <span class="kw">use </span>sharded_slab::{Clear, Pool};
 <span class="kw">use </span>waker_fn::waker_fn;
 
-<span class="macro">thread_local! </span>{
+<span class="macro">thread_local!</span> {
     <span class="kw">static </span>SPAWNER: RefCell&lt;<span class="prelude-ty">Option</span>&lt;Spawner&gt;&gt; = RefCell::new(<span class="prelude-val">None</span>);
     <span class="kw">static </span>FUTURE_POOL: Pool&lt;BoxedFuture&gt; = Pool::new();
 }
 
-<span class="kw">type </span>BoxedLocal&lt;T&gt; = Pin&lt;Box&lt;<span class="kw">dyn </span>Future&lt;Output = T&gt; + <span class="lifetime">&#39;static</span>&gt;&gt;;
+<span class="kw">type </span>BoxedLocal&lt;T&gt; = Pin&lt;Box&lt;<span class="kw">dyn </span>Future&lt;Output = T&gt; + <span class="lifetime">'static</span>&gt;&gt;;
 
 <span class="attr">#[derive(Clone, Copy, Eq)]
 </span><span class="kw">struct </span>FutureIndex {
@@ -420,13 +420,13 @@
                 <span class="comment">// sleep_count: index.sleep_count + 1,
             </span>};
             <span class="kw">let </span>waker = waker_fn(<span class="kw">move </span>|| {
-                tx.send(new_index).expect(<span class="string">&quot;Too many message queued!&quot;</span>);
+                tx.send(new_index).expect(<span class="string">"Too many message queued!"</span>);
             });
             <span class="kw">let </span>cx = <span class="kw-2">&amp;mut </span>Context::from_waker(<span class="kw-2">&amp;</span>waker);
             <span class="kw">match </span>fut.as_mut().poll(cx) {
                 Poll::Ready(r) =&gt; {
                     <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = r {
-                        <span class="macro">log::error!</span>(<span class="string">&quot;Error occurred when executing future: {}&quot;</span>, e);
+                        <span class="macro">log::error!</span>(<span class="string">"Error occurred when executing future: {}"</span>, e);
                     }
                     <span class="bool-val">true
                 </span>}
@@ -459,7 +459,7 @@
     <span class="doccomment">/// Create executor instance for [`spawn()`] and [`Executor::block_on()`].
     ///
     /// Yout should create the [`Executor`] instance first before trying to spawn any future,
-    /// otherwise it won&#39;t have any effect.
+    /// otherwise it won't have any effect.
     </span><span class="kw">pub fn </span>new() -&gt; <span class="self">Self </span>{
         <span class="kw">let </span>(tx, rx) = flume::unbounded();
         <span class="kw">let </span>(task_tx, task_rx) = flume::unbounded();
@@ -476,19 +476,19 @@
     <span class="kw">fn </span>run(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
         <span class="kw">let </span><span class="kw-2">mut </span>reactor = reactor::Reactor::default();
         reactor.setup_registry();
-        <span class="lifetime">&#39;outer</span>: <span class="kw">loop </span>{
+        <span class="lifetime">'outer</span>: <span class="kw">loop </span>{
             <span class="kw">if let </span><span class="prelude-val">Some</span>(index) = <span class="self">self</span>.queue.pop_back() {
                 FUTURE_POOL.with(|p| {
                     <span class="kw">if let </span><span class="prelude-val">Some</span>(boxed) = p.get(index.key) {
                         <span class="kw">let </span>finished = boxed.run(<span class="kw-2">&amp;</span>index, <span class="self">self</span>.task_tx.clone());
                         <span class="kw">if </span>finished &amp;&amp; !p.clear(index.key) {
                             <span class="macro">log::error!</span>(
-                                <span class="string">&quot;Failed to remove completed future with index = {} from pool.&quot;</span>,
+                                <span class="string">"Failed to remove completed future with index = {} from pool."</span>,
                                 index.key
                             );
                         }
                     } <span class="kw">else </span>{
-                        <span class="macro">log::error!</span>(<span class="string">&quot;Future with index = {} is not in pool.&quot;</span>, index.key);
+                        <span class="macro">log::error!</span>(<span class="string">"Future with index = {} is not in pool."</span>, index.key);
                     }
                 });
             } <span class="kw">else </span>{
@@ -500,7 +500,7 @@
                             <span class="self">self</span>.queue.push_front(index);
                         }
                         <span class="prelude-val">Err</span>(TryRecvError::Empty) =&gt; <span class="kw">break</span>,
-                        <span class="prelude-val">Err</span>(TryRecvError::Disconnected) =&gt; <span class="kw">break </span><span class="lifetime">&#39;outer</span>,
+                        <span class="prelude-val">Err</span>(TryRecvError::Disconnected) =&gt; <span class="kw">break </span><span class="lifetime">'outer</span>,
                     }
                 }
                 <span class="kw">if </span>wakeup_count &gt; <span class="number">0 </span>{
@@ -512,7 +512,7 @@
                     }
                     <span class="prelude-val">Err</span>(TryRecvError::Empty) =&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = reactor.wait(<span class="prelude-val">Some</span>(Duration::from_millis(<span class="number">50</span>)), || <span class="bool-val">false</span>) {
-                            <span class="macro">log::error!</span>(<span class="string">&quot;reactor wait error: {}, exit&quot;</span>, e);
+                            <span class="macro">log::error!</span>(<span class="string">"reactor wait error: {}, exit"</span>, e);
                             <span class="kw">break</span>;
                         }
                     }
@@ -525,30 +525,30 @@
     ///
     /// The executor will continue to run until this future finishes.
     ///
-    /// You can imagine that this will execute the &quot;main&quot; future function
+    /// You can imagine that this will execute the "main" future function
     /// to complete before the executor shutdown.
     </span><span class="kw">pub fn </span>block_on&lt;F&gt;(<span class="kw-2">mut </span><span class="self">self</span>, future: F) -&gt; F::Output
     <span class="kw">where
-        </span>F: Future + <span class="lifetime">&#39;static</span>,
+        </span>F: Future + <span class="lifetime">'static</span>,
     {
         <span class="kw">let </span>result_arc: Rc&lt;RefCell&lt;<span class="prelude-ty">Option</span>&lt;F::Output&gt;&gt;&gt; = Rc::new(RefCell::new(<span class="prelude-val">None</span>));
         <span class="kw">let </span>clone = Rc::clone(<span class="kw-2">&amp;</span>result_arc);
         spawn(<span class="kw">async move </span>{
             <span class="kw">let </span>result = future.<span class="kw">await</span>;
-            <span class="comment">// should put any result inside the arc, even if it&#39;s `()`!
+            <span class="comment">// should put any result inside the arc, even if it's `()`!
             </span>clone.borrow_mut().replace(result);
-            <span class="macro">log::debug!</span>(<span class="string">&quot;Blocked future finished.&quot;</span>);
+            <span class="macro">log::debug!</span>(<span class="string">"Blocked future finished."</span>);
             shutdown();
             <span class="prelude-val">Ok</span>(())
         });
-        <span class="macro">log::info!</span>(<span class="string">&quot;Start blocking...&quot;</span>);
+        <span class="macro">log::info!</span>(<span class="string">"Start blocking..."</span>);
         <span class="self">self</span>.run();
-        <span class="macro">log::debug!</span>(<span class="string">&quot;Waiting result...&quot;</span>);
+        <span class="macro">log::debug!</span>(<span class="string">"Waiting result..."</span>);
         <span class="kw">let </span><span class="kw-2">mut </span>guard = result_arc.borrow_mut();
         <span class="kw">let </span>result = guard.take();
         <span class="macro">assert!</span>(
             result.is_some(),
-            <span class="string">&quot;The blocked future should produce a return value before the execution ends.&quot;
+            <span class="string">"The blocked future should produce a return value before the execution ends."
         </span>);
         result.unwrap()
     }
@@ -561,7 +561,7 @@
                 spawner
                     .tx
                     .send(Message::Close)
-                    .expect(<span class="string">&quot;Message queue is full.&quot;</span>);
+                    .expect(<span class="string">"Message queue is full."</span>);
             }
         });
     }
@@ -576,7 +576,7 @@
 <span class="kw">impl </span>Spawner {
     <span class="kw">fn </span>spawn&lt;F&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, future: F)
     <span class="kw">where
-        </span>F: Future&lt;Output = io::Result&lt;()&gt;&gt; + <span class="lifetime">&#39;static</span>,
+        </span>F: Future&lt;Output = io::Result&lt;()&gt;&gt; + <span class="lifetime">'static</span>,
     {
         <span class="kw">let </span>key = FUTURE_POOL.with(|p| {
             p.create_with(|seat| {
@@ -586,22 +586,22 @@
         });
         <span class="self">self</span>.tx
             .send(Message::Run(FutureIndex { key }))
-            .expect(<span class="string">&quot;too many task queued&quot;</span>);
+            .expect(<span class="string">"too many task queued"</span>);
     }
     <span class="kw">fn </span>shutdown(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-        <span class="self">self</span>.tx.send(Message::Close).expect(<span class="string">&quot;too many task queued&quot;</span>);
+        <span class="self">self</span>.tx.send(Message::Close).expect(<span class="string">"too many task queued"</span>);
     }
 }
 
-<span class="doccomment">/// Spawns a future to executor&#39;s queue.
+<span class="doccomment">/// Spawns a future to executor's queue.
 ///
 /// Note that until you create [`Executor`] instance,
-/// this fuction won&#39;t have any effect.
+/// this fuction won't have any effect.
 ///
-/// Currently doesn&#39;t implement join handle in single thread.
+/// Currently doesn't implement join handle in single thread.
 </span><span class="kw">pub fn </span>spawn&lt;F&gt;(fut: F)
 <span class="kw">where
-    </span>F: Future&lt;Output = io::Result&lt;()&gt;&gt; + <span class="lifetime">&#39;static</span>,
+    </span>F: Future&lt;Output = io::Result&lt;()&gt;&gt; + <span class="lifetime">'static</span>,
 {
     SPAWNER.with(|s| {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(spawner) = s.borrow().as_ref() {

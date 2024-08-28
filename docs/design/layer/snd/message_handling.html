@@ -156,37 +156,15 @@
 <p>The execution system is done by the <code>Scheduler</code>, and we also need to call <code>Reactor</code> to look up for
 IO events to wake tasks. By these facts and the above pseudocode, the <code>Executor</code> can be viewed
 as an abstraction layer that handles messages and relay the actual actions to <code>Scheduler</code> and <code>Reactor</code>.</p>
-<p>In the code, the <code>Executor</code> will do almost the same thing with one more message to handle. The <code>Executor</code>
-will also spawn a thread for <code>Reactor</code> to run, as the IO events will need to be checked separately if
-we have the message handling loop in the main thread.</p>
 <p>The <code>Executor</code> also provides a function: <code>block_on</code>. The asynchronous function that's spawned by the <code>block_on</code> function
 is just like the <code>main</code> function in a normal program: the runtime won't exit before this function ends without
 further errors or interrupts occur during runtime.</p>
-<p>The complete pseudocode for the <code>Executor</code>:</p>
-<pre><code>Init():
-    Initialize the Scheduler.
-    Spawn a thread to init and run the Reactor.
-    Set error hook for graceful shutdown to clean storages.
-    Return instance of self
-
-HandleRequests():
-    while true:
-        r &lt;- GetRequest()
-        match r:
-            Spawn(Task) -&gt; Put the Task to the execution system
-            Shutdown -&gt; break
-
-Run():
-    HandleRequests()
-    Send Shutdown message to the Reactor
-    Join the thread for the Reactor
-
-block_on(f):
-    handle &lt;- spawn(f())
-    Run()
-    Get the result from handle
-    Return result of f()
-</code></pre>
+<p>In the current implementation, <code>Executor::new()</code> will set up a channel for scheduler message to pass, and
+<code>Executor::block_on()</code> will act as an entry point to set up the <code>Reactor</code>, the global registry to register
+IO events, a notifier to the <code>Reactor</code>, and the worker threads of the <code>Scheduler</code>.
+The message handler is executed when the <code>Reactor</code> is notified by the notifier, which means there are at least one
+new messages to be handled inside the message passing channel. For simplicity, the <code>Reactor</code> is notified
+whenever a task is spawned in current implementation.</p>
 <p>Next, we'll talk about the message passing in this design.</p>
 
                     </main>

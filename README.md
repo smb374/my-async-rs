@@ -1,11 +1,22 @@
-<div align="center">
-
 # my-async-rs
 
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/smb374/my-async-rs/Checks/main?label=main&logo=Github&style=flat-square)
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/smb374/my-async-rs/Checks/dev?label=dev&logo=Github&style=flat-square)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/smb374/my-async-rs/Audit?color=blue&label=dpendency%20audit&logo=Rust&style=flat-square)
+An example asynchronous runtime in Rust.
 
-An example async runtime.
+This project is primarily served as the codebase of my Graduation Project,
+_Analysis and Research on Rust's Asynchronous I/O Runtime Approach_, advised by
+[Prof. Chun-Ying Huang](https://people.cs.nycu.edu.tw/~chuang/) at National
+Yang Ming Chiao Tung University for my BSc degree in Computer Science.
 
-</div>
+## Purpose
+
+The purpose of this project is to serve as an easy source for people to
+understand what an implementation of a async runtime in Rust could look like
+before looking at much more complex codebases like those of
+[tokio](https://github.com/tokio-rs/tokio) and
+[async-std](https://github.com/async-rs/async-std).
+
+## Documents
+
+Design Documents can be found at [Here](https://smb374.github.io/my-async-rs/design/).
+
+<!-- vim: set colorcolumn=80 textwidth=80: -->

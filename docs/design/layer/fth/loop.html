@@ -145,45 +145,44 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="poll-loop"><a class="header" href="#poll-loop">Poll loop</a></h1>
-<p>After all the stuff defined, there's one more problem remain: Where to call <code>Reactor::wait()</code>?</p>
-<ol>
-<li>Use an isolated thread specifically for the <code>Reactor</code> to do its stuff</li>
-<li>Use a <code>Mutex</code> and make it a global to let workers call it.</li>
-</ol>
-<p>I choose the first one since <code>Poll::wait()</code> requires <code>&amp;mut</code> unique reference to call, and <code>check_extra_wakeups</code>
-will become a long critical section if there are loads of events that arrive before someone actually need it.
-The reason that not using main thread to do this is because that the main thread will have <code>Executor</code>'s message
-handling loop running.</p>
-<p>In <code>Executor</code> initialization, we set up a <code>poll_thread</code>:</p>
-<pre><code class="language-rust">// Executor::new()...
-let poll_thread_handle = thread::Builder::new()
-    .name(&quot;poll_thread&quot;.to_string())
-    .spawn(move || Self::poll_thread())
-    .expect(&quot;Failed to spawn poll_thread.&quot;);
-// ...
-fn poll_thread() {
-    let mut reactor = reactor::Reactor::default();
-    reactor.setup_registry();
-    loop {
-        // check if wakeups that is not used immediately is needed now.
-        reactor.check_extra_wakeups();
-        match reactor.wait(Some(Duration::from_millis(100))) {
-            Ok(true) =&gt; break,
-            Ok(false) =&gt; continue,
-            Err(ref e) if e.kind() == io::ErrorKind::Interrupted =&gt; continue,
-            Err(e) =&gt; {
-                log::error!(&quot;reactor wait error: {}, exit poll thread&quot;, e);
-                break;
+<p>The poll loop is the main loop that the <code>Executor</code> runs, as discussed in that section:</p>
+<pre><code class="language-rust">// Executor::run()
+fn run(mut self, reactor: &amp;mut Reactor) -&gt; io::Result&lt;()&gt; {
+    // 'env
+    thread::scope(|s| -&gt; io::Result&lt;()&gt; {
+        // 'scope
+        log::debug!(&quot;Spawn threads under scope...&quot;);
+        self.scheduler.setup_workers(s);
+        log::info!(&quot;Runtime booted up, start execution...&quot;);
+        loop {
+            reactor.check_extra_wakeups();
+            match reactor.wait(Some(Duration::from_millis(100)), || self.message_handler()) {
+                Ok(false) =&gt; {}
+                Ok(true) =&gt; break,
+                Err(e) =&gt; match e.kind() {
+                    io::ErrorKind::Interrupted | io::ErrorKind::WouldBlock =&gt; {}
+                    _ =&gt; {
+                        log::error!(&quot;Reactor wait error: {}, shutting down...&quot;, e);
+                        break;
+                    }
+                },
             }
         }
-    }
+        log::info!(&quot;Execution completed, shutting down...&quot;);
+        // shutdown worker threads
+        self.scheduler.shutdown();
+        log::info!(&quot;Runtime shutdown complete.&quot;);
+        Ok(())
+    })?;
+    Ok(())
 }
 </code></pre>
-<p>We use a waiting time of 100 ms to prevent the all-blocking scenario: Every thread is waiting on something and
-not able to process new events.
-This happens when it uses <code>reactor::wait(None)</code> for the <code>Reactor</code> to block until a readiness event comes in.
-Because of this, I changed it to 100 ms waiting duration to make it not so active but keep running.
-I'm still researching on how to deal with this, but for the current state, it works like a charm.</p>
+<p>Here scoped thread is used to encapsulate the lifetime of <code>Scheduler</code>'s worker threads.</p>
+<p>In each iteration, the <code>Reactor</code> will first check if any unused events are now required,
+as <code>mio</code> defaults to edge triggered mode. Then, it will run <code>wait</code> to wait for any
+event or schedule message income for 100 ms.
+The loop will keep running until a shutdown message or an IO error other than
+<code>EINTR</code> or <code>EWOULDBLOCK</code> occurs.</p>
 
                     </main>
 

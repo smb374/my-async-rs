@@ -1290,37 +1290,15 @@ Now, let's talk about how we can design the <code>Executor</code> we need with t
 <p>The execution system is done by the <code>Scheduler</code>, and we also need to call <code>Reactor</code> to look up for
 IO events to wake tasks. By these facts and the above pseudocode, the <code>Executor</code> can be viewed
 as an abstraction layer that handles messages and relay the actual actions to <code>Scheduler</code> and <code>Reactor</code>.</p>
-<p>In the code, the <code>Executor</code> will do almost the same thing with one more message to handle. The <code>Executor</code>
-will also spawn a thread for <code>Reactor</code> to run, as the IO events will need to be checked separately if
-we have the message handling loop in the main thread.</p>
 <p>The <code>Executor</code> also provides a function: <code>block_on</code>. The asynchronous function that's spawned by the <code>block_on</code> function
 is just like the <code>main</code> function in a normal program: the runtime won't exit before this function ends without
 further errors or interrupts occur during runtime.</p>
-<p>The complete pseudocode for the <code>Executor</code>:</p>
-<pre><code>Init():
-    Initialize the Scheduler.
-    Spawn a thread to init and run the Reactor.
-    Set error hook for graceful shutdown to clean storages.
-    Return instance of self
-
-HandleRequests():
-    while true:
-        r &lt;- GetRequest()
-        match r:
-            Spawn(Task) -&gt; Put the Task to the execution system
-            Shutdown -&gt; break
-
-Run():
-    HandleRequests()
-    Send Shutdown message to the Reactor
-    Join the thread for the Reactor
-
-block_on(f):
-    handle &lt;- spawn(f())
-    Run()
-    Get the result from handle
-    Return result of f()
-</code></pre>
+<p>In the current implementation, <code>Executor::new()</code> will set up a channel for scheduler message to pass, and
+<code>Executor::block_on()</code> will act as an entry point to set up the <code>Reactor</code>, the global registry to register
+IO events, a notifier to the <code>Reactor</code>, and the worker threads of the <code>Scheduler</code>.
+The message handler is executed when the <code>Reactor</code> is notified by the notifier, which means there are at least one
+new messages to be handled inside the message passing channel. For simplicity, the <code>Reactor</code> is notified
+whenever a task is spawned in current implementation.</p>
 <p>Next, we'll talk about the message passing in this design.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="passing-messages"><a class="header" href="#passing-messages">Passing messages</a></h1>
 <p>According to the previous section, we have two commands to handle:</p>
@@ -1386,25 +1364,24 @@ When the <code>Executor</code> initialize, it will also initialize a global <cod
 <li>Allocate the <code>Future</code> in global <code>Future</code> object pool and get its key.</li>
 <li>Construct the <code>FuturIndex</code> with the key and other payloads.</li>
 <li>Send <code>ScheduleMessage::Schedule</code> with the <code>FutureIndex</code>.</li>
+<li>Notify the <code>Reactor</code> that a task is spawned.</li>
 <li>Return the handle to the spawned future.</li>
 </ol>
 <p>The code:</p>
-<pre><code class="language-rust">// Spawner::spawn_with_handle()
-pub fn spawn_with_handle&lt;F&gt;(&amp;self, future: F, is_block: bool) -&gt; JoinHandle&lt;F::Output&gt;
+<pre><code class="language-rust">// Allocates the future in FUTURE_POOL and set up result state.
+pub(crate) fn alloc_future&lt;F&gt;(future: F, is_block: bool) -&gt; (FutureIndex, JoinHandle&lt;F::Output&gt;)
 where
     F: Future + Send + 'static,
     F::Output: Send + 'static,
 {
     // Step 1.
     let result_arc: Arc&lt;Mutex&lt;Option&lt;F::Output&gt;&gt;&gt; = Arc::new(Mutex::new(None));
-    // Step 2.
     let clone = result_arc.clone();
+    // Step 2.
     let spawn_fut = async move {
         let output = future.await;
-        // Store the result.
         let mut guard = clone.lock();
         guard.replace(output);
-        // Check if the function is called by `Executor::block_on()`
         if is_block {
             log::info!(&quot;Shutting down...&quot;);
             shutdown();
@@ -1417,29 +1394,43 @@ where
             seat.future.get_mut().replace(spawn_fut.boxed());
         })
         .unwrap();
-    // Used in auto task yielding if enabled.
+    // Setup default budget for the task. Used when BudgetFuture is used.
     let budget_index = BUDGET_SLAB
         .insert(AtomicUsize::new(DEFAULT_BUDGET))
         .unwrap();
-    // Step 4., Step 5.
-    self.tx
-        .send(ScheduleMessage::Schedule(FutureIndex {
-            key,
-            budget_index,
-            sleep_count: 0,
-        }))
-        .expect(&quot;Failed to send message&quot;);
-    // Step 6.
-    JoinHandle {
+    // Step 4.
+    let handle = JoinHandle {
         spawn_id: key,
         registered: AtomicBool::new(false),
         inner: result_arc,
-    }
+    };
+    // Setup the index for scheduling.
+    let index = FutureIndex {
+        key,
+        budget_index,
+        sleep_count: 0,
+    };
+    (index, handle)
+}
+
+// Spawner::spawn_with_handle()
+pub fn spawn_with_handle&lt;F&gt;(&amp;self, future: F, is_block: bool) -&gt; JoinHandle&lt;F::Output&gt;
+where
+    F: Future + Send + 'static,
+    F::Output: Send + 'static,
+{
+    let (index, handle) = alloc_future(future, is_block);
+    // Step 5.
+    self.tx
+        .send(ScheduleMessage::Schedule(index))
+        .expect(&quot;Failed to send message&quot;);
+    notify_reactor();
+    handle
 }
 </code></pre>
-<p>For, <code>Shutdown</code> and <code>Reschedule</code>, the implementation is simple: simply send the corresponding message with necessary arguments.
-We can also define <code>spawn()</code> and <code>shutdown()</code> now as their just a wrapper to call the global spawner and use its method call
-to send messages to the <code>Executor</code>.</p>
+<p>For, <code>Shutdown</code> and <code>Reschedule</code>, the implementation is simple: simply send the corresponding message with necessary
+arguments. We can also define <code>spawn()</code> and <code>shutdown()</code> now as their just a wrapper to
+call the global spawner and use its method call to send messages to the <code>Executor</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="message-payload"><a class="header" href="#message-payload">Message payload</a></h1>
 <p>The code in the previous section shows that the <code>FutureIndex</code> contains two extra payloads.
 The two payloads are related to scheduling, that:</p>
@@ -2373,13 +2364,17 @@ this you'll miss events under high loading scenarios.</p>
 <pre><code class="language-rust">static WAKER_SLAB: Lazy&lt;Slab&lt;Mutex&lt;Option&lt;Waker&gt;&gt;&gt;&gt; = Lazy::new(Slab::new);
 
 impl Reactor {
-    pub fn wait(&amp;mut self, timeout: Option&lt;Duration&gt;) -&gt; io::Result&lt;bool&gt; {
+    pub fn wait&lt;F&gt;(&amp;mut self, timeout: Option&lt;Duration&gt;, mut notify_handler: F) -&gt; io::Result&lt;bool&gt;
+    where
+        F: FnMut() -&gt; bool,
+    {
+        let mut result: bool = false;
         self.poll.poll(&amp;mut self.events, timeout)?;
         if !self.events.is_empty() {
             log::debug!(&quot;Start process events.&quot;);
             for e in self.events.iter() {
                 if e.token() == POLL_WAKE_TOKEN {
-                    return Ok(true);
+                    result = notify_handler();
                 }
                 let idx = e.token().0;
                 let waker_processed = process_waker(idx, |guard| {
@@ -2393,7 +2388,7 @@ impl Reactor {
                 }
             }
         }
-        Ok(false)
+        Ok(result)
     }
     pub fn check_extra_wakeups(&amp;mut self) -&gt; bool {
         let mut event_checked = false;
@@ -2477,6 +2472,8 @@ where
 <li>Since the same index may link to different wakers at different times, the entry is wrapped with <code>Mutex</code> to be able to replace contained <code>Waker</code>.</li>
 </ul>
 </li>
+<li><code>wait</code> will trigger <code>poll</code> to harvest events for processing. If the token matches the <code>POLL_WAKE_TOKEN</code>,
+it will use the passed <code>notify_handler</code> to perform message handling.</li>
 <li><code>process_waker</code> will check whether a <code>Waker</code> is present when an event occurs. If <code>WAKER_SLAB</code> doesn't contain it, or it's <code>None</code> at current state, mark return <code>false</code> to indicate that this is an extra wake-up that need to be handled after.</li>
 <li><code>add_waker</code> will check whether a <code>Waker</code> exists in <code>WAKER_SLAB</code> with the token provide. If exists, swap the old one out and wake the old one, and return <code>None</code>. Otherwise, insert the waker and return a valid token for the caller to update.
 <ul>
@@ -2490,45 +2487,44 @@ where
 </li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="poll-loop"><a class="header" href="#poll-loop">Poll loop</a></h1>
-<p>After all the stuff defined, there's one more problem remain: Where to call <code>Reactor::wait()</code>?</p>
-<ol>
-<li>Use an isolated thread specifically for the <code>Reactor</code> to do its stuff</li>
-<li>Use a <code>Mutex</code> and make it a global to let workers call it.</li>
-</ol>
-<p>I choose the first one since <code>Poll::wait()</code> requires <code>&amp;mut</code> unique reference to call, and <code>check_extra_wakeups</code>
-will become a long critical section if there are loads of events that arrive before someone actually need it.
-The reason that not using main thread to do this is because that the main thread will have <code>Executor</code>'s message
-handling loop running.</p>
-<p>In <code>Executor</code> initialization, we set up a <code>poll_thread</code>:</p>
-<pre><code class="language-rust">// Executor::new()...
-let poll_thread_handle = thread::Builder::new()
-    .name(&quot;poll_thread&quot;.to_string())
-    .spawn(move || Self::poll_thread())
-    .expect(&quot;Failed to spawn poll_thread.&quot;);
-// ...
-fn poll_thread() {
-    let mut reactor = reactor::Reactor::default();
-    reactor.setup_registry();
-    loop {
-        // check if wakeups that is not used immediately is needed now.
-        reactor.check_extra_wakeups();
-        match reactor.wait(Some(Duration::from_millis(100))) {
-            Ok(true) =&gt; break,
-            Ok(false) =&gt; continue,
-            Err(ref e) if e.kind() == io::ErrorKind::Interrupted =&gt; continue,
-            Err(e) =&gt; {
-                log::error!(&quot;reactor wait error: {}, exit poll thread&quot;, e);
-                break;
+<p>The poll loop is the main loop that the <code>Executor</code> runs, as discussed in that section:</p>
+<pre><code class="language-rust">// Executor::run()
+fn run(mut self, reactor: &amp;mut Reactor) -&gt; io::Result&lt;()&gt; {
+    // 'env
+    thread::scope(|s| -&gt; io::Result&lt;()&gt; {
+        // 'scope
+        log::debug!(&quot;Spawn threads under scope...&quot;);
+        self.scheduler.setup_workers(s);
+        log::info!(&quot;Runtime booted up, start execution...&quot;);
+        loop {
+            reactor.check_extra_wakeups();
+            match reactor.wait(Some(Duration::from_millis(100)), || self.message_handler()) {
+                Ok(false) =&gt; {}
+                Ok(true) =&gt; break,
+                Err(e) =&gt; match e.kind() {
+                    io::ErrorKind::Interrupted | io::ErrorKind::WouldBlock =&gt; {}
+                    _ =&gt; {
+                        log::error!(&quot;Reactor wait error: {}, shutting down...&quot;, e);
+                        break;
+                    }
+                },
             }
         }
-    }
+        log::info!(&quot;Execution completed, shutting down...&quot;);
+        // shutdown worker threads
+        self.scheduler.shutdown();
+        log::info!(&quot;Runtime shutdown complete.&quot;);
+        Ok(())
+    })?;
+    Ok(())
 }
 </code></pre>
-<p>We use a waiting time of 100 ms to prevent the all-blocking scenario: Every thread is waiting on something and
-not able to process new events.
-This happens when it uses <code>reactor::wait(None)</code> for the <code>Reactor</code> to block until a readiness event comes in.
-Because of this, I changed it to 100 ms waiting duration to make it not so active but keep running.
-I'm still researching on how to deal with this, but for the current state, it works like a charm.</p>
+<p>Here scoped thread is used to encapsulate the lifetime of <code>Scheduler</code>'s worker threads.</p>
+<p>In each iteration, the <code>Reactor</code> will first check if any unused events are now required,
+as <code>mio</code> defaults to edge triggered mode. Then, it will run <code>wait</code> to wait for any
+event or schedule message income for 100 ms.
+The loop will keep running until a shutdown message or an IO error other than
+<code>EINTR</code> or <code>EWOULDBLOCK</code> occurs.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="load-balancing"><a class="header" href="#load-balancing">Load Balancing</a></h1>
 <p>Load balancing is always a problem when it comes to multiple workers.
 An efficient algorithm should:</p>
