@@ -15,40 +15,15 @@ The execution system is done by the `Scheduler`, and we also need to call `React
 IO events to wake tasks. By these facts and the above pseudocode, the `Executor` can be viewed
 as an abstraction layer that handles messages and relay the actual actions to `Scheduler` and `Reactor`.
 
-In the code, the `Executor` will do almost the same thing with one more message to handle. The `Executor`
-will also spawn a thread for `Reactor` to run, as the IO events will need to be checked separately if
-we have the message handling loop in the main thread.
-
 The `Executor` also provides a function: `block_on`. The asynchronous function that's spawned by the `block_on` function
 is just like the `main` function in a normal program: the runtime won't exit before this function ends without
 further errors or interrupts occur during runtime.
 
-The complete pseudocode for the `Executor`:
-
-```
-Init():
-    Initialize the Scheduler.
-    Spawn a thread to init and run the Reactor.
-    Set error hook for graceful shutdown to clean storages.
-    Return instance of self
-
-HandleRequests():
-    while true:
-        r <- GetRequest()
-        match r:
-            Spawn(Task) -> Put the Task to the execution system
-            Shutdown -> break
-
-Run():
-    HandleRequests()
-    Send Shutdown message to the Reactor
-    Join the thread for the Reactor
-
-block_on(f):
-    handle <- spawn(f())
-    Run()
-    Get the result from handle
-    Return result of f()
-```
+In the current implementation, `Executor::new()` will set up a channel for scheduler message to pass, and
+`Executor::block_on()` will act as an entry point to set up the `Reactor`, the global registry to register
+IO events, a notifier to the `Reactor`, and the worker threads of the `Scheduler`.
+The message handler is executed when the `Reactor` is notified by the notifier, which means there are at least one
+new messages to be handled inside the message passing channel. For simplicity, the `Reactor` is notified
+whenever a task is spawned in current implementation.
 
 Next, we'll talk about the message passing in this design.

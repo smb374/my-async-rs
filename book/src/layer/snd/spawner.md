@@ -13,27 +13,26 @@ When calling `spawn()` or `Executor::block_on()`, the `Spawner` will do the foll
 3. Allocate the `Future` in global `Future` object pool and get its key.
 4. Construct the `FuturIndex` with the key and other payloads.
 5. Send `ScheduleMessage::Schedule` with the `FutureIndex`.
-6. Return the handle to the spawned future.
+6. Notify the `Reactor` that a task is spawned.
+7. Return the handle to the spawned future.
 
 The code:
 
 ```rust
-// Spawner::spawn_with_handle()
-pub fn spawn_with_handle<F>(&self, future: F, is_block: bool) -> JoinHandle<F::Output>
+// Allocates the future in FUTURE_POOL and set up result state.
+pub(crate) fn alloc_future<F>(future: F, is_block: bool) -> (FutureIndex, JoinHandle<F::Output>)
 where
     F: Future + Send + 'static,
     F::Output: Send + 'static,
 {
     // Step 1.
     let result_arc: Arc<Mutex<Option<F::Output>>> = Arc::new(Mutex::new(None));
-    // Step 2.
     let clone = result_arc.clone();
+    // Step 2.
     let spawn_fut = async move {
         let output = future.await;
-        // Store the result.
         let mut guard = clone.lock();
         guard.replace(output);
-        // Check if the function is called by `Executor::block_on()`
         if is_block {
             log::info!("Shutting down...");
             shutdown();
@@ -46,27 +45,41 @@ where
             seat.future.get_mut().replace(spawn_fut.boxed());
         })
         .unwrap();
-    // Used in auto task yielding if enabled.
+    // Setup default budget for the task. Used when BudgetFuture is used.
     let budget_index = BUDGET_SLAB
         .insert(AtomicUsize::new(DEFAULT_BUDGET))
         .unwrap();
-    // Step 4., Step 5.
-    self.tx
-        .send(ScheduleMessage::Schedule(FutureIndex {
-            key,
-            budget_index,
-            sleep_count: 0,
-        }))
-        .expect("Failed to send message");
-    // Step 6.
-    JoinHandle {
+    // Step 4.
+    let handle = JoinHandle {
         spawn_id: key,
         registered: AtomicBool::new(false),
         inner: result_arc,
-    }
+    };
+    // Setup the index for scheduling.
+    let index = FutureIndex {
+        key,
+        budget_index,
+        sleep_count: 0,
+    };
+    (index, handle)
+}
+
+// Spawner::spawn_with_handle()
+pub fn spawn_with_handle<F>(&self, future: F, is_block: bool) -> JoinHandle<F::Output>
+where
+    F: Future + Send + 'static,
+    F::Output: Send + 'static,
+{
+    let (index, handle) = alloc_future(future, is_block);
+    // Step 5.
+    self.tx
+        .send(ScheduleMessage::Schedule(index))
+        .expect("Failed to send message");
+    notify_reactor();
+    handle
 }
 ```
 
-For, `Shutdown` and `Reschedule`, the implementation is simple: simply send the corresponding message with necessary arguments.
-We can also define `spawn()` and `shutdown()` now as their just a wrapper to call the global spawner and use its method call
-to send messages to the `Executor`.
+For, `Shutdown` and `Reschedule`, the implementation is simple: simply send the corresponding message with necessary
+arguments. We can also define `spawn()` and `shutdown()` now as their just a wrapper to
+call the global spawner and use its method call to send messages to the `Executor`.

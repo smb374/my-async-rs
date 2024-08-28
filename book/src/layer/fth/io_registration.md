@@ -49,13 +49,17 @@ Firstly, the code:
 static WAKER_SLAB: Lazy<Slab<Mutex<Option<Waker>>>> = Lazy::new(Slab::new);
 
 impl Reactor {
-    pub fn wait(&mut self, timeout: Option<Duration>) -> io::Result<bool> {
+    pub fn wait<F>(&mut self, timeout: Option<Duration>, mut notify_handler: F) -> io::Result<bool>
+    where
+        F: FnMut() -> bool,
+    {
+        let mut result: bool = false;
         self.poll.poll(&mut self.events, timeout)?;
         if !self.events.is_empty() {
             log::debug!("Start process events.");
             for e in self.events.iter() {
                 if e.token() == POLL_WAKE_TOKEN {
-                    return Ok(true);
+                    result = notify_handler();
                 }
                 let idx = e.token().0;
                 let waker_processed = process_waker(idx, |guard| {
@@ -69,7 +73,7 @@ impl Reactor {
                 }
             }
         }
-        Ok(false)
+        Ok(result)
     }
     pub fn check_extra_wakeups(&mut self) -> bool {
         let mut event_checked = false;
@@ -150,6 +154,8 @@ where
 - `WAKER_SLAB` provides a global waker slab that will return an index to access the waker after insertion.
   - The returned index will be used as the event token that is registered with `REGISTERY`.
   - Since the same index may link to different wakers at different times, the entry is wrapped with `Mutex` to be able to replace contained `Waker`.
+- `wait` will trigger `poll` to harvest events for processing. If the token matches the `POLL_WAKE_TOKEN`,
+  it will use the passed `notify_handler` to perform message handling.
 - `process_waker` will check whether a `Waker` is present when an event occurs. If `WAKER_SLAB` doesn't contain it, or it's `None` at current state, mark return `false` to indicate that this is an extra wake-up that need to be handled after.
 - `add_waker` will check whether a `Waker` exists in `WAKER_SLAB` with the token provide. If exists, swap the old one out and wake the old one, and return `None`. Otherwise, insert the waker and return a valid token for the caller to update.
   - By default, `IoWrapper` will use `usize::MAX` as token. This will insert the waker and update its token to a valid one, then it can use `register()` to register the event it needs with the updated token.

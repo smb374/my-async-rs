@@ -1,45 +1,44 @@
 # Poll loop
 
-After all the stuff defined, there's one more problem remain: Where to call `Reactor::wait()`?
-
-1. Use an isolated thread specifically for the `Reactor` to do its stuff
-2. Use a `Mutex` and make it a global to let workers call it.
-
-I choose the first one since `Poll::wait()` requires `&mut` unique reference to call, and `check_extra_wakeups`
-will become a long critical section if there are loads of events that arrive before someone actually need it.
-The reason that not using main thread to do this is because that the main thread will have `Executor`'s message
-handling loop running.
-
-In `Executor` initialization, we set up a `poll_thread`:
+The poll loop is the main loop that the `Executor` runs, as discussed in that section:
 
 ```rust
-// Executor::new()...
-let poll_thread_handle = thread::Builder::new()
-    .name("poll_thread".to_string())
-    .spawn(move || Self::poll_thread())
-    .expect("Failed to spawn poll_thread.");
-// ...
-fn poll_thread() {
-    let mut reactor = reactor::Reactor::default();
-    reactor.setup_registry();
-    loop {
-        // check if wakeups that is not used immediately is needed now.
-        reactor.check_extra_wakeups();
-        match reactor.wait(Some(Duration::from_millis(100))) {
-            Ok(true) => break,
-            Ok(false) => continue,
-            Err(ref e) if e.kind() == io::ErrorKind::Interrupted => continue,
-            Err(e) => {
-                log::error!("reactor wait error: {}, exit poll thread", e);
-                break;
+// Executor::run()
+fn run(mut self, reactor: &mut Reactor) -> io::Result<()> {
+    // 'env
+    thread::scope(|s| -> io::Result<()> {
+        // 'scope
+        log::debug!("Spawn threads under scope...");
+        self.scheduler.setup_workers(s);
+        log::info!("Runtime booted up, start execution...");
+        loop {
+            reactor.check_extra_wakeups();
+            match reactor.wait(Some(Duration::from_millis(100)), || self.message_handler()) {
+                Ok(false) => {}
+                Ok(true) => break,
+                Err(e) => match e.kind() {
+                    io::ErrorKind::Interrupted | io::ErrorKind::WouldBlock => {}
+                    _ => {
+                        log::error!("Reactor wait error: {}, shutting down...", e);
+                        break;
+                    }
+                },
             }
         }
-    }
+        log::info!("Execution completed, shutting down...");
+        // shutdown worker threads
+        self.scheduler.shutdown();
+        log::info!("Runtime shutdown complete.");
+        Ok(())
+    })?;
+    Ok(())
 }
 ```
 
-We use a waiting time of 100 ms to prevent the all-blocking scenario: Every thread is waiting on something and
-not able to process new events.
-This happens when it uses `reactor::wait(None)` for the `Reactor` to block until a readiness event comes in.
-Because of this, I changed it to 100 ms waiting duration to make it not so active but keep running.
-I'm still researching on how to deal with this, but for the current state, it works like a charm.
+Here scoped thread is used to encapsulate the lifetime of `Scheduler`'s worker threads.
+
+In each iteration, the `Reactor` will first check if any unused events are now required,
+as `mio` defaults to edge triggered mode. Then, it will run `wait` to wait for any
+event or schedule message income for 100 ms.
+The loop will keep running until a shutdown message or an IO error other than
+`EINTR` or `EWOULDBLOCK` occurs.
