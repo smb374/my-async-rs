@@ -33,4 +33,12 @@ hybrid strategy that combines work stealing and priority queue are implemented.
 
 Design Documents can be found at [Here](https://smb374.github.io/my-async-rs/design/).
 
+## Credits
+
+- [tokio](https://github.com/tokio-rs/tokio): Used code in `concurrent-ringbuf`
+  for a static-size work-stealing ring buffer as well as various design concepts
+  in this project. License: MIT
+- [Prof. Chun-Ying Huang](https://people.cs.nycu.edu.tw/~chuang/): For
+  evaluating various design approach and mentoring during the project period.
+
 <!-- vim: set colorcolumn=80 textwidth=80: -->
